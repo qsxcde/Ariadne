@@ -78,6 +78,14 @@ class DuplicatePaperError(Exception):
         super().__init__(message)
 
 
+class ImportResolutionError(ValueError):
+    """Raised when an arXiv/DOI/URL identifier cannot be resolved to metadata."""
+
+
+class ImportFetchError(RuntimeError):
+    """Raised when metadata or PDF retrieval fails upstream."""
+
+
 class DocumentNotFoundError(Exception):
     """Raised when a document does not exist inside the requested session."""
 

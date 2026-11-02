@@ -52,6 +52,8 @@ export type GlossaryTerm = Schemas["GlossaryTerm"];
 export type LibraryStats = Schemas["LibraryStats"];
 export type PaperUpdatePayload = Schemas["PaperUpdateRequest"];
 export type PaperUploadResult = Schemas["PaperUploadResponse"];
+export type PaperImportPayload = Schemas["PaperImportRequest"];
+export type PaperImportResult = Schemas["PaperImportResponse"];
 
 export type AnnotationSummary = Schemas["AnnotationSummary"];
 export type AnnotationCreatePayload = Schemas["AnnotationCreateRequest"];

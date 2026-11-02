@@ -7,6 +7,8 @@ import type {
   PaperBrief,
   PaperDetail,
   PaperSummary,
+  PaperImportPayload,
+  PaperImportResult,
   PaperUpdatePayload,
   PaperUploadResult,
   WeeklyReview,
@@ -46,6 +48,15 @@ export function uploadPaper(file: File): Promise<PaperUploadResult> {
   const body = new FormData();
   body.append("file", file);
   return requestForm<PaperUploadResult>("/papers", "上传论文失败", body);
+}
+
+export function importPaperByReference(
+  payload: PaperImportPayload,
+): Promise<PaperImportResult> {
+  return requestJson<PaperImportResult>("/papers/import", "导入论文失败", {
+    method: "POST",
+    ...jsonRequest(payload),
+  });
 }
 
 export function getCitations(paperId: string): Promise<CitationGraph> {

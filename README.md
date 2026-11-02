@@ -328,6 +328,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/papers/export.bib` | Export Bibtex |
 | GET | `/papers/export.csl.json` | Export Csl |
 | GET | `/papers/export.md` | Export Markdown |
+| POST | `/papers/import` | 按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。 |
 | GET | `/papers/stats` | Get Library Stats |
 | GET | `/papers/{paper_id}` | Get Paper |
 | PATCH | `/papers/{paper_id}` | Update Paper |

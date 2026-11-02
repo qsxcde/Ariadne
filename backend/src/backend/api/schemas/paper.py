@@ -273,3 +273,20 @@ class PaperUploadResponse(BaseModel):
     job_id: str
     document_status: str
     job_status: str
+
+
+class PaperImportRequest(BaseModel):
+    source: Literal["arxiv", "doi", "url"] = "arxiv"
+    identifier: str = Field(min_length=1, max_length=2048)
+    download_pdf: bool = True
+
+
+class PaperImportResponse(BaseModel):
+    paper: PaperSummary
+    pdf_imported: bool
+    session_id: str | None = None
+    document_id: str | None = None
+    job_id: str | None = None
+    document_status: str | None = None
+    job_status: str | None = None
+    warning: str | None = None

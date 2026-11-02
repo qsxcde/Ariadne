@@ -143,7 +143,7 @@ def import_paper_upload(
         raise RuntimeError("创建论文失败")
     return {
         "paper": paper,
-        "session": session,
+        "session": session_repo.get_session(session["id"]) or session,
         "document": intake["document"],
         "job": intake["job"],
     }

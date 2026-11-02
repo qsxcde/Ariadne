@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
+import PaperImportDialog from "./PaperImportDialog.vue";
 import { usePapers } from "../../../composables/usePapers";
 import { exportBibtex } from "../../../api/papers";
 import type { PaperSummary } from "../../../api";
@@ -29,6 +30,7 @@ const {
 } = usePapers();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
+const isImportDialogOpen = ref(false);
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -81,6 +83,10 @@ async function handleFiles(event: Event): Promise<void> {
   }
 }
 
+async function handleImported(): Promise<void> {
+  await loadLibrary();
+}
+
 async function downloadBibtex(): Promise<void> {
   try {
     const bib = await exportBibtex();
@@ -127,12 +133,19 @@ onMounted(() => {
         </button>
         <button
           type="button"
+          class="paper-library__text-button"
+          @click="isImportDialogOpen = true"
+        >
+          按标识导入
+        </button>
+        <button
+          type="button"
           class="paper-library__upload"
           :disabled="isUploading"
           @click="pickFiles"
         >
           <UploadFilled class="paper-library__upload-icon" />
-          {{ isUploading ? "上传中…" : "导入论文" }}
+          {{ isUploading ? "上传中…" : "上传 PDF" }}
         </button>
       </div>
     </header>
@@ -144,6 +157,12 @@ onMounted(() => {
       accept=".pdf,application/pdf"
       multiple
       @change="handleFiles"
+    />
+
+    <PaperImportDialog
+      :visible="isImportDialogOpen"
+      @close="isImportDialogOpen = false"
+      @imported="handleImported"
     />
 
     <div class="paper-library__filters">
@@ -179,7 +198,9 @@ onMounted(() => {
     <p v-if="isLoading && !papers.length" class="paper-library__state">正在读取文献库…</p>
     <div v-else-if="!papers.length" class="paper-library__empty">
       <p class="paper-library__empty-title">还没有收录论文</p>
-      <p class="paper-library__empty-hint">点击「导入论文」上传 PDF，解析完成后会出现在这里。</p>
+      <p class="paper-library__empty-hint">
+        点击「上传 PDF」加入本地文件，或用「按标识导入」从 arXiv / DOI / 网页抓取题录。
+      </p>
     </div>
 
     <div v-else class="paper-library__grid">

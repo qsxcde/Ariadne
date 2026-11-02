@@ -184,7 +184,7 @@ handleUpload(file)
 | `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
 | `/synthesis` | `views/SynthesisView.vue` | 集合选择、跨论文问答、对比表 |
 | `/feed` | `views/FeedView.vue` | 订阅、Feed 刷新、保存到队列/忽略 |
-| `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量导入 |
+| `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量上传、按 arXiv/DOI/链接导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
@@ -193,7 +193,7 @@ handleUpload(file)
 状态与 API：
 
 - `composables/usePapers.ts`：文献库、当前论文、筛选、阅读状态、笔记；通过 `stores/index.ts` 导出。
-- `api/papers.ts`：list / get / upload / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
+- `api/papers.ts`：list / get / upload / import / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
 - 进度：`PaperReader` 滚动时 emit `progress`，`PaperWorkspace` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
 - 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点。

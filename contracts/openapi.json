@@ -2173,6 +2173,119 @@
         "title": "PaperDocumentSummary",
         "type": "object"
       },
+      "PaperImportRequest": {
+        "properties": {
+          "download_pdf": {
+            "default": true,
+            "title": "Download Pdf",
+            "type": "boolean"
+          },
+          "identifier": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Identifier",
+            "type": "string"
+          },
+          "source": {
+            "default": "arxiv",
+            "enum": [
+              "arxiv",
+              "doi",
+              "url"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "title": "PaperImportRequest",
+        "type": "object"
+      },
+      "PaperImportResponse": {
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "document_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Status"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "job_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Status"
+          },
+          "paper": {
+            "$ref": "#/components/schemas/PaperSummary"
+          },
+          "pdf_imported": {
+            "title": "Pdf Imported",
+            "type": "boolean"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "paper",
+          "pdf_imported"
+        ],
+        "title": "PaperImportResponse",
+        "type": "object"
+      },
       "PaperSummary": {
         "properties": {
           "abstract": {
@@ -4453,6 +4566,50 @@
           }
         ],
         "summary": "Export Markdown"
+      }
+    },
+    "/papers/import": {
+      "post": {
+        "description": "按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。",
+        "operationId": "import_paper_by_reference_papers_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaperImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Import Paper By Reference"
       }
     },
     "/papers/stats": {

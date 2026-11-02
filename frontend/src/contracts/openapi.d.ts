@@ -454,6 +454,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/papers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Paper By Reference
+         * @description 按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。
+         */
+        post: operations["import_paper_by_reference_papers_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers/stats": {
         parameters: {
             query?: never;
@@ -1602,6 +1622,40 @@ export interface components {
             status: string;
             /** Updated At */
             updated_at: string;
+        };
+        /** PaperImportRequest */
+        PaperImportRequest: {
+            /**
+             * Download Pdf
+             * @default true
+             */
+            download_pdf: boolean;
+            /** Identifier */
+            identifier: string;
+            /**
+             * Source
+             * @default arxiv
+             * @enum {string}
+             */
+            source: "arxiv" | "doi" | "url";
+        };
+        /** PaperImportResponse */
+        PaperImportResponse: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Document Status */
+            document_status?: string | null;
+            /** Job Id */
+            job_id?: string | null;
+            /** Job Status */
+            job_status?: string | null;
+            paper: components["schemas"]["PaperSummary"];
+            /** Pdf Imported */
+            pdf_imported: boolean;
+            /** Session Id */
+            session_id?: string | null;
+            /** Warning */
+            warning?: string | null;
         };
         /** PaperSummary */
         PaperSummary: {
@@ -2795,6 +2849,39 @@ export interface operations {
                 };
                 content: {
                     "text/plain": string;
+                };
+            };
+        };
+    };
+    import_paper_by_reference_papers_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperImportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

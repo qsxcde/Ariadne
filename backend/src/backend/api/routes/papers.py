@@ -21,6 +21,8 @@ from backend.api.schemas import (
     LibraryStats,
     PaperBrief,
     PaperDetail,
+    PaperImportRequest,
+    PaperImportResponse,
     PaperSummary,
     PaperUpdateRequest,
     PaperUploadResponse,
@@ -35,6 +37,7 @@ from backend.application import collections as collection_service
 from backend.application import explain as explain_service
 from backend.application import export as export_service
 from backend.application import glossary as glossary_service
+from backend.application import paper_import as paper_import_service
 from backend.application import papers as paper_service
 from backend.application import review as review_service
 from backend.application import stats as stats_service
@@ -117,6 +120,34 @@ def upload_paper(
         job_id=result["job"]["id"],
         document_status=result["document"]["status"],
         job_status=result["job"]["status"],
+    )
+
+
+@router.post("/papers/import", status_code=202, response_model=PaperImportResponse)
+def import_paper_by_reference(
+    payload: PaperImportRequest,
+    user: dict = Depends(get_current_user),
+) -> PaperImportResponse:
+    """按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。"""
+    result = paper_import_service.import_paper_reference(
+        user_id=user.get("id") or None,
+        source=payload.source,
+        identifier=payload.identifier,
+        download_pdf=payload.download_pdf,
+    )
+    paper = result["paper"]
+    session = result["session"]
+    document = result["document"]
+    job = result["job"]
+    return PaperImportResponse(
+        paper=_summary({**paper, "authors": paper_service.load_authors(paper)}),
+        pdf_imported=bool(result["pdf_imported"]),
+        session_id=session["id"] if session else None,
+        document_id=document["id"] if document else None,
+        job_id=job["id"] if job else None,
+        document_status=document["status"] if document else None,
+        job_status=job["status"] if job else None,
+        warning=result["warning"],
     )
 
 

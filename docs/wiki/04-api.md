@@ -57,6 +57,7 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/papers/stats` | 文献库 Dashboard 统计 | 200 | 401 |
 | GET | `/papers` | 论文列表；支持 status / collection_id / tag / q / limit | 200 | 401 |
 | POST | `/papers` | 上传 PDF：创建论文 + reading session + 文档 + 摄取任务 | **202** | 401 / 409 / 413 / 422 |
+| POST | `/papers/import` | 按 arXiv / DOI / 网页链接导入；有开放 PDF 时下载解析，否则只入库题录 | **202** | 401 / 409 / 422 / 502 |
 | GET | `/papers/{paper_id}` | 论文详情：文档、批注、集合、阅读进度 | 200 | 401 / 404 |
 | PATCH | `/papers/{paper_id}` | 编辑元数据与阅读状态/进度 | 200 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/glossary` | 生成术语表 | 200 | 401 / 404 / 409 |
@@ -98,6 +99,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/sessions/{id}/documents/{document_id}/chunks/{chunk_index}` | 引用定位（还原原文段落 + 坐标） | 200 | 401 / 404 |
 | POST | `/sessions/{id}/messages` | 流式对话 | 200（SSE） | 401 / 404 |
 
+> 标识导入：`POST /papers/import` 接受 `{source: arxiv|doi|url, identifier, download_pdf}`；arXiv 走 Atom API、DOI 走 Crossref、网页读 citation 元标签，按 `arxiv_id` / `doi` 去重（409 带 `paper_id`）。PDF 不可用时返回 202 + `pdf_imported=false` 与 `warning`，论文仍以 `inbox` 状态入库。
+>
 > v8 论文资产：`POST /papers` 会自动创建 reading session，并以 SHA-256 去重；`GET /papers/{id}` 返回 `primary_session_id` 与当前 `document_id`，阅读器继续复用 session/document 的 content/file/chunks 端点。重复上传返回 409，body 带 `paper_id`。
 
 ## 3. 端点详情

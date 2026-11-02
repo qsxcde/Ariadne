@@ -205,6 +205,34 @@ def find_by_file_hash(user_id: str | None, file_hash: str) -> PaperRecord | None
         return row_to_dict(row)  # type: ignore[return-value]
 
 
+def find_by_arxiv_id(user_id: str | None, arxiv_id: str) -> PaperRecord | None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM papers
+            WHERE user_id IS ? AND arxiv_id = ?
+            ORDER BY created_at ASC
+            LIMIT 1
+            """,
+            (user_id, arxiv_id),
+        ).fetchone()
+        return row_to_dict(row)  # type: ignore[return-value]
+
+
+def find_by_doi(user_id: str | None, doi: str) -> PaperRecord | None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT * FROM papers
+            WHERE user_id IS ? AND doi = ? COLLATE NOCASE
+            ORDER BY created_at ASC
+            LIMIT 1
+            """,
+            (user_id, doi),
+        ).fetchone()
+        return row_to_dict(row)  # type: ignore[return-value]
+
+
 def update_reading_state(
     paper_id: str,
     *,

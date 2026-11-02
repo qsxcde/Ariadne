@@ -9,6 +9,8 @@ from backend.domain.exceptions import (
     CollectionNotFoundError,
     DocumentNotFoundError,
     DuplicatePaperError,
+    ImportFetchError,
+    ImportResolutionError,
     JobInProgressError,
     PaperNotFoundError,
     SessionNotFoundError,
@@ -57,6 +59,20 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
             content={"detail": str(exc) or "Paper already exists", "paper_id": exc.paper_id},
+        )
+
+    @app.exception_handler(ImportResolutionError)
+    async def _import_unresolved(_request: Request, exc: ImportResolutionError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={"detail": str(exc) or "Cannot resolve identifier"},
+        )
+
+    @app.exception_handler(ImportFetchError)
+    async def _import_upstream_failed(_request: Request, exc: ImportFetchError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            content={"detail": str(exc) or "Upstream fetch failed"},
         )
 
     @app.exception_handler(ChunkNotFoundError)
