@@ -15,16 +15,10 @@ _MAX_SECTIONS = 8
 _SECTION_CHAR_BUDGET = 1600
 
 _BRIEF_PROMPT = """你是一个论文速读助手。下面是按章节整理的论文片段。
-请只根据这些片段，输出一个 JSON 对象，不要输出 Markdown 代码块或解释。
+只输出一个 JSON 对象，不要输出数组、Markdown 代码块或解释。
 
-JSON 字段：
-- tldr: 一句话总结（中文）
-- contributions: 3-5 条核心贡献（字符串数组）
-- method: 方法概述
-- experiments: 实验/数据集/指标
-- limitations: 局限
-- takeaways: 2-4 条阅读要点（字符串数组）
-- sections: 数组，每项包含 title、summary、chunk_indexes（该总结依据的 Chunk 序号）
+严格按这个示例的字段和类型输出：
+{"tldr": "一句话总结", "contributions": ["贡献1 [Section: Method | Chunk: 0]"], "method": "方法概述 [Section: Method | Chunk: 0]", "experiments": "实验概述", "limitations": "局限", "takeaways": ["要点1"], "sections": [{"title": "Method", "summary": "本节摘要", "chunk_indexes": [0]}]}
 
 要求：
 1. 每个关键结论都带引用，格式为 [Section: 章节标题 | Chunk: 序号]。
@@ -150,7 +144,7 @@ def generate_paper_brief(
         sections.append(item)
 
     runner = completer or composition.text_completer()
-    raw = runner.complete(_BRIEF_PROMPT.format(sections=digest))
+    raw = runner.complete(_BRIEF_PROMPT.replace("{sections}", digest))
     brief = _parse_brief(raw, sections)
     return {
         "paper_id": paper["id"],

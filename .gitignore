@@ -14,6 +14,7 @@ backend/storage/sqlite/scipal.db
 .pytest_cache/
 .vscode/
 eval_outputs/
+docker/models/
 docs/*
 !docs/README.md
 !docs/wiki/

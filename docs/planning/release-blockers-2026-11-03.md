@@ -15,7 +15,7 @@
 
 ## 2. 自动化基线
 
-- 后端 pytest：164 passed，5 skipped（3 个 Docker mock 用例 + 2 个真实网络用例默认 skip）。
+- 后端 pytest：164 passed，7 skipped（3 Docker mock + 2 真实网络 + 2 本地模型）。
 - 前端 Vitest：8 passed；typecheck/lint/build 通过。
 - ruff / mypy：通过。
 - Docker mock LLM：`./scripts/run_mock_llm_tests.sh` → 3 passed。
@@ -28,8 +28,9 @@
 - 现象：`backend/.env` 的 `DEEPSEEK_API_KEY` 返回 401 Authentication Fails。
 - 影响：M1 的 citation precision、3 篇真实速读卡、多轮评测；M2 的 10 篇课题与对比准确率；M3/M4 的真实摘要/推荐/提醒文案。
 - 已做：Docker mock LLM 验证了 OpenAI 兼容 HTTP 链路（completion/embedding/brief/explain/stream）。
-- 未做：真实 provider 质量评测；不能用 mock 结果冒充。
-- 解除：在 `backend/.env` 填入有效 Key，然后运行真实评测集。
+- 已做：**本地真实模型基线通过**（Docker Ollama + Qwen2.5-3B + nomic-embed）：5/5 语义正确、5/5 带引用；2 篇对比字段正确。复现：`./scripts/run_local_llm_eval.sh`。
+- 未做：50 题/10 篇完整评测与 DeepSeek provider 质量评测；不能用 mock 或本地小模型替代发布级评测。
+- 解除：在 `backend/.env` 填入有效 Key，然后运行完整评测集。
 
 ### 3.2 外部数据与集成（未授权/未接入）
 
