@@ -43,7 +43,7 @@ def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
         raise RuntimeError(f"Expected {count} papers, got {len(items)}")
     chunks: list[Chunk] = []
     paper_ids: list[str] = []
-    cases: list[tuple[str, list[str]]] = []
+    cases: list[tuple[str, list[str], str]] = []
     for item in items[:count]:
         title = str(item["title"])
         authors = json.loads(item.get("authors_json") or "[]")
@@ -99,13 +99,13 @@ def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
         first_author = (authors[0] if authors else "").split()[-1]
         title_probe = " ".join(title.split()[:5]).lower()
         suffix = " Answer with the exact text from the Abstract section."
-        cases.append((f"What is the title of arXiv paper {arxiv_id}?{suffix}", [title_probe]))
-        cases.append((f"Who is the first author of arXiv paper {arxiv_id}?{suffix}", [first_author]))
-        cases.append((f"What is the arXiv id of the paper titled {title[:80]}?{suffix}", [arxiv_id]))
+        cases.append((f"What is the title of arXiv paper {arxiv_id}?{suffix}", [title_probe], document["id"]))
+        cases.append((f"Who is the first author of arXiv paper {arxiv_id}?{suffix}", [first_author], document["id"]))
+        cases.append((f"What is the arXiv id of the paper titled {title[:80]}?{suffix}", [arxiv_id], document["id"]))
         if cases_per_paper >= 4:
-            cases.append((f"What problem does the paper titled {title[:80]} address?", _keywords(abstract, 0, 4)))
+            cases.append((f"What problem does the paper titled {title[:80]} address?", _keywords(abstract, 0, 4), document["id"]))
         if cases_per_paper >= 5:
-            cases.append((f"What method does the paper titled {title[:80]} use?", _keywords(abstract, 4, 8)))
+            cases.append((f"What method does the paper titled {title[:80]} use?", _keywords(abstract, 4, 8), document["id"]))
     return chunks, paper_ids, cases
 
 
@@ -122,7 +122,7 @@ def main() -> None:
     store = FAISSVectorStore(embed_fn=composition.embedder(), embedding_dim=768)
     store.add_chunks(chunks)
     policy = AnswerPolicy(empty_retrieval_message="没有相关信息", invalid_citation_message="引用无效")
-    options = RetrievalOptions(
+    base_options = dict(
         strategy="hybrid",
         bm25_top_k=8,
         dense_top_k=8,
@@ -138,7 +138,8 @@ def main() -> None:
 
     correct = 0
     cited = 0
-    for index, (question, expected_terms) in enumerate(cases, start=1):
+    for index, (question, expected_terms, document_id) in enumerate(cases, start=1):
+        options = RetrievalOptions(document_ids=[document_id], **base_options)
         answer = ""
         for event in stream_answer(store, question, policy=policy, options=options):
             if event["type"] == "token":
