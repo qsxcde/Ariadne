@@ -16,7 +16,7 @@ vi.mock("../../api/collections", () => ({
 
 import { createAnnotation, deleteAnnotation } from "../../api/annotations";
 import { listCollections } from "../../api/collections";
-import { listPapers, updatePaper } from "../../api/papers";
+import { listPapers, updatePaper, uploadPaper } from "../../api/papers";
 import type { AnnotationSummary, PaperDetail, PaperSummary } from "../../api";
 import { usePapers } from "../usePapers";
 
@@ -85,6 +85,40 @@ describe("usePapers", () => {
     expect(store.currentPaper.value?.progress).toBe(0.5);
     expect(store.papers.value[0].progress).toBe(0.5);
     expect(store.papers.value[0].reading_status).toBe("reading");
+  });
+
+  it("上传成功后刷新文献库并返回新论文", async () => {
+    vi.mocked(uploadPaper).mockResolvedValue({
+      paper: paper(),
+      session_id: "s1",
+      document_id: "d1",
+      job_id: "j1",
+      document_status: "uploaded",
+      job_status: "queued",
+    });
+    vi.mocked(listPapers).mockResolvedValue([paper()]);
+    vi.mocked(listCollections).mockResolvedValue([]);
+    const store = usePapers();
+
+    const uploaded = await store.upload(
+      new File(["%PDF-1.7"], "attention.pdf", { type: "application/pdf" }),
+    );
+
+    expect(uploaded?.id).toBe("paper-1");
+    expect(store.papers.value).toHaveLength(1);
+    expect(store.isUploading.value).toBe(false);
+  });
+
+  it("上传失败时记录错误并返回 null", async () => {
+    vi.mocked(uploadPaper).mockRejectedValue(new Error("duplicate"));
+    const store = usePapers();
+
+    const uploaded = await store.upload(
+      new File(["%PDF-1.7"], "attention.pdf", { type: "application/pdf" }),
+    );
+
+    expect(uploaded).toBeNull();
+    expect(store.errorMessage.value).toContain("duplicate");
   });
 
   it("新增与删除笔记会更新当前论文", async () => {

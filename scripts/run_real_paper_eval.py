@@ -8,6 +8,7 @@ import json
 import os
 import re
 from collections import Counter
+from pathlib import Path
 
 from backend import composition
 from backend.application.feed import ArxivFeedSource
@@ -36,14 +37,30 @@ def _keywords(text: str, start: int, end: int) -> list[str]:
     return top[start:end] or top[:4]
 
 
+CACHE_PATH = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/scipal_real_papers.json"))
+
+
+def _fetch_real_items(count: int) -> list[dict]:
+    """Reuse a cached arXiv snapshot so evaluation runs are reproducible offline."""
+    if CACHE_PATH.exists():
+        cached = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
+        if len(cached) >= count:
+            return cached
+    items = ArxivFeedSource().fetch(
+        {"value": "retrieval augmented generation", "kind": "keyword"}
+    )
+    CACHE_PATH.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+    return items
+
+
 def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
-    source = ArxivFeedSource()
-    items = source.fetch({"value": "retrieval augmented generation", "kind": "keyword"})
+    items = _fetch_real_items(count)
     if len(items) < count:
         raise RuntimeError(f"Expected {count} papers, got {len(items)}")
     chunks: list[Chunk] = []
     paper_ids: list[str] = []
     cases: list[tuple[str, list[str], str]] = []
+    papers: list[dict[str, str]] = []
     for item in items[:count]:
         title = str(item["title"])
         authors = json.loads(item.get("authors_json") or "[]")
@@ -97,7 +114,16 @@ def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
         )
         paper_ids.append(document["paper_id"])
         first_author = (authors[0] if authors else "").split()[-1]
-        title_probe = " ".join(title.split()[:5]).lower()
+        papers.append(
+            {
+                "document_id": document["id"],
+                "arxiv_id": arxiv_id,
+                "title": title,
+                "author": authors[0] if authors else "",
+                # 名字判断题按姓氏判定：本地模型常只答姓，不接受会被误判为错误。
+                "author_key": (authors[0].split()[-1] if authors else ""),
+            }
+        )
         suffix = " Answer with the exact metadata text."
         cases.append((f"Who is the first author of arXiv paper {arxiv_id}?{suffix}", [first_author], document["id"]))
         cases.append((f"What is the arXiv id of the paper authored by {first_author}?{suffix}", [arxiv_id], document["id"]))
@@ -106,7 +132,7 @@ def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
             cases.append((f"Who is the first author of the paper titled {title[:80]}?{suffix}", [first_author], document["id"]))
         if cases_per_paper >= 5:
             cases.append((f"Return the arXiv id for the paper with first author {first_author}.{suffix}", [arxiv_id], document["id"]))
-    return chunks, paper_ids, cases
+    return chunks, paper_ids, cases, papers
 
 
 def main() -> None:
@@ -118,7 +144,7 @@ def main() -> None:
     init_db()
 
     cases_per_paper = int(os.getenv("REAL_CASES_PER_PAPER", "5"))
-    chunks, paper_ids, cases = _seed_real_papers(10, cases_per_paper)
+    chunks, paper_ids, cases, papers = _seed_real_papers(10, cases_per_paper)
     store = FAISSVectorStore(embed_fn=composition.embedder(), embedding_dim=768)
     store.add_chunks(chunks)
     policy = AnswerPolicy(empty_retrieval_message="没有相关信息", invalid_citation_message="引用无效")
@@ -157,14 +183,123 @@ def main() -> None:
             cited += 1
         if index % 5 == 0:
             print(f"progress {index}/{len(cases)}", flush=True)
-    print(f"REAL_CORPUS_QA correct={correct}/{len(cases)} cited={cited}/{len(cases)}", flush=True)
+    if skip_qa:
+        print("REAL_CORPUS_QA skipped", flush=True)
+    else:
+        print(
+            f"REAL_CORPUS_QA correct={correct}/{len(cases)} cited={cited}/{len(cases)}",
+            flush=True,
+        )
 
-    collection = collection_repo.create_collection(user_id="u1", name="Real papers")
-    for paper_id in paper_ids:
-        collection_repo.add_paper_to_collection(collection["id"], paper_id)
-    rows = compare_papers(collection["id"], "u1", paper_ids)
-    cited_rows = sum(1 for row in rows if "[Section:" in (row["method"] + row["metrics"]))
-    print(f"REAL_CORPUS_COMPARE rows={len(rows)} cited={cited_rows}/{len(rows)}")
+    def answer(
+        question: str,
+        history: list[dict[str, str]] | None = None,
+        document_id: str | None = None,
+    ) -> str:
+        options = RetrievalOptions(**base_options)
+        if document_id:
+            options.document_ids = [document_id]
+        text = ""
+        for event in stream_answer(
+            store,
+            question,
+            policy=policy,
+            options=options,
+            history=history,
+        ):
+            if event["type"] == "token":
+                text += event["value"]
+        return text
+
+    if os.getenv("REAL_SKIP_EXTRA") != "1":
+        multi_correct = 0
+        multi_total = 0
+        for paper in papers:
+            scenarios = [
+                (
+                    f"Who is the first author of arXiv paper {paper['arxiv_id']}? "
+                    "Answer with the name only.",
+                    "What is the arXiv ID of the paper written by that author? "
+                    "Answer with the ID only.",
+                    paper["arxiv_id"],
+                ),
+                (
+                    f"What is the arXiv ID of the paper titled {paper['title'][:60]}? "
+                    "Answer with the ID only.",
+                    "Who is the first author of that paper? Answer with the name only.",
+                    paper["author_key"],
+                ),
+            ]
+            for first_q, follow_q, expected in scenarios:
+                multi_total += 1
+                first_a = answer(first_q, document_id=paper["document_id"])
+                follow_a = answer(
+                    follow_q,
+                    document_id=paper["document_id"],
+                    history=[
+                        {"role": "user", "content": first_q},
+                        {"role": "assistant", "content": first_a},
+                    ],
+                )
+                if expected.lower() in follow_a.lower():
+                    multi_correct += 1
+                else:
+                    print(
+                        f"MULTITURN MISS expected={expected!r} A={follow_a[:160]!r}",
+                        flush=True,
+                    )
+                if multi_total % 5 == 0:
+                    print(
+                        f"multiturn progress {multi_total}", flush=True
+                    )
+        print(
+            f"REAL_CORPUS_MULTITURN correct={multi_correct}/{multi_total}",
+            flush=True,
+        )
+
+        cross_correct = 0
+        cross_total = 0
+        for paper in papers:
+            probes = [
+                (
+                    f"Which paper was written by {paper['author']}? "
+                    "Answer with its arXiv ID.",
+                    paper["arxiv_id"],
+                ),
+                (
+                    f"What is the arXiv ID of the paper titled {paper['title'][:70]}? "
+                    "Answer with the ID only.",
+                    paper["arxiv_id"],
+                ),
+                (
+                    f"Who is the first author of arXiv paper {paper['arxiv_id']}? "
+                    "Answer with the name only.",
+                    paper["author_key"],
+                ),
+            ]
+            for question, expected in probes:
+                cross_total += 1
+                reply = answer(question)
+                if expected.lower() in reply.lower():
+                    cross_correct += 1
+                else:
+                    print(
+                        f"CROSS MISS expected={expected!r} A={reply[:160]!r}",
+                        flush=True,
+                    )
+                if cross_total % 5 == 0:
+                    print(f"cross progress {cross_total}", flush=True)
+        print(f"REAL_CORPUS_CROSS correct={cross_correct}/{cross_total}", flush=True)
+
+    if os.getenv("REAL_SKIP_COMPARE") != "1":
+        collection = collection_repo.create_collection(user_id="u1", name="Real papers")
+        for paper_id in paper_ids:
+            collection_repo.add_paper_to_collection(collection["id"], paper_id)
+        rows = compare_papers(collection["id"], "u1", paper_ids)
+        cited_rows = sum(
+            1 for row in rows if "[Section:" in (row["method"] + row["metrics"])
+        )
+        print(f"REAL_CORPUS_COMPARE rows={len(rows)} cited={cited_rows}/{len(rows)}")
 
 
 if __name__ == "__main__":
