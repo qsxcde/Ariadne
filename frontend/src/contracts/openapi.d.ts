@@ -1392,8 +1392,10 @@ export interface components {
         MessageStatus: "complete" | "failed" | "stopped";
         /** NotificationDeliverRequest */
         NotificationDeliverRequest: {
+            /** Email To */
+            email_to?: string | null;
             /** Webhook Url */
-            webhook_url: string;
+            webhook_url?: string | null;
         };
         /** NotificationDeliverResponse */
         NotificationDeliverResponse: {

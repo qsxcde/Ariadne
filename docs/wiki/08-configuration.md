@@ -146,7 +146,20 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `JWT_ALGORITHM` | `HS256` | |
 | `JWT_EXPIRE_MINUTES` | `10080` | 7 天 |
 
-### 2.12 应用与文案
+### 2.12 通知投递（SMTP）
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `SMTP_HOST` | `None` | SMTP 服务器；为空时邮件投递不可用 |
+| `SMTP_PORT` | `587` | SMTP 端口 |
+| `SMTP_USERNAME` | `None` | 登录名；为空则匿名发送 |
+| `SMTP_PASSWORD` | `None` | 登录密码 |
+| `SMTP_FROM` | `None` | 发件人地址；邮件投递必填 |
+| `SMTP_STARTTLS` | `True` | 是否使用 STARTTLS |
+
+Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webhook_url` 或 `email_to`。
+
+### 2.13 应用与文案
 
 | 变量 | 默认 | 说明 |
 |---|---|---|

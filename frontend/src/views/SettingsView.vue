@@ -15,6 +15,7 @@ defineEmits<{
 const alertSettings = ref<AlertSettings | null>(null);
 const notifications = ref<NotificationSummary[]>([]);
 const webhookUrl = ref("");
+const deliveryEmail = ref("");
 const isSaving = ref(false);
 const isDelivering = ref(false);
 const errorMessage = ref("");
@@ -37,11 +38,14 @@ async function readNotification(notification: NotificationSummary): Promise<void
 }
 
 async function deliver(): Promise<void> {
-  if (!webhookUrl.value.trim()) return;
+  if (!webhookUrl.value.trim() && !deliveryEmail.value.trim()) return;
   isDelivering.value = true;
   deliverMessage.value = "";
   try {
-    const result = await deliverNotifications(webhookUrl.value.trim());
+    const result = await deliverNotifications(
+      webhookUrl.value.trim() || undefined,
+      deliveryEmail.value.trim() || undefined,
+    );
     deliverMessage.value = "已投递 " + result.delivered + " 条";
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "投递失败";
@@ -150,6 +154,10 @@ onMounted(() => {
         <label class="settings-field">
           Webhook URL
           <input v-model="webhookUrl" class="settings-select" type="url" placeholder="https://…" />
+        </label>
+        <label class="settings-field">
+          邮件地址（需后端配置 SMTP）
+          <input v-model="deliveryEmail" class="settings-select" type="email" placeholder="you@example.com" />
         </label>
         <button type="button" class="settings-save" :disabled="isDelivering" @click="deliver">
           {{ isDelivering ? "投递中…" : "投递未读通知" }}

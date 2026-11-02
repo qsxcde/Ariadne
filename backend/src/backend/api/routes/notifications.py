@@ -45,7 +45,9 @@ def deliver_notifications(
 ) -> NotificationDeliverResponse:
     try:
         result = notification_service.deliver_pending(
-            user.get("id") or None, webhook_url=payload.webhook_url
+            user.get("id") or None,
+            webhook_url=payload.webhook_url,
+            email_to=payload.email_to,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

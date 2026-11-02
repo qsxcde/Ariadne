@@ -15,9 +15,15 @@ export function markNotificationRead(id: string): Promise<NotificationSummary> {
   });
 }
 
-export function deliverNotifications(webhookUrl: string): Promise<NotificationDeliverResult> {
+export function deliverNotifications(
+  webhookUrl?: string,
+  emailTo?: string,
+): Promise<NotificationDeliverResult> {
   return requestJson<NotificationDeliverResult>("/notifications/deliver", "投递通知失败", {
     method: "POST",
-    ...jsonRequest({ webhook_url: webhookUrl }),
+    ...jsonRequest({
+      webhook_url: webhookUrl || undefined,
+      email_to: emailTo || undefined,
+    }),
   });
 }

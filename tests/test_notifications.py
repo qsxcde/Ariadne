@@ -6,11 +6,13 @@ import pytest
 
 from backend.application.feed import FakeFeedSource, create_subscription, refresh_feed
 from backend.application.notifications import (
+    SmtpChannel,
     create_notification,
     deliver_pending,
     list_notifications,
     mark_read,
 )
+from backend.config import settings
 
 
 class FakeChannel:
@@ -41,6 +43,42 @@ def test_notifications_create_read_and_deliver():
     assert result == {"pending": 1, "delivered": 1}
     assert channel.sent[0]["id"] == pending["id"]
     assert list_notifications("u1", status="delivered")[0]["id"] == pending["id"]
+
+
+@pytest.mark.unit
+def test_smtp_channel_sends_email(monkeypatch):
+    sent: list[object] = []
+
+    class FakeSmtp:
+        def __init__(self, host, port, timeout):
+            self.host = host
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def starttls(self):
+            return None
+
+        def login(self, username, password):
+            return None
+
+        def send_message(self, message):
+            sent.append(message)
+
+    monkeypatch.setattr(settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(settings, "smtp_from", "scipal@example.com")
+    monkeypatch.setattr("backend.application.notifications.smtplib.SMTP", FakeSmtp)
+    notification = create_notification(
+        "u1", kind="feed", title="New paper", body="body"
+    )
+
+    SmtpChannel("reader@example.com").send(notification)
+
+    assert sent
+    assert sent[0]["To"] == "reader@example.com"
 
 
 @pytest.mark.integration

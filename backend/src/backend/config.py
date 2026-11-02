@@ -107,6 +107,12 @@ class RuntimeSettings(BaseSettings):
     fallback_api_key: str | None = None
     fallback_base_url: str | None = None
     fallback_model: str = "glm-4-flash"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    smtp_starttls: bool = True
     ollama_base_url: str | None = None
     ollama_model: str = "qwen2.5:7b"
     # Auth
