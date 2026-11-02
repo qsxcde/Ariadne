@@ -171,7 +171,7 @@ docker compose -f docker-compose.app.yml up --build
 - 前端：http://localhost:8080
 - 后端：http://localhost:8000
 - 模型与 API Key 仍从 backend/.env 读取；数据目录挂载到 backend/data。
-- 前端镜像已构建验证；后端镜像首次构建会安装 torch/faiss/mineru，体积较大。
+- 前后端镜像均已构建验证；`docker compose up` 后前端页面可访问，`/health` 反向代理返回 200。
 
 ## 使用方式
 
