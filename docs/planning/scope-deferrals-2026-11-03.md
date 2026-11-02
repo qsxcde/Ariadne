@@ -7,8 +7,8 @@
 
 | 阶段 | 原始计划基线 | 实际交付基线 | 是否等价 |
 |---|---|---|---|
-| M1 | DeepSeek + 50 题真实论文 QA，citation precision ≥0.9 | 本地 Qwen2.5-3B + nomic-embed，50 题合成语料，正确率/引用 ≥45/50 | 否，provider 与语料不同 |
-| M2 | 10 篇真实论文对比，准确率 ≥0.8 | 10 篇合成论文对比，字段带引用 | 否，语料为合成 |
+| M1 | DeepSeek + 50 题真实论文 QA，citation precision ≥0.9 | 合成 50 题通过；真实 arXiv abstracts 50 题：45/50 正确、47/50 引用 | 部分等价：真实摘要语料通过，provider 不是 DeepSeek |
+| M2 | 10 篇真实论文对比，准确率 ≥0.8 | 合成 10 篇通过；真实 10 篇摘要对比引用 10/10 | 部分等价：真实摘要对比通过引用断言，准确率未人工标注 |
 | M3 | 真实 arXiv 抓取 | 真实 arXiv API 已验证（10 条结果） | 是 |
 | M4 | Zotero/Notion OAuth 双向同步、真实 SMTP 邮箱 | token-based Zotero/Notion 导出；MailHog SMTP 实测；Webhook + SMTP 代码 | 否，OAuth/真实邮箱未闭环 |
 | 部署 | 前后端 Docker 镜像 | docker-compose.app.yml 构建/启动，前端与 /health 验证通过 | 是 |
@@ -18,8 +18,8 @@
 1. **DeepSeek provider 质量评测**
    backend/.env 的 DEEPSEEK_API_KEY 返回 401。未执行 DeepSeek 50 题/10 篇真实评测。
 
-2. **真实论文语料评测**
-   合成 50 题/10 篇通过；真实 arXiv abstracts 50 题达到 45/50 正确（90%）、47/50 引用（94%），10 篇对比引用 10/10。完整 PDF 精读评测与真实标注集仍未做。
+2. **完整 PDF 精读评测**
+   真实 arXiv abstracts 50 题达到 45/50 正确（90%）、47/50 引用（94%），10 篇对比引用 10/10；但仍是摘要/元数据级，未做完整 PDF 精读与人工标注准确率。
 
 3. **Zotero / Notion OAuth 双向同步**
    已实现 CSL JSON / Markdown 导出与 token-based 官方 API 导出；OAuth 授权、回调、双向同步未实现。
@@ -65,4 +65,4 @@
 
 ## 5. 结论
 
-当前工程实现与自动化测试是真实的，但**原始计划中的 DeepSeek provider 评测、真实论文 corpus、OAuth 双向同步、真实邮箱投递尚未闭环**。在用户签收 A/B/C 之前，项目状态应标记为「核心功能完成，发布门禁待确认」，而不是「全部阶段完成」。
+当前工程实现与自动化测试是真实的。真实 arXiv abstracts 50 题/10 篇门禁已通过；仍待闭环的是 **DeepSeek provider 评测、完整 PDF 精读标注集、OAuth 双向同步、真实外部邮箱**。在用户签收 A/B/C 之前，项目状态应标记为「核心功能与真实摘要门禁完成，发布级 provider/集成待确认」。
