@@ -46,9 +46,11 @@ from backend.api.schemas.paper import (
     GlossaryResponse,
     GlossaryTerm,
     LibraryStats,
+    IntegrationExportResponse,
     NotificationDeliverRequest,
     NotificationDeliverResponse,
     NotificationSummary,
+    NotionExportRequest,
     PaperBrief,
     PaperBriefSection,
     PaperComparison,
@@ -58,6 +60,7 @@ from backend.api.schemas.paper import (
     PaperUpdateRequest,
     PaperUploadResponse,
     WeeklyReview,
+    ZoteroExportRequest,
 )
 from backend.api.schemas.session import (
     IndexSnapshotSummary,
@@ -110,7 +113,9 @@ __all__ = [
     "LibraryStats",
     "NotificationDeliverRequest",
     "NotificationDeliverResponse",
+    "IntegrationExportResponse",
     "NotificationSummary",
+    "NotionExportRequest",
     "PaperBlock",
     "PaperBrief",
     "PaperBriefSection",
@@ -132,4 +137,5 @@ __all__ = [
     "SourceChunkResponse",
     "UserResponse",
     "WeeklyReview",
+    "ZoteroExportRequest",
 ]

@@ -194,7 +194,7 @@ uv run --project backend pytest -m unit -v
 uv run --project backend pytest -m integration -v
 ```
 
-当前覆盖 164 个后端用例（另有 5 个 Docker/网络用例、2 个本地模型用例和 1 个 SMTP 用例默认 skip）：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
+当前覆盖 166 个后端用例（另有 5 个 Docker/网络用例、2 个本地模型用例和 1 个 SMTP 用例默认 skip）：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
 
 前端：
 
@@ -241,7 +241,7 @@ CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + 
 
 | 关卡 | 命令 | 结果 |
 |---|---|---|
-| 后端测试 | `uv run --project backend pytest` | 164 passed, 8 skipped |
+| 后端测试 | `uv run --project backend pytest` | 166 passed, 8 skipped |
 | 后端 lint | `uv run --project backend ruff check backend/src tests` | All checks passed |
 | 后端类型检查 | `uv run --project backend mypy --config-file backend/pyproject.toml backend/src/backend/storage backend/src/backend/core backend/src/backend/application` | 30 source files, no issues |
 | 前端 lint | `cd frontend && npm run lint` | 通过 |
@@ -318,6 +318,8 @@ uv run --project backend python -m scipal_eval.cli run \
 | POST | `/feed/{item_id}/ignore` | Ignore Feed Item |
 | POST | `/feed/{item_id}/save` | Save Feed Item |
 | GET | `/health` | 健康检查：进程存活与后台任务线程状态。 |
+| POST | `/integrations/notion/export` | Export Notion |
+| POST | `/integrations/zotero/export` | Export Zotero |
 | GET | `/notifications` | List Notifications |
 | POST | `/notifications/deliver` | Deliver Notifications |
 | POST | `/notifications/{notification_id}/read` | Mark Notification Read |

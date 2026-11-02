@@ -35,7 +35,7 @@
 ### 3.2 外部数据与集成（未授权/未接入）
 
 - 真实 arXiv 抓取：**已验证**。`ArxivFeedSource` 实际调用 arXiv API，返回 10 条结果，标题/URL/推荐理由正确；可用 `SCIPAL_NETWORK_TESTS=1 pytest tests/test_arxiv_network.py` 复现。
-- Zotero / Notion：已提供 CSL JSON / Markdown 兼容导出，可手工导入；OAuth 双向同步未接入。
+- Zotero / Notion：已提供 CSL JSON / Markdown 兼容导出；新增 token-based Zotero API Key / Notion Integration Token 导出（fake HTTP 测试通过）；OAuth 双向同步未接入。
 - 邮件/推送：站内通知 outbox + Webhook 已实现；SMTP 通道已用 Docker MailHog 实测（scripts/run_smtp_test.sh，1 passed）。真实外部邮箱仍未配置。
 - 引用网络：**已验证** OpenAlex（Attention Is All You Need：被引 120404，28 篇参考文献）；可用 SCIPAL_NETWORK_TESTS=1 pytest tests/test_citations_network.py 复现。Semantic Scholar 未接。
 

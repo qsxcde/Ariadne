@@ -294,6 +294,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations/notion/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Notion */
+        post: operations["export_notion_integrations_notion_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/zotero/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Zotero */
+        post: operations["export_zotero_integrations_zotero_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications": {
         parameters: {
             query?: never;
@@ -1302,6 +1336,11 @@ export interface components {
             /** Updated At */
             updated_at: string;
         };
+        /** IntegrationExportResponse */
+        IntegrationExportResponse: {
+            /** Exported */
+            exported: number;
+        };
         /**
          * JobStatus
          * @enum {string}
@@ -1420,6 +1459,13 @@ export interface components {
             status: string;
             /** Title */
             title: string;
+        };
+        /** NotionExportRequest */
+        NotionExportRequest: {
+            /** Database Id */
+            database_id: string;
+            /** Token */
+            token: string;
         };
         /**
          * PaperBlock
@@ -1888,6 +1934,19 @@ export interface components {
             reading_papers: number;
             /** Week Start */
             week_start: string;
+        };
+        /** ZoteroExportRequest */
+        ZoteroExportRequest: {
+            /** Api Key */
+            api_key: string;
+            /** Library Id */
+            library_id: string;
+            /**
+             * Library Type
+             * @default user
+             * @enum {string}
+             */
+            library_type: "user" | "group";
         };
     };
     responses: never;
@@ -2447,6 +2506,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    export_notion_integrations_notion_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotionExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationExportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_zotero_integrations_zotero_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ZoteroExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationExportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

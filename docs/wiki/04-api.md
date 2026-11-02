@@ -72,6 +72,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/papers/export.bib` | 导出文献库 BibTeX | 200 | 401 |
 | GET | `/papers/export.csl.json` | 导出 CSL JSON（Zotero 可导入） | 200 | 401 |
 | GET | `/papers/export.md` | 导出 Markdown（Notion/Obsidian 可导入） | 200 | 401 |
+| POST | `/integrations/zotero/export` | 用 Zotero API Key 导出条目 | 200 | 401 / 502 |
+| POST | `/integrations/notion/export` | 用 Notion Integration Token 导出页面 | 200 | 401 / 502 |
 | GET | `/notifications` | 站内通知列表 | 200 | 401 |
 | POST | `/notifications/{id}/read` | 标记已读 | 200 | 401 / 404 |
 | POST | `/notifications/deliver` | 通过 Webhook 投递未读通知 | 200 | 401 / 422 / 502 |

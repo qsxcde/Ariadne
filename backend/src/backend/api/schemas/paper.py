@@ -125,6 +125,21 @@ class DigestResponse(WeeklyReview):
     saved_feed_items: int = 0
 
 
+class ZoteroExportRequest(BaseModel):
+    api_key: str
+    library_id: str
+    library_type: Literal["user", "group"] = "user"
+
+
+class NotionExportRequest(BaseModel):
+    token: str
+    database_id: str
+
+
+class IntegrationExportResponse(BaseModel):
+    exported: int
+
+
 class CitationReference(BaseModel):
     openalex_id: str
     title: str

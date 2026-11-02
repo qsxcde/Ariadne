@@ -1447,6 +1447,19 @@
         "title": "IndexSnapshotSummary",
         "type": "object"
       },
+      "IntegrationExportResponse": {
+        "properties": {
+          "exported": {
+            "title": "Exported",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "exported"
+        ],
+        "title": "IntegrationExportResponse",
+        "type": "object"
+      },
       "JobStatus": {
         "enum": [
           "queued",
@@ -1751,6 +1764,24 @@
           "created_at"
         ],
         "title": "NotificationSummary",
+        "type": "object"
+      },
+      "NotionExportRequest": {
+        "properties": {
+          "database_id": {
+            "title": "Database Id",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "database_id"
+        ],
+        "title": "NotionExportRequest",
         "type": "object"
       },
       "PaperBlock": {
@@ -3148,6 +3179,33 @@
         ],
         "title": "WeeklyReview",
         "type": "object"
+      },
+      "ZoteroExportRequest": {
+        "properties": {
+          "api_key": {
+            "title": "Api Key",
+            "type": "string"
+          },
+          "library_id": {
+            "title": "Library Id",
+            "type": "string"
+          },
+          "library_type": {
+            "default": "user",
+            "enum": [
+              "user",
+              "group"
+            ],
+            "title": "Library Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "api_key",
+          "library_id"
+        ],
+        "title": "ZoteroExportRequest",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -3942,6 +4000,92 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/integrations/notion/export": {
+      "post": {
+        "operationId": "export_notion_integrations_notion_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotionExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Notion"
+      }
+    },
+    "/integrations/zotero/export": {
+      "post": {
+        "operationId": "export_zotero_integrations_zotero_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZoteroExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Zotero"
       }
     },
     "/notifications": {
