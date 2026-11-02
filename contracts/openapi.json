@@ -514,6 +514,68 @@
         "title": "ChatStreamWarningEvent",
         "type": "object"
       },
+      "CollectionAskRequest": {
+        "properties": {
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "CollectionAskRequest",
+        "type": "object"
+      },
+      "CollectionAskResponse": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "chunk_count": {
+            "default": 0,
+            "title": "Chunk Count",
+            "type": "integer"
+          },
+          "paper_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paper Ids",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "title": "CollectionAskResponse",
+        "type": "object"
+      },
+      "CollectionCompareRequest": {
+        "properties": {
+          "paper_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paper Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "paper_ids"
+        ],
+        "title": "CollectionCompareRequest",
+        "type": "object"
+      },
       "CollectionCreateRequest": {
         "properties": {
           "description": {
@@ -1271,6 +1333,44 @@
           "title"
         ],
         "title": "PaperBriefSection",
+        "type": "object"
+      },
+      "PaperComparison": {
+        "properties": {
+          "datasets": {
+            "title": "Datasets",
+            "type": "string"
+          },
+          "limitations": {
+            "title": "Limitations",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "metrics": {
+            "title": "Metrics",
+            "type": "string"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id",
+          "title",
+          "method",
+          "datasets",
+          "metrics",
+          "limitations"
+        ],
+        "title": "PaperComparison",
         "type": "object"
       },
       "PaperDetail": {
@@ -2735,6 +2835,118 @@
           }
         ],
         "summary": "Update Collection"
+      }
+    },
+    "/collections/{collection_id}/ask": {
+      "post": {
+        "operationId": "ask_collection_collections__collection_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionAskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionAskResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Ask Collection"
+      }
+    },
+    "/collections/{collection_id}/compare": {
+      "post": {
+        "operationId": "compare_collection_papers_collections__collection_id__compare_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "title": "Collection Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionCompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaperComparison"
+                  },
+                  "title": "Response Compare Collection Papers Collections  Collection Id  Compare Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Compare Collection Papers"
       }
     },
     "/collections/{collection_id}/papers/{paper_id}": {

@@ -17,6 +17,12 @@ def _accessible(collection_id: str, user_id: str | None) -> dict[str, Any]:
     return dict(row)
 
 
+def get_accessible_collection(
+    collection_id: str, user_id: str | None
+) -> dict[str, Any]:
+    return _accessible(collection_id, user_id)
+
+
 def list_for_user(user_id: str | None) -> list[dict[str, Any]]:
     return [
         _serialize(row)

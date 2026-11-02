@@ -94,6 +94,30 @@ class ExplainResponse(BaseModel):
     explanation: str
 
 
+class CollectionAskRequest(BaseModel):
+    question: str
+
+
+class CollectionAskResponse(BaseModel):
+    answer: str
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    paper_ids: list[str] = Field(default_factory=list)
+    chunk_count: int = 0
+
+
+class CollectionCompareRequest(BaseModel):
+    paper_ids: list[str]
+
+
+class PaperComparison(BaseModel):
+    paper_id: str
+    title: str
+    method: str
+    datasets: str
+    metrics: str
+    limitations: str
+
+
 class PaperUpdateRequest(BaseModel):
     title: str | None = None
     authors: list[str] | None = None

@@ -13,6 +13,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: "/synthesis",
+      name: "synthesis",
+      component: AppShell,
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/today",
       name: "today",
       component: AppShell,

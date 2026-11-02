@@ -8,6 +8,7 @@ import PaperReader from "../features/reader/components/PaperReader.vue";
 import PaperWorkspace from "../features/reader/components/PaperWorkspace.vue";
 import SettingsView from "../views/SettingsView.vue";
 import TodayView from "../views/TodayView.vue";
+import SynthesisView from "../views/SynthesisView.vue";
 import SourceDrawer from "../components/SourceDrawer.vue";
 import { usePaperChat } from "../composables/usePaperChat";
 import { useAuth } from "../composables/useAuth";
@@ -57,6 +58,7 @@ const activeSessionId = computed(() => paperSession.value?.sessionId ?? "");
 const readerDocument = computed(() => documents.value[0] ?? null);
 const showReader = computed(() => route.name === "session-reader");
 const showToday = computed(() => route.name === "today");
+const showSynthesis = computed(() => route.name === "synthesis");
 const showPaper = computed(() => route.name === "paper");
 const showLibrary = computed(() => route.name === "library");
 const showSettings = computed(() => route.name === "settings");
@@ -119,6 +121,10 @@ function openPaper(paperId: string): void {
 
 function openToday(): void {
   void router.push({ name: "today" });
+}
+
+function openSynthesis(): void {
+  void router.push({ name: "synthesis" });
 }
 
 function openSettings(): void {
@@ -213,6 +219,7 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
         v-if="showLibrary"
         @open="openPaper"
         @today="openToday"
+        @synthesis="openSynthesis"
         @settings="openSettings"
       />
 
@@ -221,6 +228,12 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
         @open="openPaper"
         @library="openLibrary"
         @settings="openSettings"
+      />
+
+      <SynthesisView
+        v-else-if="showSynthesis"
+        @library="openLibrary"
+        @open="openPaper"
       />
 
       <PaperWorkspace
@@ -241,7 +254,7 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
       <SettingsView v-else-if="showSettings" @back="closeSettings" />
 
       <ChatWorkspace
-        v-if="!showLibrary && !showToday && !showPaper && !showReader && !showSettings"
+        v-if="!showLibrary && !showToday && !showSynthesis && !showPaper && !showReader && !showSettings"
         v-model:draft="draft"
         :can-open-reader="Boolean(readerDocument)"
         :error-message="errorMessage"

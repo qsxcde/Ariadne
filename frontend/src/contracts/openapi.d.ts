@@ -117,6 +117,40 @@ export interface paths {
         patch: operations["update_collection_collections__collection_id__patch"];
         trace?: never;
     };
+    "/collections/{collection_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask Collection */
+        post: operations["ask_collection_collections__collection_id__ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collection_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compare Collection Papers */
+        post: operations["compare_collection_papers_collections__collection_id__compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/collections/{collection_id}/papers/{paper_id}": {
         parameters: {
             query?: never;
@@ -616,6 +650,32 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** CollectionAskRequest */
+        CollectionAskRequest: {
+            /** Question */
+            question: string;
+        };
+        /** CollectionAskResponse */
+        CollectionAskResponse: {
+            /** Answer */
+            answer: string;
+            /**
+             * Chunk Count
+             * @default 0
+             */
+            chunk_count: number;
+            /** Paper Ids */
+            paper_ids?: string[];
+            /** Sources */
+            sources?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** CollectionCompareRequest */
+        CollectionCompareRequest: {
+            /** Paper Ids */
+            paper_ids: string[];
+        };
         /** CollectionCreateRequest */
         CollectionCreateRequest: {
             /** Description */
@@ -880,6 +940,21 @@ export interface components {
              * @default
              */
             summary: string;
+            /** Title */
+            title: string;
+        };
+        /** PaperComparison */
+        PaperComparison: {
+            /** Datasets */
+            datasets: string;
+            /** Limitations */
+            limitations: string;
+            /** Method */
+            method: string;
+            /** Metrics */
+            metrics: string;
+            /** Paper Id */
+            paper_id: string;
             /** Title */
             title: string;
         };
@@ -1482,6 +1557,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CollectionSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_collection_collections__collection_id__ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionAskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionAskResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_collection_papers_collections__collection_id__compare_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperComparison"][];
                 };
             };
             /** @description Validation Error */

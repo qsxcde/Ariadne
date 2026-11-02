@@ -6,9 +6,13 @@ from backend.api.schemas import (
     AnnotationCreateRequest,
     AnnotationSummary,
     AnnotationUpdateRequest,
+    CollectionAskRequest,
+    CollectionAskResponse,
+    CollectionCompareRequest,
     CollectionCreateRequest,
     CollectionSummary,
     CollectionUpdateRequest,
+    PaperComparison,
     ExplainRequest,
     ExplainResponse,
     PaperBrief,
@@ -24,6 +28,7 @@ from backend.application import brief as brief_service
 from backend.application import collections as collection_service
 from backend.application import explain as explain_service
 from backend.application import papers as paper_service
+from backend.application import synthesis as synthesis_service
 
 router = APIRouter()
 
@@ -212,6 +217,44 @@ def delete_annotation(
 ) -> dict:
     annotation_service.delete_annotation(annotation_id, user.get("id") or None)
     return {"status": "deleted"}
+
+
+@router.post(
+    "/collections/{collection_id}/ask", response_model=CollectionAskResponse
+)
+def ask_collection(
+    collection_id: str,
+    payload: CollectionAskRequest,
+    user: dict = Depends(get_current_user),
+) -> CollectionAskResponse:
+    try:
+        result = synthesis_service.answer_collection(
+            collection_id,
+            user.get("id") or None,
+            payload.question,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return CollectionAskResponse(**result)
+
+
+@router.post(
+    "/collections/{collection_id}/compare", response_model=list[PaperComparison]
+)
+def compare_collection_papers(
+    collection_id: str,
+    payload: CollectionCompareRequest,
+    user: dict = Depends(get_current_user),
+) -> list[PaperComparison]:
+    try:
+        rows = synthesis_service.compare_papers(
+            collection_id,
+            user.get("id") or None,
+            payload.paper_ids,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return [PaperComparison(**row) for row in rows]
 
 
 @router.get("/collections", response_model=list[CollectionSummary])

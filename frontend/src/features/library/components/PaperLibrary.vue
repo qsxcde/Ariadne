@@ -9,6 +9,7 @@ import { formatUpdatedAt } from "../../../utils/format";
 const emit = defineEmits<{
   open: [paperId: string];
   today: [];
+  synthesis: [];
   settings: [];
 }>();
 
@@ -94,6 +95,9 @@ onMounted(() => {
       <div class="paper-library__actions">
         <button type="button" class="paper-library__text-button" @click="emit('today')">
           Today
+        </button>
+        <button type="button" class="paper-library__text-button" @click="emit('synthesis')">
+          综合
         </button>
         <button type="button" class="paper-library__text-button" @click="emit('settings')">
           设置

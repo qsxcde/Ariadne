@@ -182,6 +182,7 @@ handleUpload(file)
 | 路由 | 组件 | 用途 |
 |---|---|---|
 | `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
+| `/synthesis` | `views/SynthesisView.vue` | 集合选择、跨论文问答、对比表 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |

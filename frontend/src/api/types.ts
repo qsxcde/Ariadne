@@ -45,6 +45,8 @@ export type AnnotationUpdatePayload = Schemas["AnnotationUpdateRequest"];
 
 export type CollectionSummary = Schemas["CollectionSummary"];
 export type CollectionCreatePayload = Schemas["CollectionCreateRequest"];
+export type CollectionAskResult = Schemas["CollectionAskResponse"];
+export type PaperComparison = Schemas["PaperComparison"];
 
 /** SSE 事件载荷：六类事件的判别联合，同样来自 OpenAPI components。 */
 export type MessageChunk = Schemas["ChatStreamEvent"];

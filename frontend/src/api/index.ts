@@ -6,6 +6,7 @@ export * from "./paper";
 export * from "./papers";
 export * from "./annotations";
 export * from "./collections";
+export * from "./synthesis";
 export * from "./documents";
 export * from "./library";
 export * from "./chat";
