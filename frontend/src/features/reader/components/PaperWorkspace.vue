@@ -41,6 +41,7 @@ const citations = ref<CitationGraph | null>(null);
 const isGlossaryLoading = ref(false);
 const isCitationsLoading = ref(false);
 const statusSaving = ref(false);
+const readerRef = ref<InstanceType<typeof PaperReader> | null>(null);
 let progressTimer: number | null = null;
 let pendingProgress: number | null = null;
 
@@ -100,6 +101,10 @@ async function generateGlossary(): Promise<void> {
   } finally {
     isGlossaryLoading.value = false;
   }
+}
+
+function jumpToSection(title: string): void {
+  readerRef.value?.revealSection(title);
 }
 
 async function generateBrief(): Promise<void> {
@@ -278,6 +283,7 @@ onBeforeUnmount(() => {
 
     <div v-if="currentPaper && documentItem && primarySessionId" class="paper-workspace__body">
       <PaperReader
+        ref="readerRef"
         :session-id="primarySessionId"
         :document-id="documentItem.id"
         :initial-progress="currentPaper.progress"
@@ -328,6 +334,21 @@ onBeforeUnmount(() => {
               <h3>阅读要点</h3>
               <ul class="paper-workspace__brief-list">
                 <li v-for="item in currentBrief.takeaways ?? []" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <div v-if="(currentBrief.sections ?? []).length">
+              <h3>章节摘要</h3>
+              <ul class="paper-workspace__section-list">
+                <li v-for="section in currentBrief.sections ?? []" :key="section.title">
+                  <button
+                    type="button"
+                    class="paper-workspace__section"
+                    @click="jumpToSection(section.title)"
+                  >
+                    <span class="paper-workspace__section-title">{{ section.title }}</span>
+                    <span class="paper-workspace__section-summary">{{ section.summary }}</span>
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -614,6 +635,44 @@ onBeforeUnmount(() => {
 .paper-workspace__brief-list {
   margin: 0 0 6px;
   padding-left: 18px;
+}
+
+.paper-workspace__section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.paper-workspace__section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.paper-workspace__section:hover {
+  border-color: var(--color-accent);
+}
+
+.paper-workspace__section-title {
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.paper-workspace__section-summary {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .paper-workspace__note-compose {

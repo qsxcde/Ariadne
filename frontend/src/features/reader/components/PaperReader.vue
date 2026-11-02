@@ -15,6 +15,7 @@ import PaperOutline from "./PaperOutline.vue";
 // pdf.js 体积较大，只在切到「原页」时才加载
 const PdfViewer = defineAsyncComponent(() => import("./PdfViewer.vue"));
 import { usePaperReader } from "../../../composables/usePaperReader";
+import { findBlockBySection } from "../../../utils/section";
 import type { PaperBlock } from "../../../api";
 import type { SelectionAskMode } from "../../../types";
 
@@ -156,6 +157,16 @@ function scrollToActiveBlock(): void {
     scrollToBlock(id);
   }
 }
+
+/** 按章节标题定位：优先末级路径完全匹配，退化为路径包含。 */
+function revealSection(title: string): void {
+  const block = findBlockBySection(content.value?.blocks ?? [], title);
+  if (block) {
+    revealBlock([block.id]);
+  }
+}
+
+defineExpose({ revealSection });
 
 /** 选区浮条：只处理落在正文区域内的选区。 */
 function handleMouseUp(): void {

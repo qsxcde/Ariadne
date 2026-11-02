@@ -196,7 +196,7 @@ handleUpload(file)
 - `api/papers.ts`：list / get / upload / import / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
 - 进度：`PaperReader` 滚动时 emit `progress`，`PaperWorkspace` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
-- 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点。
+- 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点；章节摘要列表点击后经 `findBlockBySection` 定位并高亮正文块。
 - 术语表/引用：右侧栏可生成术语表、查询 OpenAlex 引用关系。
 - 通知：Settings 显示未读通知，支持 Webhook 投递；邮件需另配 SMTP。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
