@@ -2,7 +2,6 @@
 
 import json
 from typing import Any, Protocol
-from urllib.parse import quote
 from xml.etree import ElementTree
 
 import httpx
@@ -31,9 +30,8 @@ class FakeFeedSource:
 
 class ArxivFeedSource:
     def fetch(self, subscription: SubscriptionRecord) -> list[dict[str, Any]]:
-        value = quote(subscription["value"])
         field = "au" if subscription["kind"] == "author" else "all"
-        query = f"{field}:\"{value}\""
+        query = f"{field}:\"{subscription['value']}\""
         response = httpx.get(
             "https://export.arxiv.org/api/query",
             params={"search_query": query, "start": 0, "max_results": 10},

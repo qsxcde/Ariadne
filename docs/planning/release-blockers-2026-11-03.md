@@ -33,7 +33,7 @@
 
 ### 3.2 外部数据与集成（未授权/未接入）
 
-- 真实 arXiv 抓取：代码有 `ArxivFeedSource`，测试用 `FakeFeedSource`；发布前需联网手工验证限流与字段。
+- 真实 arXiv 抓取：**已验证**。`ArxivFeedSource` 实际调用 arXiv API，返回 10 条结果，标题/URL/推荐理由正确；可用 `SCIPAL_NETWORK_TESTS=1 pytest tests/test_arxiv_network.py` 复现。
 - Zotero / Notion 同步：未接入 OAuth 与 API；当前只有 BibTeX / Markdown / CSV 导出。
 - 邮件/推送提醒：Settings 只保存本地偏好，未接投递通道。
 - 引用网络：未接 OpenAlex/Semantic Scholar；当前只有站内来源引用。

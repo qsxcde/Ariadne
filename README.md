@@ -202,6 +202,12 @@ Docker mock LLM 集成测试（验证 OpenAI 兼容 HTTP 链路，不需要真�
 
 该脚本通过 `docker-compose.test.yml` 启动 `docker/mock-llm`，跑完自动清理。
 
+真实 arXiv 抓取冒烟测试（需要网络，默认 skip）：
+
+```bash
+SCIPAL_NETWORK_TESTS=1 uv run --project backend pytest tests/test_arxiv_network.py
+```
+
 CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + test + 契约 diff + build）。
 
 ## 验收记录
