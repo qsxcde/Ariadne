@@ -15,7 +15,7 @@
 
 ## 2. 自动化基线
 
-- 后端 pytest：156 passed，4 skipped（3 个 Docker mock 用例 + 1 个真实 arXiv 网络用例默认 skip）。
+- 后端 pytest：163 passed，5 skipped（3 个 Docker mock 用例 + 2 个真实网络用例默认 skip）。
 - 前端 Vitest：8 passed；typecheck/lint/build 通过。
 - ruff / mypy：通过。
 - Docker mock LLM：`./scripts/run_mock_llm_tests.sh` → 3 passed。
@@ -36,7 +36,7 @@
 - 真实 arXiv 抓取：**已验证**。`ArxivFeedSource` 实际调用 arXiv API，返回 10 条结果，标题/URL/推荐理由正确；可用 `SCIPAL_NETWORK_TESTS=1 pytest tests/test_arxiv_network.py` 复现。
 - Zotero / Notion：已提供 CSL JSON / Markdown 兼容导出，可手工导入；OAuth 双向同步未接入。
 - 邮件/推送：站内通知 outbox + Webhook 投递已实现（/notifications/deliver）；邮件投递需另配 SMTP。
-- 引用网络：已接 OpenAlex（/papers/{id}/citations）；Semantic Scholar 未接。
+- 引用网络：**已验证** OpenAlex（Attention Is All You Need：被引 120404，28 篇参考文献）；可用 SCIPAL_NETWORK_TESTS=1 pytest tests/test_citations_network.py 复现。Semantic Scholar 未接。
 
 ## 4. 可以立即继续的工作（不依赖 Key）
 
