@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 13
+CURRENT_SCHEMA_VERSION = 15
 
 _init_lock = threading.RLock()
 
@@ -78,6 +78,10 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_reading_log(conn)
     if from_version < 13:
         _migrate_add_weekly_reports(conn)
+    if from_version < 14:
+        _migrate_add_citation_count(conn)
+    if from_version < 15:
+        _migrate_add_arxiv_updated(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -243,6 +247,8 @@ def _migrate_add_papers(conn) -> None:
           last_location_json TEXT NULL,
           last_read_at TEXT NULL,
           time_spent_seconds INTEGER NOT NULL DEFAULT 0,
+          last_citation_count INTEGER NULL,
+          last_arxiv_updated TEXT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           CHECK (reading_status IN ('inbox', 'queued', 'skimming', 'reading', 'read', 'archived')),
@@ -574,6 +580,20 @@ def _migrate_add_weekly_reports(conn) -> None:
     )
 
 
+def _migrate_add_citation_count(conn) -> None:
+    """Track the last observed citation count per paper (v14)."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+    if "last_citation_count" not in columns:
+        conn.execute("ALTER TABLE papers ADD COLUMN last_citation_count INTEGER NULL")
+
+
+def _migrate_add_arxiv_updated(conn) -> None:
+    """Track the last seen arXiv update timestamp per paper (v15)."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+    if "last_arxiv_updated" not in columns:
+        conn.execute("ALTER TABLE papers ADD COLUMN last_arxiv_updated TEXT NULL")
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -602,6 +622,8 @@ def _create_initial_schema(conn) -> None:
           last_location_json TEXT NULL,
           last_read_at TEXT NULL,
           time_spent_seconds INTEGER NOT NULL DEFAULT 0,
+          last_citation_count INTEGER NULL,
+          last_arxiv_updated TEXT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL,
           CHECK (reading_status IN ('inbox', 'queued', 'skimming', 'reading', 'read', 'archived')),

@@ -182,6 +182,13 @@ class NotificationDeliverResponse(BaseModel):
     delivered: int
 
 
+class UpdateCheckResponse(BaseModel):
+    checked: int
+    updated: int
+    notified: int
+    errors: list[str] = Field(default_factory=list)
+
+
 class LibraryStats(BaseModel):
     total: int
     by_status: dict[str, int] = Field(default_factory=dict)

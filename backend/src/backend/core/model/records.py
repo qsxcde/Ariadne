@@ -158,6 +158,8 @@ class PaperRecord(TypedDict):
     last_location_json: str | None
     last_read_at: str | None
     time_spent_seconds: int
+    last_citation_count: int | None
+    last_arxiv_updated: str | None
     created_at: str
     updated_at: str
 

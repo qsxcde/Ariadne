@@ -233,6 +233,22 @@ def find_by_doi(user_id: str | None, doi: str) -> PaperRecord | None:
         return row_to_dict(row)  # type: ignore[return-value]
 
 
+def update_citation_count(paper_id: str, count: int) -> None:
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE papers SET last_citation_count = ?, updated_at = ? WHERE id = ?",
+            (max(0, int(count)), now_iso(), paper_id),
+        )
+
+
+def update_arxiv_updated(paper_id: str, updated_at: str) -> None:
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE papers SET last_arxiv_updated = ?, updated_at = ? WHERE id = ?",
+            (updated_at, now_iso(), paper_id),
+        )
+
+
 def update_reading_state(
     paper_id: str,
     *,

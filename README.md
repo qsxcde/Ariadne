@@ -321,6 +321,8 @@ uv run --project backend python -m scipal_eval.cli run \
 | POST | `/integrations/notion/export` | Export Notion |
 | POST | `/integrations/zotero/export` | Export Zotero |
 | GET | `/notifications` | List Notifications |
+| POST | `/notifications/check-citations` | 检查已收录论文的新引用；首次运行只记录基线。 |
+| POST | `/notifications/check-versions` | 检查 arXiv 新版本；首次运行只记录基线。 |
 | POST | `/notifications/deliver` | Deliver Notifications |
 | POST | `/notifications/{notification_id}/read` | Mark Notification Read |
 | GET | `/papers` | 文献库列表：按用户、状态、集合、标签与标题过滤。 |

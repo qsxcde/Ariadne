@@ -368,7 +368,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 | 版本 | 变更 |
 |---|---|
-| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 13` |
+| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 15` |
 | v2 | `chunks(document_id, chunk_index)` 唯一索引 |
 | v3 | `retrieval_indexes.created_at` 补列并回填；新增 `idx_sessions_list` 部分索引 |
 | v4 | 重建 6 张含外键表，补全 `ON DELETE CASCADE` / `SET NULL` |
@@ -381,6 +381,8 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v11 | 新增 `notifications`（站内通知与 Webhook 投递） |
 | v12 | 新增 `reading_log`（按天阅读时长），并在记录时累加 `papers.time_spent_seconds` |
 | v13 | 新增 `weekly_reports`（可编辑周报复盘） |
+| v14 | `papers.last_citation_count`：上次观察到的被引次数 |
+| v15 | `papers.last_arxiv_updated`：上次观察到的 arXiv 更新时间 |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

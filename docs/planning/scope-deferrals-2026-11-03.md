@@ -41,9 +41,9 @@
 - M0：schema v8、v7/v5 迁移、论文资产/阅读闭环，commit 7626a0a。
 - M1/M2：历史注入、scope 检索、chunk 引用、brief/explain、Today、集合问答、对比、周报、导出。
 - M3：订阅/Feed、真实 arXiv、Docker mock LLM。
-- M4：提醒/Digest、OpenAlex 引用（按标题检索 + 相似度校验）、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
+- M4：提醒/Digest、Feed/引用/arXiv 版本检查、OpenAlex 引用（按标题检索 + 相似度校验）、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
 - 测试：
-  - 普通 pytest：196 passed, 9 skipped。
+  - 普通 pytest：206 passed, 9 skipped。
   - 前端 vitest：16 passed。
   - 本地真实模型：50 题 QA（45/50）、20 个多轮脚本（20/20）、30 题跨论文（26/30）、10 篇对比引用（10/10）。
   - Docker mock LLM：3 passed。

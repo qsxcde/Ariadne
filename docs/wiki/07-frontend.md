@@ -198,7 +198,7 @@ handleUpload(file)
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
 - 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点；章节摘要列表点击后经 `findBlockBySection` 定位并高亮正文块。
 - 术语表/引用：右侧栏可生成术语表、查询 OpenAlex 引用关系。
-- 通知：Settings 显示未读通知，支持 Webhook 投递；邮件需另配 SMTP。
+- 通知：Settings 显示未读通知，支持「检查引用更新 / 检查新版本」与 Webhook 投递；邮件需另配 SMTP。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
 - 结构化块：table / formula 块右上角提供「解释表格 / 解释公式」，复用同一 explain 端点。
 - 元数据：阅读工作台「编辑信息」弹窗 PATCH /papers/{id}，可改标题/作者/年份/venue/DOI/arXiv/链接/摘要。

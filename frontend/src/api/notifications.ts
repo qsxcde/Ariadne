@@ -2,6 +2,7 @@ import { jsonRequest, requestJson } from "./client";
 import type {
   NotificationDeliverResult,
   NotificationSummary,
+  UpdateCheckResult,
 } from "./types";
 
 export function listNotifications(status?: string): Promise<NotificationSummary[]> {
@@ -13,6 +14,22 @@ export function markNotificationRead(id: string): Promise<NotificationSummary> {
   return requestJson<NotificationSummary>("/notifications/" + id + "/read", "标记通知失败", {
     method: "POST",
   });
+}
+
+export function checkCitationUpdates(): Promise<UpdateCheckResult> {
+  return requestJson<UpdateCheckResult>(
+    "/notifications/check-citations",
+    "检查引用更新失败",
+    { method: "POST" },
+  );
+}
+
+export function checkVersionUpdates(): Promise<UpdateCheckResult> {
+  return requestJson<UpdateCheckResult>(
+    "/notifications/check-versions",
+    "检查新版本失败",
+    { method: "POST" },
+  );
 }
 
 export function deliverNotifications(

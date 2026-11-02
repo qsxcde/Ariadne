@@ -41,6 +41,7 @@ export type FeedItemSummary = Schemas["FeedItemSummary"];
 export type FeedRefreshResult = Schemas["FeedRefreshResponse"];
 export type NotificationSummary = Schemas["NotificationSummary"];
 export type NotificationDeliverResult = Schemas["NotificationDeliverResponse"];
+export type UpdateCheckResult = Schemas["UpdateCheckResponse"];
 export type AlertSettings = Schemas["AlertSettings"];
 export type AlertSettingsUpdate = Schemas["AlertSettingsUpdate"];
 export type Digest = Schemas["DigestResponse"];

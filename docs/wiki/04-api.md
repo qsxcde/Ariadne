@@ -80,6 +80,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/notifications` | 站内通知列表 | 200 | 401 |
 | POST | `/notifications/{id}/read` | 标记已读 | 200 | 401 / 404 |
 | POST | `/notifications/deliver` | 通过 Webhook 投递未读通知 | 200 | 401 / 422 / 502 |
+| POST | `/notifications/check-citations` | 检查新引用并生成提醒；首跑只记基线 | 200 | 401 |
+| POST | `/notifications/check-versions` | 检查 arXiv 新版本并生成提醒；首跑只记基线 | 200 | 401 |
 | GET | `/subscriptions` | 订阅列表 | 200 | 401 |
 | POST | `/subscriptions` | 新建订阅 | 201 | 401 / 422 |
 | DELETE | `/subscriptions/{id}` | 删除订阅 | 200 | 401 / 404 |

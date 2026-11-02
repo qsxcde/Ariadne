@@ -7,9 +7,12 @@ from backend.api.schemas import (
     NotificationDeliverRequest,
     NotificationDeliverResponse,
     NotificationSummary,
+    UpdateCheckResponse,
 )
 from backend.api.security import get_current_user
+from backend.application import citation_alerts as citation_alert_service
 from backend.application import notifications as notification_service
+from backend.application import version_alerts as version_alert_service
 
 router = APIRouter()
 
@@ -36,6 +39,26 @@ def mark_notification_read(
     if row is None:
         raise HTTPException(status_code=404, detail="Notification not found")
     return NotificationSummary(**row)
+
+
+@router.post("/notifications/check-citations", response_model=UpdateCheckResponse)
+def check_citation_updates(
+    user: dict = Depends(get_current_user),
+) -> UpdateCheckResponse:
+    """检查已收录论文的新引用；首次运行只记录基线。"""
+    return UpdateCheckResponse(
+        **citation_alert_service.check_citation_updates(user.get("id") or None)
+    )
+
+
+@router.post("/notifications/check-versions", response_model=UpdateCheckResponse)
+def check_version_updates(
+    user: dict = Depends(get_current_user),
+) -> UpdateCheckResponse:
+    """检查 arXiv 新版本；首次运行只记录基线。"""
+    return UpdateCheckResponse(
+        **version_alert_service.check_version_updates(user.get("id") or None)
+    )
 
 
 @router.post("/notifications/deliver", response_model=NotificationDeliverResponse)

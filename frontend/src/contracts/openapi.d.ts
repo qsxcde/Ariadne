@@ -345,6 +345,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/check-citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Citation Updates
+         * @description 检查已收录论文的新引用；首次运行只记录基线。
+         */
+        post: operations["check_citation_updates_notifications_check_citations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/check-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Version Updates
+         * @description 检查 arXiv 新版本；首次运行只记录基线。
+         */
+        post: operations["check_version_updates_notifications_check_versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/deliver": {
         parameters: {
             query?: never;
@@ -2076,6 +2116,17 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** UpdateCheckResponse */
+        UpdateCheckResponse: {
+            /** Checked */
+            checked: number;
+            /** Errors */
+            errors?: string[];
+            /** Notified */
+            notified: number;
+            /** Updated */
+            updated: number;
+        };
         /** UserResponse */
         UserResponse: {
             /** Id */
@@ -2794,6 +2845,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_citation_updates_notifications_check_citations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateCheckResponse"];
+                };
+            };
+        };
+    };
+    check_version_updates_notifications_check_versions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateCheckResponse"];
                 };
             };
         };

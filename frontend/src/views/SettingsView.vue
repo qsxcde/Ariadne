@@ -2,6 +2,8 @@
 import { onMounted, ref } from "vue";
 import { getAlertSettings, updateAlertSettings } from "../api/settings";
 import {
+  checkCitationUpdates,
+  checkVersionUpdates,
   deliverNotifications,
   listNotifications,
   markNotificationRead,
@@ -18,6 +20,8 @@ const webhookUrl = ref("");
 const deliveryEmail = ref("");
 const isSaving = ref(false);
 const isDelivering = ref(false);
+const isCheckingCitations = ref(false);
+const isCheckingVersions = ref(false);
 const errorMessage = ref("");
 const deliverMessage = ref("");
 
@@ -51,6 +55,38 @@ async function deliver(): Promise<void> {
     errorMessage.value = error instanceof Error ? error.message : "投递失败";
   } finally {
     isDelivering.value = false;
+  }
+}
+
+async function checkCitations(): Promise<void> {
+  isCheckingCitations.value = true;
+  deliverMessage.value = "";
+  try {
+    const result = await checkCitationUpdates();
+    const errors = result.errors ?? [];
+    const suffix = errors.length ? `，${errors.length} 篇暂无数据` : "";
+    deliverMessage.value = `检查 ${result.checked} 篇，新增 ${result.notified} 条引用提醒${suffix}`;
+    await load();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "检查引用更新失败";
+  } finally {
+    isCheckingCitations.value = false;
+  }
+}
+
+async function checkVersions(): Promise<void> {
+  isCheckingVersions.value = true;
+  deliverMessage.value = "";
+  try {
+    const result = await checkVersionUpdates();
+    const errors = result.errors ?? [];
+    const suffix = errors.length ? `，${errors.length} 篇暂无数据` : "";
+    deliverMessage.value = `检查 ${result.checked} 篇，新增 ${result.notified} 条版本提醒${suffix}`;
+    await load();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "检查新版本失败";
+  } finally {
+    isCheckingVersions.value = false;
   }
 }
 
@@ -134,7 +170,7 @@ onMounted(() => {
         <button type="button" class="settings-save" :disabled="isSaving" @click="save">
           {{ isSaving ? "保存中…" : "保存提醒设置" }}
         </button>
-        <p class="settings-card__hint">当前为本地设置；邮件/推送投递尚未接入。</p>
+        <p class="settings-card__hint">Webhook 立即投递；邮件需在后端配置 SMTP 环境变量。</p>
       </article>
 
       <article class="settings-card">
@@ -151,6 +187,22 @@ onMounted(() => {
             </button>
           </li>
         </ul>
+        <button
+          type="button"
+          class="settings-save"
+          :disabled="isCheckingCitations"
+          @click="checkCitations"
+        >
+          {{ isCheckingCitations ? "检查中…" : "检查引用更新" }}
+        </button>
+        <button
+          type="button"
+          class="settings-save"
+          :disabled="isCheckingVersions"
+          @click="checkVersions"
+        >
+          {{ isCheckingVersions ? "检查中…" : "检查新版本" }}
+        </button>
         <label class="settings-field">
           Webhook URL
           <input v-model="webhookUrl" class="settings-select" type="url" placeholder="https://…" />

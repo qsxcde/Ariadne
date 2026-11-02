@@ -3333,6 +3333,36 @@
         "title": "SubscriptionSummary",
         "type": "object"
       },
+      "UpdateCheckResponse": {
+        "properties": {
+          "checked": {
+            "title": "Checked",
+            "type": "integer"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "notified": {
+            "title": "Notified",
+            "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "checked",
+          "updated",
+          "notified"
+        ],
+        "title": "UpdateCheckResponse",
+        "type": "object"
+      },
       "UserResponse": {
         "properties": {
           "id": {
@@ -4414,6 +4444,54 @@
           }
         ],
         "summary": "List Notifications"
+      }
+    },
+    "/notifications/check-citations": {
+      "post": {
+        "description": "检查已收录论文的新引用；首次运行只记录基线。",
+        "operationId": "check_citation_updates_notifications_check_citations_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Check Citation Updates"
+      }
+    },
+    "/notifications/check-versions": {
+      "post": {
+        "description": "检查 arXiv 新版本；首次运行只记录基线。",
+        "operationId": "check_version_updates_notifications_check_versions_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCheckResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Check Version Updates"
       }
     },
     "/notifications/deliver": {

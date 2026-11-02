@@ -164,6 +164,20 @@ def fetch_arxiv_reference(identifier: str) -> PaperReference:
     )
 
 
+def fetch_arxiv_updated(arxiv_id: str) -> str | None:
+    """Return the arXiv ``updated`` timestamp, which changes on every new version."""
+    normalized = normalize_arxiv_id(arxiv_id)
+    response = _http_get(ARXIV_API_URL, params={"id_list": normalized})
+    try:
+        root = ElementTree.fromstring(response.text)
+    except ElementTree.ParseError as exc:
+        raise ImportFetchError("arXiv 返回内容无法解析") from exc
+    entry = root.find(f"{_ATOM}entry")
+    if entry is None:
+        return None
+    return _clean_text(entry.findtext(f"{_ATOM}updated")) or None
+
+
 def fetch_doi_reference(identifier: str) -> PaperReference:
     doi = normalize_doi(identifier)
     response = _http_get(f"{CROSSREF_API_URL}/{doi}")
