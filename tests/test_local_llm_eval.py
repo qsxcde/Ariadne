@@ -22,19 +22,32 @@ pytestmark = [
     ),
 ]
 
-CASES = [
-    ("How many tokens does SparseAttention use?", ["64"]),
-    ("How much does SparseAttention improve BLEU on WMT?", ["1.2"]),
-    ("What is the main limitation of SparseAttention?", ["long-range", "长程", "依赖"]),
-    ("How much memory does SparseAttention save?", ["40", "百分之四十"]),
+BASE_CASES = [
     ("What is the method called?", ["SparseAttention"]),
+    ("How many tokens does SparseAttention use?", ["64"]),
+    ("How much memory does SparseAttention save?", ["40", "百分之四十"]),
+    ("Which dataset is used for experiments?", ["WMT", "English-German", "英德"]),
+    ("How much does BLEU improve on WMT?", ["1.2"]),
+    ("How many transformer layers does the model have?", ["12"]),
+    ("How many GPUs were used for training?", ["8"]),
+    ("What is the computational complexity?", ["O(n)", "linear", "线性"]),
+    ("What license is the code released under?", ["MIT"]),
+    ("What is the main limitation?", ["long-range", "长程", "依赖"]),
+]
+
+PHRASES = [
+    "{q}",
+    "According to the paper, {q}",
+    "Please answer briefly based on the paper: {q}",
+    "In the paper, {q}",
+    "Answer this question using the paper: {q}",
 ]
 
 
 def _store() -> FAISSVectorStore:
     chunks = [
         Chunk(
-            text="SparseAttention uses a fixed set of 64 tokens and reduces memory by 40%.",
+            text="The method is called SparseAttention. Token count: 64. Memory saving: 40%.",
             metadata=ChunkMetadata(
                 paper_id="doc-1",
                 section="Method",
@@ -44,7 +57,7 @@ def _store() -> FAISSVectorStore:
             ),
         ),
         Chunk(
-            text="On WMT English-German, SparseAttention improves BLEU by 1.2 points.",
+            text="Dataset: WMT English-German. BLEU improvement: 1.2 points.",
             metadata=ChunkMetadata(
                 paper_id="doc-1",
                 section="Experiments",
@@ -54,12 +67,42 @@ def _store() -> FAISSVectorStore:
             ),
         ),
         Chunk(
-            text="A limitation is that the fixed token set may miss long-range dependencies.",
+            text="Layer count: 12. GPU count: 8.",
+            metadata=ChunkMetadata(
+                paper_id="doc-1",
+                section="Architecture",
+                section_path=["Architecture"],
+                chunk_index=2,
+                type="paragraph",
+            ),
+        ),
+        Chunk(
+            text="Complexity: O(n).",
+            metadata=ChunkMetadata(
+                paper_id="doc-1",
+                section="Complexity",
+                section_path=["Complexity"],
+                chunk_index=3,
+                type="paragraph",
+            ),
+        ),
+        Chunk(
+            text="License: MIT.",
+            metadata=ChunkMetadata(
+                paper_id="doc-1",
+                section="License",
+                section_path=["License"],
+                chunk_index=4,
+                type="paragraph",
+            ),
+        ),
+        Chunk(
+            text="Limitation: may miss long-range dependencies.",
             metadata=ChunkMetadata(
                 paper_id="doc-1",
                 section="Limitations",
                 section_path=["Limitations"],
-                chunk_index=2,
+                chunk_index=5,
                 type="paragraph",
             ),
         ),
@@ -69,18 +112,13 @@ def _store() -> FAISSVectorStore:
     return store
 
 
-@pytest.mark.integration
-def test_local_model_answers_with_citations():
-    store = _store()
-    policy = AnswerPolicy(
-        empty_retrieval_message="没有相关信息", invalid_citation_message="引用无效"
-    )
-    options = RetrievalOptions(
+def _options() -> RetrievalOptions:
+    return RetrievalOptions(
         strategy="hybrid",
-        bm25_top_k=5,
-        dense_top_k=5,
-        seed_top_k=5,
-        max_expanded_chunks=5,
+        bm25_top_k=8,
+        dense_top_k=8,
+        seed_top_k=8,
+        max_expanded_chunks=8,
         same_section_window=0,
         adjacent_window=1,
         include_linked_blocks=False,
@@ -89,21 +127,35 @@ def test_local_model_answers_with_citations():
         term_expand_enabled=False,
     )
 
+
+@pytest.mark.integration
+def test_local_model_answers_50_questions_with_citations():
+    store = _store()
+    policy = AnswerPolicy(
+        empty_retrieval_message="没有相关信息", invalid_citation_message="引用无效"
+    )
+    options = _options()
+
     correct = 0
     cited = 0
-    for question, expected_terms in CASES:
-        answer = ""
-        for event in stream_answer(store, question, policy=policy, options=options):
-            if event["type"] == "token":
-                answer += event["value"]
-        lowered = answer.lower()
-        if any(term.lower() in lowered for term in expected_terms):
-            correct += 1
-        if "[Section:" in answer:
-            cited += 1
+    total = 0
+    for question, expected_terms in BASE_CASES:
+        for phrase in PHRASES:
+            prompt = phrase.format(q=question)
+            answer = ""
+            for event in stream_answer(store, prompt, policy=policy, options=options):
+                if event["type"] == "token":
+                    answer += event["value"]
+            lowered = answer.lower()
+            if any(term.lower() in lowered for term in expected_terms):
+                correct += 1
+            if "[Section:" in answer:
+                cited += 1
+            total += 1
 
-    assert correct >= 4, f"local model answered {correct}/{len(CASES)} correctly"
-    assert cited >= 4, f"local model cited {cited}/{len(CASES)} answers"
+    assert total == 50
+    assert correct >= 45, f"local model answered {correct}/50 correctly"
+    assert cited >= 45, f"local model cited {cited}/50 answers"
 
 
 def _seed_paper(title: str, method: str, metric: str) -> str:
@@ -145,24 +197,24 @@ def _seed_paper(title: str, method: str, metric: str) -> str:
 
 
 @pytest.mark.integration
-def test_local_model_compares_two_papers():
-    first = _seed_paper(
-        "PaperA",
-        "Paper A proposes SparseAttention with 64 tokens.",
-        "Paper A reports BLEU 1.2 on WMT.",
-    )
-    second = _seed_paper(
-        "PaperB",
-        "Paper B proposes DenseAttention with full attention.",
-        "Paper B reports BLEU 0.8 on WMT.",
-    )
+def test_local_model_compares_ten_papers():
+    paper_ids = []
+    for index in range(1, 11):
+        paper_ids.append(
+            _seed_paper(
+                f"Paper{index}",
+                f"Paper {index} proposes Method{index} for efficient attention.",
+                f"Paper {index} reports BLEU 1.{index} on WMT.",
+            )
+        )
     collection = collection_repo.create_collection(user_id="u1", name="Compare")
-    collection_repo.add_paper_to_collection(collection["id"], first)
-    collection_repo.add_paper_to_collection(collection["id"], second)
+    for paper_id in paper_ids:
+        collection_repo.add_paper_to_collection(collection["id"], paper_id)
 
-    rows = compare_papers(collection["id"], "u1", [first, second])
+    rows = compare_papers(collection["id"], "u1", paper_ids)
 
-    assert len(rows) == 2
-    assert all("[Section:" in row["method"] for row in rows)
-    assert "Sparse" in rows[0]["method"]
-    assert "1.2" in rows[0]["metrics"]
+    assert len(rows) == 10
+    for index, row in enumerate(rows, start=1):
+        assert f"Method{index}" in row["method"]
+        assert "[Section:" in row["method"]
+        assert f"1.{index}" in row["metrics"]

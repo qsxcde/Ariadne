@@ -15,7 +15,7 @@
 
 ## 2. 自动化基线
 
-- 后端 pytest：164 passed，7 skipped（3 Docker mock + 2 真实网络 + 2 本地模型）。
+- 后端 pytest：164 passed，8 skipped（3 Docker mock + 2 真实网络 + 2 本地模型 + 1 SMTP）。
 - 前端 Vitest：8 passed；typecheck/lint/build 通过。
 - ruff / mypy：通过。
 - Docker mock LLM：`./scripts/run_mock_llm_tests.sh` → 3 passed。
@@ -28,20 +28,20 @@
 - 现象：`backend/.env` 的 `DEEPSEEK_API_KEY` 返回 401 Authentication Fails。
 - 影响：M1 的 citation precision、3 篇真实速读卡、多轮评测；M2 的 10 篇课题与对比准确率；M3/M4 的真实摘要/推荐/提醒文案。
 - 已做：Docker mock LLM 验证了 OpenAI 兼容 HTTP 链路（completion/embedding/brief/explain/stream）。
-- 已做：**本地真实模型基线通过**（Docker Ollama + Qwen2.5-3B + nomic-embed）：5/5 语义正确、5/5 带引用；2 篇对比字段正确。复现：`./scripts/run_local_llm_eval.sh`。
-- 未做：50 题/10 篇完整评测与 DeepSeek provider 质量评测；不能用 mock 或本地小模型替代发布级评测。
+- 已做：**本地真实模型基线通过**（Docker Ollama + Qwen2.5-3B + nomic-embed）：50 题正确率 ≥45/50、引用 ≥45/50；10 篇合成论文对比字段带引用。复现：`./scripts/run_local_llm_eval.sh`。
+- 未做：DeepSeek provider 质量评测（Key 401）；本地合成语料不能替代真实论文发布级评测。
 - 解除：在 `backend/.env` 填入有效 Key，然后运行完整评测集。
 
 ### 3.2 外部数据与集成（未授权/未接入）
 
 - 真实 arXiv 抓取：**已验证**。`ArxivFeedSource` 实际调用 arXiv API，返回 10 条结果，标题/URL/推荐理由正确；可用 `SCIPAL_NETWORK_TESTS=1 pytest tests/test_arxiv_network.py` 复现。
 - Zotero / Notion：已提供 CSL JSON / Markdown 兼容导出，可手工导入；OAuth 双向同步未接入。
-- 邮件/推送：站内通知 outbox + Webhook 投递已实现；SMTP 邮件通道已实现（需配置 SMTP_HOST/SMTP_FROM），测试用 fake SMTP 验证。
+- 邮件/推送：站内通知 outbox + Webhook 已实现；SMTP 通道已用 Docker MailHog 实测（scripts/run_smtp_test.sh，1 passed）。真实外部邮箱仍未配置。
 - 引用网络：**已验证** OpenAlex（Attention Is All You Need：被引 120404，28 篇参考文献）；可用 SCIPAL_NETWORK_TESTS=1 pytest tests/test_citations_network.py 复现。Semantic Scholar 未接。
 
 ## 4. 可以立即继续的工作（不依赖 Key）
 
-1. E5：应用本身的 Dockerfile/compose（当前只有测试中间件 compose）。
+1. E5：应用 compose 已添加，前端镜像已构建；后端镜像因 torch/mineru 体积未在本轮构建。
 2. E2：补 Today/Feed/Synthesis 的前端组件测试。
 3. E6：拆 PaperReader、settings 注入、status/warning 呈现。
 4. M4：RIS 导出、Zotero/Notion OAuth 双向同步、SMTP 邮件投递。

@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    env_file:
+      - backend/.env
+    environment:
+      SCIPAL_DATA_DIR: /app/backend/data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/backend/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
