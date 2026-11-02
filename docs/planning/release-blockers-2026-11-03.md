@@ -34,17 +34,16 @@
 ### 3.2 外部数据与集成（未授权/未接入）
 
 - 真实 arXiv 抓取：**已验证**。`ArxivFeedSource` 实际调用 arXiv API，返回 10 条结果，标题/URL/推荐理由正确；可用 `SCIPAL_NETWORK_TESTS=1 pytest tests/test_arxiv_network.py` 复现。
-- Zotero / Notion 同步：未接入 OAuth 与 API；当前只有 BibTeX / Markdown / CSV 导出。
-- 邮件/推送提醒：Settings 只保存本地偏好，未接投递通道。
-- 引用网络：未接 OpenAlex/Semantic Scholar；当前只有站内来源引用。
+- Zotero / Notion：已提供 CSL JSON / Markdown 兼容导出，可手工导入；OAuth 双向同步未接入。
+- 邮件/推送：站内通知 outbox + Webhook 投递已实现（/notifications/deliver）；邮件投递需另配 SMTP。
+- 引用网络：已接 OpenAlex（/papers/{id}/citations）；Semantic Scholar 未接。
 
 ## 4. 可以立即继续的工作（不依赖 Key）
 
 1. E5：应用本身的 Dockerfile/compose（当前只有测试中间件 compose）。
 2. E2：补 Today/Feed/Synthesis 的前端组件测试。
 3. E6：拆 PaperReader、settings 注入、status/warning 呈现。
-4. M2：术语表、公式/表格解释（可用 mock 测试）。
-5. M4：BibTeX 之外 RIS 导出、Digest 页面化。
+4. M4：RIS 导出、Zotero/Notion OAuth 双向同步、SMTP 邮件投递。
 
 ## 5. 结论
 

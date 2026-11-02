@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 10
+CURRENT_SCHEMA_VERSION = 11
 
 _init_lock = threading.RLock()
 
@@ -72,6 +72,8 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_feed(conn)
     if from_version < 10:
         _migrate_add_alert_settings(conn)
+    if from_version < 11:
+        _migrate_add_notifications(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -511,6 +513,27 @@ def _migrate_add_alert_settings(conn) -> None:
     )
 
 
+def _migrate_add_notifications(conn) -> None:
+    """Add in-app notification outbox (v11)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS notifications (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          kind TEXT NOT NULL,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'unread',
+          created_at TEXT NOT NULL,
+          delivered_at TEXT NULL,
+          CHECK (status IN ('unread', 'read', 'delivered'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_notifications_user_status
+          ON notifications(user_id, status, created_at DESC);
+        """
+    )
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -732,6 +755,18 @@ def _create_initial_schema(conn) -> None:
           updated_at TEXT NOT NULL,
           CHECK (digest_frequency IN ('daily', 'weekly', 'off'))
         );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          kind TEXT NOT NULL,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'unread',
+          created_at TEXT NOT NULL,
+          delivered_at TEXT NULL,
+          CHECK (status IN ('unread', 'read', 'delivered'))
+        );
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_papers_user_status ON papers(user_id, reading_status, updated_at DESC)")
@@ -759,3 +794,4 @@ def _create_initial_schema(conn) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_user_active ON subscriptions(user_id, is_active, created_at)")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_feed_items_user_source_external ON feed_items(user_id, source, external_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_feed_items_user_status ON feed_items(user_id, status, created_at DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_status ON notifications(user_id, status, created_at DESC)")

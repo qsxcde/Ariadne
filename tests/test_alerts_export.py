@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.application.export import export_bibtex
+from backend.application.export import export_bibtex, export_csl_json, export_markdown
 from backend.application.review import weekly_review
 from backend.storage.sqlite import alerts as alert_repo
 from backend.storage.sqlite import documents as document_repo
@@ -54,6 +54,14 @@ def test_bibtex_export_contains_metadata():
     assert "Vaswani and Shazeer" in bib
     assert "NeurIPS" in bib
     assert export_bibtex("missing-user") == ""
+
+    csl = export_csl_json("u1")
+    assert csl[0]["title"] == "Attention Is All You Need"
+    assert csl[0]["DOI"] == "10.1000/test"
+
+    markdown = export_markdown("u1")
+    assert "# SciPal Library" in markdown
+    assert "Attention Is All You Need" in markdown
 
 
 @pytest.mark.integration

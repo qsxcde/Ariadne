@@ -2,7 +2,7 @@
 
 面向 SciPal 仓库的工程知识库。所有结论均以当前代码为准，正文中标注了对应的源码路径，便于随时回查验证。
 
-- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 10`
+- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 11`
 - 最后核对：2026-11-03
 - 覆盖范围：`backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`
 
@@ -12,7 +12,7 @@
 |---|---|---|
 | [01 项目概览](01-overview.md) | 定位、能力边界、技术栈、术语表、端到端主流程、仓库结构 | 所有人 |
 | [02 系统架构](02-architecture.md) | 分层、模块职责、启动时序、请求生命周期、并发模型、错误处理 | 后端 |
-| [03 数据模型与存储](03-data-model.md) | 16 张表、论文资产/Feed/提醒设置、ER 关系、状态机、迁移历史 | 后端 |
+| [03 数据模型与存储](03-data-model.md) | 17 张表、论文资产/Feed/提醒/通知、ER 关系、状态机、迁移历史 | 后端 |
 | [04 API 参考](04-api.md) | 全部 HTTP 端点、请求/响应字段、SSE 协议、错误码、调用示例 | 前后端 |
 | [05 文档摄取与索引](05-ingestion-and-indexing.md) | 上传→解析→归一化→切块→FAISS 快照提交/回滚的完整链路 | 后端 / 算法 |
 | [06 检索与问答](06-retrieval-and-chat.md) | 改写、BM25+Dense 混合召回、RRF、重排、上下文、生成与引用校验 | 后端 / 算法 |

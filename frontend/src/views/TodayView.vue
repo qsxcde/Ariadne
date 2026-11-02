@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { usePapers } from "../composables/usePapers";
-import { getWeeklyReview } from "../api/papers";
-import type { PaperSummary, WeeklyReview } from "../api";
+import { getLibraryStats, getWeeklyReview } from "../api/papers";
+import type { LibraryStats, PaperSummary, WeeklyReview } from "../api";
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -12,6 +12,7 @@ const emit = defineEmits<{
 
 const { papers, isLoading, errorMessage, loadLibrary } = usePapers();
 const review = ref<WeeklyReview | null>(null);
+const stats = ref<LibraryStats | null>(null);
 
 const reading = computed(() =>
   papers.value
@@ -38,9 +39,13 @@ function openPaper(paper: PaperSummary): void {
 onMounted(async () => {
   await loadLibrary();
   try {
-    review.value = await getWeeklyReview();
+    [review.value, stats.value] = await Promise.all([
+      getWeeklyReview(),
+      getLibraryStats(),
+    ]);
   } catch {
     review.value = null;
+    stats.value = null;
   }
 });
 </script>
@@ -60,6 +65,15 @@ onMounted(async () => {
     </header>
 
     <p v-if="errorMessage" class="today__error">{{ errorMessage }}</p>
+
+    <div v-if="stats" class="today__stats">
+      <div><strong>{{ stats.total }}</strong><span>论文</span></div>
+      <div><strong>{{ stats.by_status?.read ?? 0 }}</strong><span>已读</span></div>
+      <div><strong>{{ stats.by_status?.reading ?? 0 }}</strong><span>在读</span></div>
+      <div><strong>{{ (stats.by_status?.queued ?? 0) + (stats.by_status?.inbox ?? 0) }}</strong><span>队列</span></div>
+      <div><strong>{{ stats.notes }}</strong><span>笔记</span></div>
+      <div><strong>{{ stats.questions }}</strong><span>开放问题</span></div>
+    </div>
     <p v-if="isLoading && !papers.length" class="today__state">正在读取阅读进度…</p>
 
     <div class="today__grid">
@@ -176,6 +190,31 @@ onMounted(async () => {
 .today__button:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.today__stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.today__stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-panel);
+}
+
+.today__stats strong {
+  font-size: 22px;
+}
+
+.today__stats span {
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 
 .today__grid {

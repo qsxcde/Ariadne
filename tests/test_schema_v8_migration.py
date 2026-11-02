@@ -186,7 +186,7 @@ def test_v7_database_migrates_to_papers(tmp_path, monkeypatch):
 
     init_db()
 
-    assert _row(db_path, "PRAGMA user_version")[0][0] == 10
+    assert _row(db_path, "PRAGMA user_version")[0][0] == 11
     papers = _row(db_path, "SELECT * FROM papers ORDER BY id")
     assert [row["id"] for row in papers] == ["paper_doc-1", "paper_doc-2"]
     assert [row["title"] for row in papers] == ["paper-one", "paper-two"]
@@ -211,6 +211,7 @@ def test_v7_database_migrates_to_papers(tmp_path, monkeypatch):
     assert _row(db_path, "SELECT COUNT(*) FROM subscriptions")[0][0] == 0
     assert _row(db_path, "SELECT COUNT(*) FROM feed_items")[0][0] == 0
     assert _row(db_path, "SELECT COUNT(*) FROM alert_settings")[0][0] == 0
+    assert _row(db_path, "SELECT COUNT(*) FROM notifications")[0][0] == 0
     assert _row(db_path, "PRAGMA foreign_key_check") == []
 
 

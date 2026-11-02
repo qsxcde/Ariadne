@@ -4,8 +4,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
 import PaperReader from "./PaperReader.vue";
 import { usePapers } from "../../../composables/usePapers";
-import { explainSelection } from "../../../api/papers";
-import type { AnnotationSummary, PaperDocumentSummary } from "../../../api";
+import { explainSelection, getCitations, getGlossary } from "../../../api/papers";
+import type {
+  AnnotationSummary,
+  CitationGraph,
+  GlossaryResponse,
+  PaperDocumentSummary,
+} from "../../../api";
 import type { SelectionAskMode } from "../../../types";
 
 const props = defineProps<{
@@ -31,6 +36,10 @@ const {
 } = usePapers();
 
 const noteDraft = ref("");
+const glossary = ref<GlossaryResponse | null>(null);
+const citations = ref<CitationGraph | null>(null);
+const isGlossaryLoading = ref(false);
+const isCitationsLoading = ref(false);
 const statusSaving = ref(false);
 let progressTimer: number | null = null;
 let pendingProgress: number | null = null;
@@ -69,6 +78,28 @@ function annotationLabel(annotation: AnnotationSummary): string {
 
 async function refresh(): Promise<void> {
   await loadPaper(props.paperId);
+}
+
+async function loadCitations(): Promise<void> {
+  isCitationsLoading.value = true;
+  try {
+    citations.value = await getCitations(props.paperId);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "读取引用关系失败");
+  } finally {
+    isCitationsLoading.value = false;
+  }
+}
+
+async function generateGlossary(): Promise<void> {
+  isGlossaryLoading.value = true;
+  try {
+    glossary.value = await getGlossary(props.paperId);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "生成术语表失败");
+  } finally {
+    isGlossaryLoading.value = false;
+  }
 }
 
 async function generateBrief(): Promise<void> {
@@ -299,6 +330,53 @@ onBeforeUnmount(() => {
                 <li v-for="item in currentBrief.takeaways ?? []" :key="item">{{ item }}</li>
               </ul>
             </div>
+          </div>
+        </section>
+
+        <section class="paper-workspace__brief">
+          <header class="paper-workspace__brief-head">
+            <span class="paper-workspace__eyebrow">术语表</span>
+            <button
+              type="button"
+              class="paper-workspace__secondary"
+              :disabled="isGlossaryLoading"
+              @click="generateGlossary"
+            >
+              {{ isGlossaryLoading ? "生成中…" : "生成术语表" }}
+            </button>
+          </header>
+          <p v-if="!glossary" class="paper-workspace__empty">
+            提取关键术语与一句话解释。
+          </p>
+          <ul v-else class="paper-workspace__brief-list">
+            <li v-for="term in glossary.terms ?? []" :key="term.term">
+              <strong>{{ term.term }}</strong>：{{ term.definition }}
+            </li>
+          </ul>
+        </section>
+
+        <section class="paper-workspace__brief">
+          <header class="paper-workspace__brief-head">
+            <span class="paper-workspace__eyebrow">引用关系</span>
+            <button
+              type="button"
+              class="paper-workspace__secondary"
+              :disabled="isCitationsLoading"
+              @click="loadCitations"
+            >
+              {{ isCitationsLoading ? "读取中…" : "查询 OpenAlex" }}
+            </button>
+          </header>
+          <p v-if="!citations" class="paper-workspace__empty">
+            通过 DOI / arXiv 查询被引与参考文献。
+          </p>
+          <div v-else class="paper-workspace__brief-body">
+            <p>被引 {{ citations.cited_by_count }} 次 · 参考文献 {{ citations.reference_count }} 篇</p>
+            <ul class="paper-workspace__brief-list">
+              <li v-for="reference in (citations.references ?? []).slice(0, 5)" :key="reference.openalex_id">
+                {{ reference.title }}<span v-if="reference.year">（{{ reference.year }}）</span>
+              </li>
+            </ul>
           </div>
         </section>
 

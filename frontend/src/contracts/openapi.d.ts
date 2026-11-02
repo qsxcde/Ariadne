@@ -294,6 +294,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notifications */
+        get: operations["list_notifications_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deliver Notifications */
+        post: operations["deliver_notifications_notifications_deliver_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notification Read */
+        post: operations["mark_notification_read_notifications__notification_id__read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers": {
         parameters: {
             query?: never;
@@ -327,6 +378,57 @@ export interface paths {
         };
         /** Export Bibtex */
         get: operations["export_bibtex_papers_export_bib_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/export.csl.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Csl */
+        get: operations["export_csl_papers_export_csl_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/export.md": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Markdown */
+        get: operations["export_markdown_papers_export_md_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Library Stats */
+        get: operations["get_library_stats_papers_stats_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -388,6 +490,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/papers/{paper_id}/citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Citations */
+        get: operations["get_citations_papers__paper_id__citations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers/{paper_id}/explain": {
         parameters: {
             query?: never;
@@ -399,6 +518,23 @@ export interface paths {
         put?: never;
         /** Explain Selection */
         post: operations["explain_selection_papers__paper_id__explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/{paper_id}/glossary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Generate Glossary */
+        get: operations["generate_glossary_papers__paper_id__glossary_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -866,6 +1002,38 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** CitationGraph */
+        CitationGraph: {
+            /** Cited By Count */
+            cited_by_count: number;
+            /** Openalex Id */
+            openalex_id: string;
+            /** Paper Id */
+            paper_id: string;
+            /** Reference Count */
+            reference_count: number;
+            /** References */
+            references?: components["schemas"]["CitationReference"][];
+            /**
+             * Source
+             * @default openalex
+             */
+            source: string;
+        };
+        /** CitationReference */
+        CitationReference: {
+            /**
+             * Doi
+             * @default
+             */
+            doi: string;
+            /** Openalex Id */
+            openalex_id: string;
+            /** Title */
+            title: string;
+            /** Year */
+            year?: number | null;
+        };
         /** CollectionAskRequest */
         CollectionAskRequest: {
             /** Question */
@@ -1080,6 +1248,32 @@ export interface components {
             /** Subscriptions */
             subscriptions: number;
         };
+        /** GlossaryResponse */
+        GlossaryResponse: {
+            /** Generated At */
+            generated_at: string;
+            /** Paper Id */
+            paper_id: string;
+            /** Terms */
+            terms?: components["schemas"]["GlossaryTerm"][];
+        };
+        /** GlossaryTerm */
+        GlossaryTerm: {
+            /**
+             * Chunk Index
+             * @default 0
+             */
+            chunk_index: number;
+            /** Definition */
+            definition: string;
+            /**
+             * Section
+             * @default
+             */
+            section: string;
+            /** Term */
+            term: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1162,11 +1356,69 @@ export interface components {
             /** Updated At */
             updated_at: string;
         };
+        /** LibraryStats */
+        LibraryStats: {
+            /** By Status */
+            by_status?: {
+                [key: string]: number;
+            };
+            /**
+             * Collections
+             * @default 0
+             */
+            collections: number;
+            /**
+             * Feed Saved
+             * @default 0
+             */
+            feed_saved: number;
+            /**
+             * Notes
+             * @default 0
+             */
+            notes: number;
+            /**
+             * Questions
+             * @default 0
+             */
+            questions: number;
+            /** Total */
+            total: number;
+        };
         /**
          * MessageStatus
          * @enum {string}
          */
         MessageStatus: "complete" | "failed" | "stopped";
+        /** NotificationDeliverRequest */
+        NotificationDeliverRequest: {
+            /** Webhook Url */
+            webhook_url: string;
+        };
+        /** NotificationDeliverResponse */
+        NotificationDeliverResponse: {
+            /** Delivered */
+            delivered: number;
+            /** Pending */
+            pending: number;
+        };
+        /** NotificationSummary */
+        NotificationSummary: {
+            /** Body */
+            body: string;
+            /** Created At */
+            created_at: string;
+            /** Delivered At */
+            delivered_at?: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
         /**
          * PaperBlock
          * @description Reader 用的正文块，`id` 与 citations 的 block_ids 对齐。
@@ -2197,6 +2449,101 @@ export interface operations {
             };
         };
     };
+    list_notifications_notifications_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deliver_notifications_notifications_deliver_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationDeliverRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationDeliverResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_notification_read_notifications__notification_id__read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_papers_papers_get: {
         parameters: {
             query?: {
@@ -2281,6 +2628,66 @@ export interface operations {
                 };
                 content: {
                     "text/plain": string;
+                };
+            };
+        };
+    };
+    export_csl_papers_export_csl_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    export_markdown_papers_export_md_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    get_library_stats_papers_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryStats"];
                 };
             };
         };
@@ -2450,6 +2857,37 @@ export interface operations {
             };
         };
     };
+    get_citations_papers__paper_id__citations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationGraph"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     explain_selection_papers__paper_id__explain_post: {
         parameters: {
             query?: never;
@@ -2472,6 +2910,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExplainResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_glossary_papers__paper_id__glossary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryResponse"];
                 };
             };
             /** @description Validation Error */

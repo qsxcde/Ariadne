@@ -1,6 +1,9 @@
 import { jsonRequest, requestForm, requestJson, requestText } from "./client";
 import type {
   ExplainResponse,
+  CitationGraph,
+  GlossaryResponse,
+  LibraryStats,
   PaperBrief,
   PaperDetail,
   PaperSummary,
@@ -43,6 +46,18 @@ export function uploadPaper(file: File): Promise<PaperUploadResult> {
   const body = new FormData();
   body.append("file", file);
   return requestForm<PaperUploadResult>("/papers", "上传论文失败", body);
+}
+
+export function getCitations(paperId: string): Promise<CitationGraph> {
+  return requestJson<CitationGraph>(`/papers/${paperId}/citations`, "读取引用关系失败");
+}
+
+export function getGlossary(paperId: string): Promise<GlossaryResponse> {
+  return requestJson<GlossaryResponse>(`/papers/${paperId}/glossary`, "生成术语表失败");
+}
+
+export function getLibraryStats(): Promise<LibraryStats> {
+  return requestJson<LibraryStats>("/papers/stats", "读取统计失败");
 }
 
 export function exportBibtex(): Promise<string> {

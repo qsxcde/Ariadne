@@ -1,21 +1,52 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { getAlertSettings, updateAlertSettings } from "../api/settings";
-import type { AlertSettings } from "../api";
+import {
+  deliverNotifications,
+  listNotifications,
+  markNotificationRead,
+} from "../api/notifications";
+import type { AlertSettings, NotificationSummary } from "../api";
 
 defineEmits<{
   back: [];
 }>();
 
 const alertSettings = ref<AlertSettings | null>(null);
+const notifications = ref<NotificationSummary[]>([]);
+const webhookUrl = ref("");
 const isSaving = ref(false);
+const isDelivering = ref(false);
 const errorMessage = ref("");
+const deliverMessage = ref("");
 
 async function load(): Promise<void> {
   try {
-    alertSettings.value = await getAlertSettings();
+    [alertSettings.value, notifications.value] = await Promise.all([
+      getAlertSettings(),
+      listNotifications("unread"),
+    ]);
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "读取提醒设置失败";
+  }
+}
+
+async function readNotification(notification: NotificationSummary): Promise<void> {
+  await markNotificationRead(notification.id);
+  notifications.value = notifications.value.filter((item) => item.id !== notification.id);
+}
+
+async function deliver(): Promise<void> {
+  if (!webhookUrl.value.trim()) return;
+  isDelivering.value = true;
+  deliverMessage.value = "";
+  try {
+    const result = await deliverNotifications(webhookUrl.value.trim());
+    deliverMessage.value = "已投递 " + result.delivered + " 条";
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "投递失败";
+  } finally {
+    isDelivering.value = false;
   }
 }
 
@@ -100,6 +131,31 @@ onMounted(() => {
           {{ isSaving ? "保存中…" : "保存提醒设置" }}
         </button>
         <p class="settings-card__hint">当前为本地设置；邮件/推送投递尚未接入。</p>
+      </article>
+
+      <article class="settings-card">
+        <h2>通知</h2>
+        <p v-if="!notifications.length" class="settings-card__hint">没有未读通知。</p>
+        <ul v-else class="settings-notifications">
+          <li v-for="notification in notifications" :key="notification.id">
+            <div>
+              <strong>{{ notification.title }}</strong>
+              <p>{{ notification.body }}</p>
+            </div>
+            <button type="button" class="settings-mark" @click="readNotification(notification)">
+              已读
+            </button>
+          </li>
+        </ul>
+        <label class="settings-field">
+          Webhook URL
+          <input v-model="webhookUrl" class="settings-select" type="url" placeholder="https://…" />
+        </label>
+        <button type="button" class="settings-save" :disabled="isDelivering" @click="deliver">
+          {{ isDelivering ? "投递中…" : "投递未读通知" }}
+        </button>
+        <p v-if="deliverMessage" class="settings-card__hint">{{ deliverMessage }}</p>
+        <p class="settings-card__hint">支持 Webhook 推送；邮件需要另行配置 SMTP。</p>
       </article>
 
       <article class="settings-card">
@@ -225,6 +281,44 @@ onMounted(() => {
   cursor: pointer;
   font-size: 12px;
   padding: 7px 10px;
+}
+
+.settings-notifications {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-notifications li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+}
+
+.settings-notifications p {
+  margin: 3px 0 0;
+  color: var(--color-text-muted);
+}
+
+.settings-mark {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .settings-error {

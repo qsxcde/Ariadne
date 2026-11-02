@@ -125,6 +125,63 @@ class DigestResponse(WeeklyReview):
     saved_feed_items: int = 0
 
 
+class CitationReference(BaseModel):
+    openalex_id: str
+    title: str
+    doi: str = ""
+    year: int | None = None
+
+
+class CitationGraph(BaseModel):
+    paper_id: str
+    openalex_id: str
+    cited_by_count: int
+    reference_count: int
+    references: list[CitationReference] = Field(default_factory=list)
+    source: str = "openalex"
+
+
+class NotificationSummary(BaseModel):
+    id: str
+    kind: str
+    title: str
+    body: str
+    status: str
+    created_at: str
+    delivered_at: str | None = None
+
+
+class NotificationDeliverRequest(BaseModel):
+    webhook_url: str
+
+
+class NotificationDeliverResponse(BaseModel):
+    pending: int
+    delivered: int
+
+
+class LibraryStats(BaseModel):
+    total: int
+    by_status: dict[str, int] = Field(default_factory=dict)
+    notes: int = 0
+    questions: int = 0
+    collections: int = 0
+    feed_saved: int = 0
+
+
+class GlossaryTerm(BaseModel):
+    term: str
+    definition: str
+    section: str = ""
+    chunk_index: int = 0
+
+
+class GlossaryResponse(BaseModel):
+    paper_id: str
+    terms: list[GlossaryTerm] = Field(default_factory=list)
+    generated_at: str
+
+
 class CollectionAskRequest(BaseModel):
     question: str
 

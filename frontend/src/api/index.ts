@@ -9,6 +9,7 @@ export * from "./collections";
 export * from "./synthesis";
 export * from "./feed";
 export * from "./settings";
+export * from "./notifications";
 export * from "./documents";
 export * from "./library";
 export * from "./chat";

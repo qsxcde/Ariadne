@@ -1,12 +1,13 @@
 """Paper library, annotations and collections endpoints."""
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from backend.api.schemas import (
     AnnotationCreateRequest,
     AnnotationSummary,
     AnnotationUpdateRequest,
+    CitationGraph,
     CollectionAskRequest,
     CollectionAskResponse,
     CollectionCompareRequest,
@@ -16,6 +17,8 @@ from backend.api.schemas import (
     PaperComparison,
     ExplainRequest,
     ExplainResponse,
+    GlossaryResponse,
+    LibraryStats,
     PaperBrief,
     PaperDetail,
     PaperSummary,
@@ -27,11 +30,14 @@ from backend.api.security import get_current_user
 from backend.api.uploads import read_upload_with_limit, reject_by_content_length
 from backend.application import annotations as annotation_service
 from backend.application import brief as brief_service
+from backend.application import citations as citation_service
 from backend.application import collections as collection_service
 from backend.application import explain as explain_service
 from backend.application import export as export_service
+from backend.application import glossary as glossary_service
 from backend.application import papers as paper_service
 from backend.application import review as review_service
+from backend.application import stats as stats_service
 from backend.application import synthesis as synthesis_service
 
 router = APIRouter()
@@ -54,6 +60,11 @@ def _summary(row: dict) -> PaperSummary:
         updated_at=row["updated_at"],
         tags=row.get("tags") or [],
     )
+
+
+@router.get("/papers/stats", response_model=LibraryStats)
+def get_library_stats(user: dict = Depends(get_current_user)) -> LibraryStats:
+    return LibraryStats(**stats_service.library_stats(user.get("id") or None))
 
 
 @router.get("/review/weekly", response_model=WeeklyReview)
@@ -117,6 +128,22 @@ def export_bibtex(user: dict = Depends(get_current_user)) -> PlainTextResponse:
     )
 
 
+@router.get("/papers/export.csl.json")
+def export_csl(user: dict = Depends(get_current_user)) -> JSONResponse:
+    return JSONResponse(
+        export_service.export_csl_json(user.get("id") or None),
+        media_type="application/json",
+    )
+
+
+@router.get("/papers/export.md", response_class=PlainTextResponse)
+def export_markdown(user: dict = Depends(get_current_user)) -> PlainTextResponse:
+    return PlainTextResponse(
+        export_service.export_markdown(user.get("id") or None),
+        media_type="text/markdown",
+    )
+
+
 @router.get("/papers/{paper_id}", response_model=PaperDetail)
 def get_paper(paper_id: str, user: dict = Depends(get_current_user)) -> PaperDetail:
     return PaperDetail(
@@ -140,6 +167,32 @@ def explain_selection(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return ExplainResponse(explanation=explanation)
+
+
+@router.get("/papers/{paper_id}/citations", response_model=CitationGraph)
+def get_citations(
+    paper_id: str, user: dict = Depends(get_current_user)
+) -> CitationGraph:
+    try:
+        return CitationGraph(
+            **citation_service.get_citation_graph(paper_id, user.get("id") or None)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"OpenAlex failed: {exc}") from exc
+
+
+@router.get("/papers/{paper_id}/glossary", response_model=GlossaryResponse)
+def generate_glossary(
+    paper_id: str, user: dict = Depends(get_current_user)
+) -> GlossaryResponse:
+    try:
+        return GlossaryResponse(
+            **glossary_service.generate_glossary(paper_id, user.get("id") or None)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/papers/{paper_id}/brief", response_model=PaperBrief)

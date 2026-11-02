@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.errors import register_exception_handlers
-from backend.api.routes import auth, chat, documents, feed, papers, sessions, settings as settings_routes
+from backend.api.routes import auth, chat, documents, feed, notifications, papers, sessions, settings as settings_routes
 from backend.api.security import anonymous_access_allowed
 from backend.application.documents import recover_orphaned_documents
 from backend.config import env_file_path, repo_env_file_warning, settings
@@ -96,6 +96,7 @@ app.include_router(sessions.router)
 app.include_router(documents.router)
 app.include_router(papers.router)
 app.include_router(feed.router)
+app.include_router(notifications.router)
 app.include_router(settings_routes.router)
 app.include_router(chat.router)
 

@@ -623,6 +623,80 @@
         "title": "ChatStreamWarningEvent",
         "type": "object"
       },
+      "CitationGraph": {
+        "properties": {
+          "cited_by_count": {
+            "title": "Cited By Count",
+            "type": "integer"
+          },
+          "openalex_id": {
+            "title": "Openalex Id",
+            "type": "string"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "reference_count": {
+            "title": "Reference Count",
+            "type": "integer"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/CitationReference"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "source": {
+            "default": "openalex",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id",
+          "openalex_id",
+          "cited_by_count",
+          "reference_count"
+        ],
+        "title": "CitationGraph",
+        "type": "object"
+      },
+      "CitationReference": {
+        "properties": {
+          "doi": {
+            "default": "",
+            "title": "Doi",
+            "type": "string"
+          },
+          "openalex_id": {
+            "title": "Openalex Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "openalex_id",
+          "title"
+        ],
+        "title": "CitationReference",
+        "type": "object"
+      },
       "CollectionAskRequest": {
         "properties": {
           "question": {
@@ -1241,6 +1315,59 @@
         "title": "FeedRefreshResponse",
         "type": "object"
       },
+      "GlossaryResponse": {
+        "properties": {
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "terms": {
+            "items": {
+              "$ref": "#/components/schemas/GlossaryTerm"
+            },
+            "title": "Terms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "paper_id",
+          "generated_at"
+        ],
+        "title": "GlossaryResponse",
+        "type": "object"
+      },
+      "GlossaryTerm": {
+        "properties": {
+          "chunk_index": {
+            "default": 0,
+            "title": "Chunk Index",
+            "type": "integer"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "section": {
+            "default": "",
+            "title": "Section",
+            "type": "string"
+          },
+          "term": {
+            "title": "Term",
+            "type": "string"
+          }
+        },
+        "required": [
+          "term",
+          "definition"
+        ],
+        "title": "GlossaryTerm",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1482,6 +1609,46 @@
         "title": "LibraryDocumentSummary",
         "type": "object"
       },
+      "LibraryStats": {
+        "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Status",
+            "type": "object"
+          },
+          "collections": {
+            "default": 0,
+            "title": "Collections",
+            "type": "integer"
+          },
+          "feed_saved": {
+            "default": 0,
+            "title": "Feed Saved",
+            "type": "integer"
+          },
+          "notes": {
+            "default": 0,
+            "title": "Notes",
+            "type": "integer"
+          },
+          "questions": {
+            "default": 0,
+            "title": "Questions",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total"
+        ],
+        "title": "LibraryStats",
+        "type": "object"
+      },
       "MessageStatus": {
         "enum": [
           "complete",
@@ -1490,6 +1657,86 @@
         ],
         "title": "MessageStatus",
         "type": "string"
+      },
+      "NotificationDeliverRequest": {
+        "properties": {
+          "webhook_url": {
+            "title": "Webhook Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "webhook_url"
+        ],
+        "title": "NotificationDeliverRequest",
+        "type": "object"
+      },
+      "NotificationDeliverResponse": {
+        "properties": {
+          "delivered": {
+            "title": "Delivered",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pending",
+          "delivered"
+        ],
+        "title": "NotificationDeliverResponse",
+        "type": "object"
+      },
+      "NotificationSummary": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "body",
+          "status",
+          "created_at"
+        ],
+        "title": "NotificationSummary",
+        "type": "object"
       },
       "PaperBlock": {
         "description": "Reader 用的正文块，`id` 与 citations 的 block_ids 对齐。",
@@ -3682,6 +3929,148 @@
         "summary": "Health"
       }
     },
+    "/notifications": {
+      "get": {
+        "operationId": "list_notifications_notifications_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationSummary"
+                  },
+                  "title": "Response List Notifications Notifications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "List Notifications"
+      }
+    },
+    "/notifications/deliver": {
+      "post": {
+        "operationId": "deliver_notifications_notifications_deliver_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationDeliverRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationDeliverResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Deliver Notifications"
+      }
+    },
+    "/notifications/{notification_id}/read": {
+      "post": {
+        "operationId": "mark_notification_read_notifications__notification_id__read_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Mark Notification Read"
+      }
+    },
     "/papers": {
       "get": {
         "description": "文献库列表：按用户、状态、集合、标签与标题过滤。",
@@ -3861,6 +4250,73 @@
           }
         ],
         "summary": "Export Bibtex"
+      }
+    },
+    "/papers/export.csl.json": {
+      "get": {
+        "operationId": "export_csl_papers_export_csl_json_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Csl"
+      }
+    },
+    "/papers/export.md": {
+      "get": {
+        "operationId": "export_markdown_papers_export_md_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Markdown"
+      }
+    },
+    "/papers/stats": {
+      "get": {
+        "operationId": "get_library_stats_papers_stats_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Library Stats"
       }
     },
     "/papers/{paper_id}": {
@@ -4119,6 +4575,50 @@
         "summary": "Generate Brief"
       }
     },
+    "/papers/{paper_id}/citations": {
+      "get": {
+        "operationId": "get_citations_papers__paper_id__citations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "paper_id",
+            "required": true,
+            "schema": {
+              "title": "Paper Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationGraph"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Citations"
+      }
+    },
     "/papers/{paper_id}/explain": {
       "post": {
         "operationId": "explain_selection_papers__paper_id__explain_post",
@@ -4171,6 +4671,50 @@
           }
         ],
         "summary": "Explain Selection"
+      }
+    },
+    "/papers/{paper_id}/glossary": {
+      "get": {
+        "operationId": "generate_glossary_papers__paper_id__glossary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "paper_id",
+            "required": true,
+            "schema": {
+              "title": "Paper Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GlossaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Glossary"
       }
     },
     "/review/weekly": {

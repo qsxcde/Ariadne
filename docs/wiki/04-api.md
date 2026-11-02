@@ -54,10 +54,13 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | PATCH | `/sessions/{id}` | 改标题 / 置顶 | 200 | 401 / 404 |
 | DELETE | `/sessions/{id}` | 归档会话并删磁盘目录 | 200 | 401 |
 | GET | `/documents` | 文献库列表（跨会话，legacy） | 200 | 401 |
+| GET | `/papers/stats` | 文献库 Dashboard 统计 | 200 | 401 |
 | GET | `/papers` | 论文列表；支持 status / collection_id / tag / q / limit | 200 | 401 |
 | POST | `/papers` | 上传 PDF：创建论文 + reading session + 文档 + 摄取任务 | **202** | 401 / 409 / 413 / 422 |
 | GET | `/papers/{paper_id}` | 论文详情：文档、批注、集合、阅读进度 | 200 | 401 / 404 |
 | PATCH | `/papers/{paper_id}` | 编辑元数据与阅读状态/进度 | 200 | 401 / 404 / 422 |
+| GET | `/papers/{paper_id}/glossary` | 生成术语表 | 200 | 401 / 404 / 409 |
+| GET | `/papers/{paper_id}/citations` | OpenAlex 引用/被引关系 | 200 | 401 / 404 / 409 / 502 |
 | POST | `/papers/{paper_id}/brief` | 生成 5 分钟速读卡（带 chunk 引用） | 200 | 401 / 404 / 409 |
 | POST | `/papers/{paper_id}/explain` | 划词解释/翻译/简化 | 200 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
@@ -67,6 +70,11 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | PATCH | `/settings/alerts` | 更新提醒/Digest 设置 | 200 | 401 / 422 |
 | GET | `/digest` | 本周 Digest（周报 + 已保存 Feed） | 200 | 401 |
 | GET | `/papers/export.bib` | 导出文献库 BibTeX | 200 | 401 |
+| GET | `/papers/export.csl.json` | 导出 CSL JSON（Zotero 可导入） | 200 | 401 |
+| GET | `/papers/export.md` | 导出 Markdown（Notion/Obsidian 可导入） | 200 | 401 |
+| GET | `/notifications` | 站内通知列表 | 200 | 401 |
+| POST | `/notifications/{id}/read` | 标记已读 | 200 | 401 / 404 |
+| POST | `/notifications/deliver` | 通过 Webhook 投递未读通知 | 200 | 401 / 422 / 502 |
 | GET | `/subscriptions` | 订阅列表 | 200 | 401 |
 | POST | `/subscriptions` | 新建订阅 | 201 | 401 / 422 |
 | DELETE | `/subscriptions/{id}` | 删除订阅 | 200 | 401 / 404 |

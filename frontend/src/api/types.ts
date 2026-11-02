@@ -39,11 +39,17 @@ export type SubscriptionSummary = Schemas["SubscriptionSummary"];
 export type SubscriptionCreatePayload = Schemas["SubscriptionCreateRequest"];
 export type FeedItemSummary = Schemas["FeedItemSummary"];
 export type FeedRefreshResult = Schemas["FeedRefreshResponse"];
+export type NotificationSummary = Schemas["NotificationSummary"];
+export type NotificationDeliverResult = Schemas["NotificationDeliverResponse"];
 export type AlertSettings = Schemas["AlertSettings"];
 export type AlertSettingsUpdate = Schemas["AlertSettingsUpdate"];
 export type Digest = Schemas["DigestResponse"];
 export type ExplainRequest = Schemas["ExplainRequest"];
 export type ExplainResponse = Schemas["ExplainResponse"];
+export type GlossaryResponse = Schemas["GlossaryResponse"];
+export type CitationGraph = Schemas["CitationGraph"];
+export type GlossaryTerm = Schemas["GlossaryTerm"];
+export type LibraryStats = Schemas["LibraryStats"];
 export type PaperUpdatePayload = Schemas["PaperUpdateRequest"];
 export type PaperUploadResult = Schemas["PaperUploadResponse"];
 

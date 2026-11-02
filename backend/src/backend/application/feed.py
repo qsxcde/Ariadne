@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 
 import httpx
 
+from backend.application import notifications as notification_service
 from backend.core.model.records import FeedItemRecord, SubscriptionRecord
 from backend.storage.sqlite import feed as feed_repo
 from backend.storage.sqlite import papers as paper_repo
@@ -108,6 +109,13 @@ def refresh_feed(
             )
             created += 1
         subscription_repo.mark_checked(subscription["id"])
+    if created:
+        notification_service.create_notification(
+            user_id,
+            kind="feed",
+            title="Feed 有新论文",
+            body=f"本次抓取 {created} 条，去 Feed 查看并保存到队列。",
+        )
     return {"subscriptions": len(subscriptions), "items": created}
 
 
