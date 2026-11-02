@@ -93,5 +93,6 @@ def test_compare_papers_returns_uniform_fields():
     rows = compare_papers(collection["id"], "u1", [first], completer=fake)
 
     assert rows[0]["paper_id"] == first
-    assert rows[0]["metrics"] == "BLEU"
+    assert "BLEU" in rows[0]["metrics"]
+    assert "[Section:" in rows[0]["metrics"]
     assert rows[0]["limitations"] == "未提及"

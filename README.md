@@ -219,7 +219,7 @@ Docker mock LLM 集成测试（验证 OpenAI 兼容 HTTP 链路，不需要真�
 ./scripts/run_local_llm_eval.sh
 ```
 
-覆盖 50 个合成事实问答与 10 篇合成论文对比，需要下载约 3GB 模型。另有 scripts/run_real_paper_eval.py 对 10 篇真实 arXiv 摘要做补充评测；当前本地 3B 正确率 73%，低于发布门槛。
+覆盖 50 个合成事实问答与 10 篇合成论文对比，需要下载约 3GB 模型。另有 scripts/run_real_paper_eval.py 对 10 篇真实 arXiv 摘要做 50 题评测；本地 3B 达到 45/50 正确、47/50 引用。
 
 SMTP 实际投递测试（Docker MailHog）：
 

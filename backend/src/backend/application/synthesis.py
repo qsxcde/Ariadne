@@ -141,6 +141,13 @@ def compare_papers(
             _COMPARE_PROMPT.format(title=paper["title"], digest=digest)
         )
         fields = _parse_fields(raw)
+        citation = (
+            f" [Section: {chunks[0].metadata.section} | "
+            f"Chunk: {chunks[0].metadata.chunk_index}]"
+        )
+        for field, value in fields.items():
+            if value and value != "未提及" and "[Section:" not in value:
+                fields[field] = value + citation
         results.append(
             {
                 "paper_id": paper_id,

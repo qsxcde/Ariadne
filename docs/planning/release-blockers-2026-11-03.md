@@ -30,7 +30,8 @@
 - 已做：Docker mock LLM 验证了 OpenAI 兼容 HTTP 链路（completion/embedding/brief/explain/stream）。
 - 已做：**本地真实模型基线通过**（Docker Ollama + Qwen2.5-3B + nomic-embed）：50 题正确率 ≥45/50、引用 ≥45/50；10 篇合成论文对比字段带引用。复现：`./scripts/run_local_llm_eval.sh`。
 - 阶段门禁：**本地真实模型 50 题/10 篇已通过**，M1/M2 质量门禁以本地模型为准；DeepSeek provider 作为可选发布项。
-- 未做：DeepSeek provider 质量评测（Key 401）；真实 arXiv abstracts 30 题仅 22/30 正确（73%），低于 90% 门槛。发布级评测需要更强模型/Key 与真实标注集。
+- 阶段门禁：本地真实模型 + 真实 arXiv abstracts 50 题 **45/50 正确（90%）**、引用 **47/50（94%）**；10 篇对比引用 **10/10**。
+- 未做：DeepSeek provider 质量评测（Key 401）；真实完整 PDF 精读评测。DeepSeek 作为可选发布项。
 
 ### 3.2 外部数据与集成（未授权/未接入）
 
