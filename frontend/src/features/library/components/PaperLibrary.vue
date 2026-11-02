@@ -10,6 +10,7 @@ const emit = defineEmits<{
   open: [paperId: string];
   today: [];
   synthesis: [];
+  feed: [];
   settings: [];
 }>();
 
@@ -98,6 +99,9 @@ onMounted(() => {
         </button>
         <button type="button" class="paper-library__text-button" @click="emit('synthesis')">
           综合
+        </button>
+        <button type="button" class="paper-library__text-button" @click="emit('feed')">
+          跟进
         </button>
         <button type="button" class="paper-library__text-button" @click="emit('settings')">
           设置

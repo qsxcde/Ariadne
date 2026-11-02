@@ -63,6 +63,13 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
 | POST | `/papers/{paper_id}/annotations` | 新建高亮/笔记/问题 | 201 | 401 / 404 / 422 |
 | PATCH / DELETE | `/annotations/{annotation_id}` | 编辑/删除批注 | 200 | 401 / 404 |
+| GET | `/subscriptions` | 订阅列表 | 200 | 401 |
+| POST | `/subscriptions` | 新建订阅 | 201 | 401 / 422 |
+| DELETE | `/subscriptions/{id}` | 删除订阅 | 200 | 401 / 404 |
+| GET | `/feed` | Feed 列表；按 new/saved/ignored 过滤 | 200 | 401 |
+| POST | `/feed/refresh` | 从 arXiv 抓取并去重 | 200 | 401 / 502 |
+| POST | `/feed/{id}/save` | 存入阅读队列并创建 paper | 200 | 401 / 404 |
+| POST | `/feed/{id}/ignore` | 忽略 | 200 | 401 / 404 |
 | GET | `/review/weekly` | 本周阅读/笔记/开放问题汇总 | 200 | 401 |
 | POST | `/collections/{collection_id}/ask` | 集合内跨论文问答 | 200 | 401 / 404 / 422 |
 | POST | `/collections/{collection_id}/compare` | 2–5 篇论文结构化对比 | 200 | 401 / 404 / 422 |

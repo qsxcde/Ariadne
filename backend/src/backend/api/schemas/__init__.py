@@ -20,6 +20,12 @@ from backend.api.schemas.document import (
     SourceBlockBox,
     SourceChunkResponse,
 )
+from backend.api.schemas.feed import (
+    FeedItemSummary,
+    FeedRefreshResponse,
+    SubscriptionCreateRequest,
+    SubscriptionSummary,
+)
 from backend.api.schemas.paper import (
     AnnotationCreateRequest,
     AnnotationSummary,
@@ -78,6 +84,8 @@ __all__ = [
     "DocumentSummary",
     "ExplainRequest",
     "ExplainResponse",
+    "FeedItemSummary",
+    "FeedRefreshResponse",
     "LibraryDocumentSummary",
     "IndexSnapshotSummary",
     "JobSummary",
@@ -97,6 +105,8 @@ __all__ = [
     "SessionSummary",
     "SessionUpdateRequest",
     "SourceBlockBox",
+    "SubscriptionCreateRequest",
+    "SubscriptionSummary",
     "SourceChunkResponse",
     "UserResponse",
     "WeeklyReview",

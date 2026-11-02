@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 8
+CURRENT_SCHEMA_VERSION = 9
 
 _init_lock = threading.RLock()
 
@@ -68,6 +68,8 @@ def _migrate_schema(conn, from_version: int) -> None:
                 conn.execute(f"ALTER TABLE messages ADD COLUMN {column} {ddl_type} NULL")
     if from_version < 8:
         _migrate_add_papers(conn)
+    if from_version < 9:
+        _migrate_add_feed(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -445,6 +447,49 @@ def _migrate_add_papers(conn) -> None:
 
 
 
+def _migrate_add_feed(conn) -> None:
+    """Add subscriptions and feed items (v9)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS subscriptions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          kind TEXT NOT NULL,
+          value TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          last_checked_at TEXT NULL,
+          CHECK (kind IN ('keyword', 'author', 'venue', 'institution'))
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_kind_value
+          ON subscriptions(user_id, kind, value);
+        CREATE INDEX IF NOT EXISTS idx_subscriptions_user_active
+          ON subscriptions(user_id, is_active, created_at);
+
+        CREATE TABLE IF NOT EXISTS feed_items (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          source TEXT NOT NULL,
+          external_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          authors_json TEXT NULL,
+          abstract TEXT NULL,
+          url TEXT NULL,
+          published_at TEXT NULL,
+          paper_id TEXT NULL REFERENCES papers(id) ON DELETE SET NULL,
+          status TEXT NOT NULL DEFAULT 'new',
+          relevance_reason TEXT NULL,
+          created_at TEXT NOT NULL,
+          CHECK (status IN ('new', 'saved', 'ignored'))
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_feed_items_user_source_external
+          ON feed_items(user_id, source, external_id);
+        CREATE INDEX IF NOT EXISTS idx_feed_items_user_status
+          ON feed_items(user_id, status, created_at DESC);
+        """
+    )
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -626,6 +671,34 @@ def _create_initial_schema(conn) -> None:
           tag TEXT NOT NULL,
           PRIMARY KEY (paper_id, tag)
         );
+
+        CREATE TABLE IF NOT EXISTS subscriptions (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          kind TEXT NOT NULL,
+          value TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          created_at TEXT NOT NULL,
+          last_checked_at TEXT NULL,
+          CHECK (kind IN ('keyword', 'author', 'venue', 'institution'))
+        );
+
+        CREATE TABLE IF NOT EXISTS feed_items (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          source TEXT NOT NULL,
+          external_id TEXT NOT NULL,
+          title TEXT NOT NULL,
+          authors_json TEXT NULL,
+          abstract TEXT NULL,
+          url TEXT NULL,
+          published_at TEXT NULL,
+          paper_id TEXT NULL REFERENCES papers(id) ON DELETE SET NULL,
+          status TEXT NOT NULL DEFAULT 'new',
+          relevance_reason TEXT NULL,
+          created_at TEXT NOT NULL,
+          CHECK (status IN ('new', 'saved', 'ignored'))
+        );
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_papers_user_status ON papers(user_id, reading_status, updated_at DESC)")
@@ -649,3 +722,7 @@ def _create_initial_schema(conn) -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_annotations_chunk ON annotations(chunk_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_collection_papers_paper ON collection_papers(paper_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_paper_tags_tag ON paper_tags(tag)")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_kind_value ON subscriptions(user_id, kind, value)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_subscriptions_user_active ON subscriptions(user_id, is_active, created_at)")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_feed_items_user_source_external ON feed_items(user_id, source, external_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_feed_items_user_status ON feed_items(user_id, status, created_at DESC)")

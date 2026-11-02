@@ -67,6 +67,32 @@ class SessionRecord(TypedDict):
     is_pinned: int
 
 
+class SubscriptionRecord(TypedDict):
+    id: str
+    user_id: str | None
+    kind: str
+    value: str
+    is_active: int
+    created_at: str
+    last_checked_at: str | None
+
+
+class FeedItemRecord(TypedDict):
+    id: str
+    user_id: str | None
+    source: str
+    external_id: str
+    title: str
+    authors_json: str | None
+    abstract: str | None
+    url: str | None
+    published_at: str | None
+    paper_id: str | None
+    status: str
+    relevance_reason: str | None
+    created_at: str
+
+
 class CollectionRecord(TypedDict):
     id: str
     user_id: str | None
