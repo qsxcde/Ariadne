@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
 import { usePapers } from "../../../composables/usePapers";
+import { exportBibtex } from "../../../api/papers";
 import type { PaperSummary } from "../../../api";
 import { formatUpdatedAt } from "../../../utils/format";
 
@@ -80,6 +81,21 @@ async function handleFiles(event: Event): Promise<void> {
   }
 }
 
+async function downloadBibtex(): Promise<void> {
+  try {
+    const bib = await exportBibtex();
+    const blob = new Blob([bib], { type: "application/x-bibtex;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "scipal-library.bib";
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "导出 BibTeX 失败");
+  }
+}
+
 onMounted(() => {
   void loadLibrary();
 });
@@ -102,6 +118,9 @@ onMounted(() => {
         </button>
         <button type="button" class="paper-library__text-button" @click="emit('feed')">
           跟进
+        </button>
+        <button type="button" class="paper-library__text-button" @click="downloadBibtex">
+          导出 BibTeX
         </button>
         <button type="button" class="paper-library__text-button" @click="emit('settings')">
           设置

@@ -1,6 +1,6 @@
 # 03 数据模型与存储
 
-权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 9`）。
+权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 10`）。
 仓储实现：`backend/src/backend/storage/sqlite/*.py`（纯 SQL，无 ORM）。
 
 ## 1. 表总览
@@ -14,6 +14,7 @@
 | `paper_tags` | 标签 | 论文标签 |
 | `subscriptions` | 订阅 | 关键词/作者/venue/机构 |
 | `feed_items` | Feed | 发现的新论文、推荐理由与保存/忽略状态 |
+| `alert_settings` | 提醒设置 | 新论文/版本/引用提醒与 Digest 频率 |
 | `sessions` | 会话 | 标题、置顶、归档、归属用户、关联论文 |
 | `documents` | 文档 | PDF 元数据、状态机、解析产物路径、论文归属 |
 | `chunks` | 分块 | 检索事实表，正文 + 结构化元数据 |
@@ -373,6 +374,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v7 | `messages.model` / `prompt_tokens` / `completion_tokens` |
 | v8 | 新增 `papers` / `annotations` / `collections` / `collection_papers` / `paper_tags`；documents/chunks/jobs/sessions 增加 `paper_id`；documents 增加 `file_hash`；旧文档回填为 `paper_<document_id>` |
 | v9 | 新增 `subscriptions` / `feed_items`（M3 领域跟进） |
+| v10 | 新增 `alert_settings`（M4 提醒与 Digest 偏好） |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

@@ -1,6 +1,7 @@
 """Paper library, annotations and collections endpoints."""
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi.responses import PlainTextResponse
 
 from backend.api.schemas import (
     AnnotationCreateRequest,
@@ -28,6 +29,7 @@ from backend.application import annotations as annotation_service
 from backend.application import brief as brief_service
 from backend.application import collections as collection_service
 from backend.application import explain as explain_service
+from backend.application import export as export_service
 from backend.application import papers as paper_service
 from backend.application import review as review_service
 from backend.application import synthesis as synthesis_service
@@ -104,6 +106,14 @@ def upload_paper(
         job_id=result["job"]["id"],
         document_status=result["document"]["status"],
         job_status=result["job"]["status"],
+    )
+
+
+@router.get("/papers/export.bib", response_class=PlainTextResponse)
+def export_bibtex(user: dict = Depends(get_current_user)) -> PlainTextResponse:
+    return PlainTextResponse(
+        export_service.export_bibtex(user.get("id") or None),
+        media_type="application/x-bibtex",
     )
 
 

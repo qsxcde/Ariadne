@@ -67,6 +67,17 @@ class SessionRecord(TypedDict):
     is_pinned: int
 
 
+class AlertSettingsRecord(TypedDict):
+    id: str
+    user_id: str | None
+    new_paper: int
+    new_version: int
+    new_citation: int
+    digest_enabled: int
+    digest_frequency: str
+    updated_at: str
+
+
 class SubscriptionRecord(TypedDict):
     id: str
     user_id: str | None

@@ -1,4 +1,4 @@
-import { jsonRequest, requestForm, requestJson } from "./client";
+import { jsonRequest, requestForm, requestJson, requestText } from "./client";
 import type {
   ExplainResponse,
   PaperBrief,
@@ -43,6 +43,10 @@ export function uploadPaper(file: File): Promise<PaperUploadResult> {
   const body = new FormData();
   body.append("file", file);
   return requestForm<PaperUploadResult>("/papers", "上传论文失败", body);
+}
+
+export function exportBibtex(): Promise<string> {
+  return requestText("/papers/export.bib", "导出 BibTeX 失败");
 }
 
 export function getWeeklyReview(): Promise<WeeklyReview> {

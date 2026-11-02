@@ -169,6 +169,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Digest */
+        get: operations["get_digest_digest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -295,6 +312,23 @@ export interface paths {
          * @description 上传 PDF：创建论文、reading session、文档与摄取任务。
          */
         post: operations["upload_paper_papers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/export.bib": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Bibtex */
+        get: operations["export_bibtex_papers_export_bib_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -560,6 +594,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/settings/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Alert Settings */
+        get: operations["get_alert_settings_settings_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Alert Settings */
+        patch: operations["update_alert_settings_settings_alerts_patch"];
+        trace?: never;
+    };
     "/subscriptions": {
         parameters: {
             query?: never;
@@ -599,6 +651,50 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AlertSettings */
+        AlertSettings: {
+            /**
+             * Digest Enabled
+             * @default true
+             */
+            digest_enabled: boolean;
+            /**
+             * Digest Frequency
+             * @default weekly
+             * @enum {string}
+             */
+            digest_frequency: "daily" | "weekly" | "off";
+            /**
+             * New Citation
+             * @default false
+             */
+            new_citation: boolean;
+            /**
+             * New Paper
+             * @default true
+             */
+            new_paper: boolean;
+            /**
+             * New Version
+             * @default true
+             */
+            new_version: boolean;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** AlertSettingsUpdate */
+        AlertSettingsUpdate: {
+            /** Digest Enabled */
+            digest_enabled?: boolean | null;
+            /** Digest Frequency */
+            digest_frequency?: ("daily" | "weekly" | "off") | null;
+            /** New Citation */
+            new_citation?: boolean | null;
+            /** New Paper */
+            new_paper?: boolean | null;
+            /** New Version */
+            new_version?: boolean | null;
+        };
         /** AnnotationCreateRequest */
         AnnotationCreateRequest: {
             /** Bbox */
@@ -827,6 +923,28 @@ export interface components {
             name?: string | null;
             /** Sort Order */
             sort_order?: number | null;
+        };
+        /** DigestResponse */
+        DigestResponse: {
+            /** Notes */
+            notes: number;
+            /** Open Questions */
+            open_questions: number;
+            /** Queued Papers */
+            queued_papers: number;
+            /** Read Paper Ids */
+            read_paper_ids?: string[];
+            /** Read Papers */
+            read_papers: number;
+            /** Reading Papers */
+            reading_papers: number;
+            /**
+             * Saved Feed Items
+             * @default 0
+             */
+            saved_feed_items: number;
+            /** Week Start */
+            week_start: string;
         };
         /** DocumentContentResponse */
         DocumentContentResponse: {
@@ -1906,6 +2024,26 @@ export interface operations {
             };
         };
     };
+    get_digest_digest_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DigestResponse"];
+                };
+            };
+        };
+    };
     list_documents_documents_get: {
         parameters: {
             query?: never;
@@ -2123,6 +2261,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_bibtex_papers_export_bib_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
                 };
             };
         };
@@ -2674,6 +2832,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_alert_settings_settings_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSettings"];
+                };
+            };
+        };
+    };
+    update_alert_settings_settings_alerts_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertSettings"];
                 };
             };
             /** @description Validation Error */

@@ -63,6 +63,10 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
 | POST | `/papers/{paper_id}/annotations` | 新建高亮/笔记/问题 | 201 | 401 / 404 / 422 |
 | PATCH / DELETE | `/annotations/{annotation_id}` | 编辑/删除批注 | 200 | 401 / 404 |
+| GET | `/settings/alerts` | 提醒/Digest 设置 | 200 | 401 |
+| PATCH | `/settings/alerts` | 更新提醒/Digest 设置 | 200 | 401 / 422 |
+| GET | `/digest` | 本周 Digest（周报 + 已保存 Feed） | 200 | 401 |
+| GET | `/papers/export.bib` | 导出文献库 BibTeX | 200 | 401 |
 | GET | `/subscriptions` | 订阅列表 | 200 | 401 |
 | POST | `/subscriptions` | 新建订阅 | 201 | 401 / 422 |
 | DELETE | `/subscriptions/{id}` | 删除订阅 | 200 | 401 / 404 |

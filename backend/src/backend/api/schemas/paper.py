@@ -104,6 +104,27 @@ class WeeklyReview(BaseModel):
     read_paper_ids: list[str] = Field(default_factory=list)
 
 
+class AlertSettings(BaseModel):
+    new_paper: bool = True
+    new_version: bool = True
+    new_citation: bool = False
+    digest_enabled: bool = True
+    digest_frequency: Literal["daily", "weekly", "off"] = "weekly"
+    updated_at: str
+
+
+class AlertSettingsUpdate(BaseModel):
+    new_paper: bool | None = None
+    new_version: bool | None = None
+    new_citation: bool | None = None
+    digest_enabled: bool | None = None
+    digest_frequency: Literal["daily", "weekly", "off"] | None = None
+
+
+class DigestResponse(WeeklyReview):
+    saved_feed_items: int = 0
+
+
 class CollectionAskRequest(BaseModel):
     question: str
 

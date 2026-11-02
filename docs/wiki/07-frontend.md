@@ -187,7 +187,7 @@ handleUpload(file)
 | `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
-| `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明 |
+| `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
 | `/` | `ChatWorkspace` | 对话（legacy 主入口） |
 
 状态与 API：
@@ -199,7 +199,8 @@ handleUpload(file)
 - 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
 - Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题来自 GET /review/weekly。
-- 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV。
+- 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV；文献库导出 BibTeX。
+- 设置：提醒开关与 Digest 频率写入 /settings/alerts；当前只保存本地偏好，邮件/推送投递尚未接入。
 
 ## 9. 本地开发
 

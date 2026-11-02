@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 9
+CURRENT_SCHEMA_VERSION = 10
 
 _init_lock = threading.RLock()
 
@@ -70,6 +70,8 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_papers(conn)
     if from_version < 9:
         _migrate_add_feed(conn)
+    if from_version < 10:
+        _migrate_add_alert_settings(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -490,6 +492,25 @@ def _migrate_add_feed(conn) -> None:
     )
 
 
+def _migrate_add_alert_settings(conn) -> None:
+    """Add local alert/digest preferences (v10)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS alert_settings (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL UNIQUE,
+          new_paper INTEGER NOT NULL DEFAULT 1,
+          new_version INTEGER NOT NULL DEFAULT 1,
+          new_citation INTEGER NOT NULL DEFAULT 0,
+          digest_enabled INTEGER NOT NULL DEFAULT 1,
+          digest_frequency TEXT NOT NULL DEFAULT 'weekly',
+          updated_at TEXT NOT NULL,
+          CHECK (digest_frequency IN ('daily', 'weekly', 'off'))
+        );
+        """
+    )
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -698,6 +719,18 @@ def _create_initial_schema(conn) -> None:
           relevance_reason TEXT NULL,
           created_at TEXT NOT NULL,
           CHECK (status IN ('new', 'saved', 'ignored'))
+        );
+
+        CREATE TABLE IF NOT EXISTS alert_settings (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL UNIQUE,
+          new_paper INTEGER NOT NULL DEFAULT 1,
+          new_version INTEGER NOT NULL DEFAULT 1,
+          new_citation INTEGER NOT NULL DEFAULT 0,
+          digest_enabled INTEGER NOT NULL DEFAULT 1,
+          digest_frequency TEXT NOT NULL DEFAULT 'weekly',
+          updated_at TEXT NOT NULL,
+          CHECK (digest_frequency IN ('daily', 'weekly', 'off'))
         );
         """
     )

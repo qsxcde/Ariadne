@@ -183,7 +183,7 @@ uv run --project backend pytest -m unit -v
 uv run --project backend pytest -m integration -v
 ```
 
-当前覆盖 153 个后端用例（另有 3 个 Docker mock LLM 用例默认 skip，需运行 scripts/run_mock_llm_tests.sh）：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
+当前覆盖 156 个后端用例（另有 3 个 Docker mock LLM 用例默认 skip，需运行 scripts/run_mock_llm_tests.sh）：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
 
 前端：
 
@@ -210,7 +210,7 @@ CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + 
 
 | 关卡 | 命令 | 结果 |
 |---|---|---|
-| 后端测试 | `uv run --project backend pytest` | 153 passed, 3 skipped |
+| 后端测试 | `uv run --project backend pytest` | 156 passed, 3 skipped |
 | 后端 lint | `uv run --project backend ruff check backend/src tests` | All checks passed |
 | 后端类型检查 | `uv run --project backend mypy --config-file backend/pyproject.toml backend/src/backend/storage backend/src/backend/core backend/src/backend/application` | 30 source files, no issues |
 | 前端 lint | `cd frontend && npm run lint` | 通过 |
@@ -280,6 +280,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | POST | `/collections/{collection_id}/compare` | Compare Collection Papers |
 | DELETE | `/collections/{collection_id}/papers/{paper_id}` | Remove Paper From Collection |
 | PUT | `/collections/{collection_id}/papers/{paper_id}` | Add Paper To Collection |
+| GET | `/digest` | Get Digest |
 | GET | `/documents` | 跨会话的文献库列表（已归档会话不计入）。 |
 | GET | `/feed` | List Feed |
 | POST | `/feed/refresh` | Refresh Feed |
@@ -288,6 +289,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/health` | 健康检查：进程存活与后台任务线程状态。 |
 | GET | `/papers` | 文献库列表：按用户、状态、集合、标签与标题过滤。 |
 | POST | `/papers` | 上传 PDF：创建论文、reading session、文档与摄取任务。 |
+| GET | `/papers/export.bib` | Export Bibtex |
 | GET | `/papers/{paper_id}` | Get Paper |
 | PATCH | `/papers/{paper_id}` | Update Paper |
 | GET | `/papers/{paper_id}/annotations` | List Annotations |
@@ -306,6 +308,8 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/sessions/{session_id}/documents/{document_id}/content` | 返回解析后的结构化正文，供阅读器渲染与引用定位。 |
 | GET | `/sessions/{session_id}/documents/{document_id}/file` | 下载/内联渲染原始 PDF（前端阅读器用）。 |
 | POST | `/sessions/{session_id}/messages` | 发送提问，以 text/event-stream 流式返回回答。 |
+| GET | `/settings/alerts` | Get Alert Settings |
+| PATCH | `/settings/alerts` | Update Alert Settings |
 | GET | `/subscriptions` | List Subscriptions |
 | POST | `/subscriptions` | Create Subscription |
 | DELETE | `/subscriptions/{subscription_id}` | Delete Subscription |

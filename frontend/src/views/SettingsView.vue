@@ -1,7 +1,46 @@
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
+import { getAlertSettings, updateAlertSettings } from "../api/settings";
+import type { AlertSettings } from "../api";
+
 defineEmits<{
   back: [];
 }>();
+
+const alertSettings = ref<AlertSettings | null>(null);
+const isSaving = ref(false);
+const errorMessage = ref("");
+
+async function load(): Promise<void> {
+  try {
+    alertSettings.value = await getAlertSettings();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "读取提醒设置失败";
+  }
+}
+
+async function save(): Promise<void> {
+  if (!alertSettings.value) return;
+  isSaving.value = true;
+  errorMessage.value = "";
+  try {
+    alertSettings.value = await updateAlertSettings({
+      new_paper: alertSettings.value.new_paper,
+      new_version: alertSettings.value.new_version,
+      new_citation: alertSettings.value.new_citation,
+      digest_enabled: alertSettings.value.digest_enabled,
+      digest_frequency: alertSettings.value.digest_frequency,
+    });
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : "保存提醒设置失败";
+  } finally {
+    isSaving.value = false;
+  }
+}
+
+onMounted(() => {
+  void load();
+});
 </script>
 
 <template>
@@ -28,6 +67,39 @@ defineEmits<{
         <p>LLM 与 Embedding 由后端环境变量配置，前端不保存 API Key。</p>
         <p>需要在 backend/.env 中设置 DEEPSEEK_API_KEY；Embedding 可走本地模型或 OpenAI 兼容服务。</p>
         <p class="settings-card__hint">修改配置后重启后端生效。</p>
+      </article>
+
+      <article v-if="alertSettings" class="settings-card">
+        <h2>提醒与 Digest</h2>
+        <label class="settings-toggle">
+          <input v-model="alertSettings.new_paper" type="checkbox" />
+          新论文提醒
+        </label>
+        <label class="settings-toggle">
+          <input v-model="alertSettings.new_version" type="checkbox" />
+          新版本提醒
+        </label>
+        <label class="settings-toggle">
+          <input v-model="alertSettings.new_citation" type="checkbox" />
+          新引用提醒
+        </label>
+        <label class="settings-toggle">
+          <input v-model="alertSettings.digest_enabled" type="checkbox" />
+          启用 Digest
+        </label>
+        <label class="settings-toggle">
+          Digest 频率
+          <select v-model="alertSettings.digest_frequency" class="settings-select">
+            <option value="daily">每日</option>
+            <option value="weekly">每周</option>
+            <option value="off">关闭</option>
+          </select>
+        </label>
+        <p v-if="errorMessage" class="settings-error">{{ errorMessage }}</p>
+        <button type="button" class="settings-save" :disabled="isSaving" @click="save">
+          {{ isSaving ? "保存中…" : "保存提醒设置" }}
+        </button>
+        <p class="settings-card__hint">当前为本地设置；邮件/推送投递尚未接入。</p>
       </article>
 
       <article class="settings-card">
@@ -124,6 +196,40 @@ defineEmits<{
   color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.settings-select {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.settings-save {
+  border: 1px solid var(--color-accent);
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.settings-error {
+  color: var(--color-danger);
+  font-size: 12px;
 }
 
 .settings-card__hint {

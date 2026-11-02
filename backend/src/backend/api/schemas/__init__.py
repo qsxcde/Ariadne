@@ -27,6 +27,8 @@ from backend.api.schemas.feed import (
     SubscriptionSummary,
 )
 from backend.api.schemas.paper import (
+    AlertSettings,
+    AlertSettingsUpdate,
     AnnotationCreateRequest,
     AnnotationSummary,
     AnnotationUpdateRequest,
@@ -35,6 +37,7 @@ from backend.api.schemas.paper import (
     CollectionAskRequest,
     CollectionAskResponse,
     CollectionCompareRequest,
+    DigestResponse,
     CollectionUpdateRequest,
     ExplainRequest,
     ExplainResponse,
@@ -62,6 +65,8 @@ from backend.api.schemas.session import (
 __all__ = [
     "AnnotationCreateRequest",
     "AnnotationSummary",
+    "AlertSettings",
+    "AlertSettingsUpdate",
     "AnnotationUpdateRequest",
     "AuthRequest",
     "AuthResponse",
@@ -79,6 +84,7 @@ __all__ = [
     "CollectionCreateRequest",
     "CollectionSummary",
     "CollectionUpdateRequest",
+    "DigestResponse",
     "DocumentContentResponse",
     "DocumentIntakeResponse",
     "DocumentSummary",

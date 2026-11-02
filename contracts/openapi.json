@@ -1,6 +1,115 @@
 {
   "components": {
     "schemas": {
+      "AlertSettings": {
+        "properties": {
+          "digest_enabled": {
+            "default": true,
+            "title": "Digest Enabled",
+            "type": "boolean"
+          },
+          "digest_frequency": {
+            "default": "weekly",
+            "enum": [
+              "daily",
+              "weekly",
+              "off"
+            ],
+            "title": "Digest Frequency",
+            "type": "string"
+          },
+          "new_citation": {
+            "default": false,
+            "title": "New Citation",
+            "type": "boolean"
+          },
+          "new_paper": {
+            "default": true,
+            "title": "New Paper",
+            "type": "boolean"
+          },
+          "new_version": {
+            "default": true,
+            "title": "New Version",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "updated_at"
+        ],
+        "title": "AlertSettings",
+        "type": "object"
+      },
+      "AlertSettingsUpdate": {
+        "properties": {
+          "digest_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest Enabled"
+          },
+          "digest_frequency": {
+            "anyOf": [
+              {
+                "enum": [
+                  "daily",
+                  "weekly",
+                  "off"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest Frequency"
+          },
+          "new_citation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Citation"
+          },
+          "new_paper": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Paper"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          }
+        },
+        "title": "AlertSettingsUpdate",
+        "type": "object"
+      },
       "AnnotationCreateRequest": {
         "properties": {
           "bbox": {
@@ -676,6 +785,56 @@
           }
         },
         "title": "CollectionUpdateRequest",
+        "type": "object"
+      },
+      "DigestResponse": {
+        "properties": {
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "open_questions": {
+            "title": "Open Questions",
+            "type": "integer"
+          },
+          "queued_papers": {
+            "title": "Queued Papers",
+            "type": "integer"
+          },
+          "read_paper_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Read Paper Ids",
+            "type": "array"
+          },
+          "read_papers": {
+            "title": "Read Papers",
+            "type": "integer"
+          },
+          "reading_papers": {
+            "title": "Reading Papers",
+            "type": "integer"
+          },
+          "saved_feed_items": {
+            "default": 0,
+            "title": "Saved Feed Items",
+            "type": "integer"
+          },
+          "week_start": {
+            "title": "Week Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_start",
+          "read_papers",
+          "reading_papers",
+          "queued_papers",
+          "notes",
+          "open_questions"
+        ],
+        "title": "DigestResponse",
         "type": "object"
       },
       "DocumentContentResponse": {
@@ -3289,6 +3448,29 @@
         "summary": "Add Paper To Collection"
       }
     },
+    "/digest": {
+      "get": {
+        "operationId": "get_digest_digest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DigestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Digest"
+      }
+    },
     "/documents": {
       "get": {
         "description": "跨会话的文献库列表（已归档会话不计入）。",
@@ -3656,6 +3838,29 @@
           }
         ],
         "summary": "Upload Paper"
+      }
+    },
+    "/papers/export.bib": {
+      "get": {
+        "operationId": "export_bibtex_papers_export_bib_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Export Bibtex"
       }
     },
     "/papers/{paper_id}": {
@@ -4515,6 +4720,70 @@
           }
         ],
         "summary": "Chat"
+      }
+    },
+    "/settings/alerts": {
+      "get": {
+        "operationId": "get_alert_settings_settings_alerts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Alert Settings"
+      },
+      "patch": {
+        "operationId": "update_alert_settings_settings_alerts_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Alert Settings"
       }
     },
     "/subscriptions": {

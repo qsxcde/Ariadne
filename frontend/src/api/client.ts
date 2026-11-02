@@ -99,6 +99,22 @@ export function jsonRequest(payload: unknown): JsonRequestPayload {
   };
 }
 
+/** 读取纯文本响应（BibTeX 等），带鉴权头。 */
+export async function requestText(
+  path: string,
+  fallback: string,
+  options: RequestOptions = {},
+): Promise<string> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: buildHeaders(options),
+  });
+  if (!res.ok) {
+    throw await readError(res, fallback);
+  }
+  return res.text();
+}
+
 /** 下载二进制内容（PDF 等），带鉴权头。 */
 export async function fetchBinary(path: string, fallback: string): Promise<ArrayBuffer> {
   const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
