@@ -2,9 +2,15 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
+import PaperMetadataDialog from "./PaperMetadataDialog.vue";
 import PaperReader from "./PaperReader.vue";
 import { usePapers } from "../../../composables/usePapers";
-import { explainSelection, getCitations, getGlossary } from "../../../api/papers";
+import {
+  explainSelection,
+  getCitations,
+  getGlossary,
+  recordReadingTime,
+} from "../../../api/papers";
 import type {
   AnnotationSummary,
   CitationGraph,
@@ -38,12 +44,58 @@ const {
 const noteDraft = ref("");
 const glossary = ref<GlossaryResponse | null>(null);
 const citations = ref<CitationGraph | null>(null);
+const isMetadataDialogOpen = ref(false);
 const isGlossaryLoading = ref(false);
 const isCitationsLoading = ref(false);
 const statusSaving = ref(false);
 const readerRef = ref<InstanceType<typeof PaperReader> | null>(null);
 let progressTimer: number | null = null;
 let pendingProgress: number | null = null;
+
+const READING_TICK_MS = 5000;
+const READING_FLUSH_SECONDS = 60;
+let readingTimer: number | null = null;
+let readingPaperId = "";
+let pendingReadingSeconds = 0;
+
+function flushReadingTime(): void {
+  const seconds = Math.min(Math.floor(pendingReadingSeconds), 3600);
+  pendingReadingSeconds = 0;
+  if (seconds < 5 || !readingPaperId) {
+    return;
+  }
+  void recordReadingTime(readingPaperId, seconds).catch(() => undefined);
+}
+
+function startReadingClock(): void {
+  readingPaperId = props.paperId;
+  if (readingTimer !== null) {
+    return;
+  }
+  readingTimer = window.setInterval(() => {
+    if (window.document.visibilityState !== "visible") {
+      return;
+    }
+    pendingReadingSeconds += READING_TICK_MS / 1000;
+    if (pendingReadingSeconds >= READING_FLUSH_SECONDS) {
+      flushReadingTime();
+    }
+  }, READING_TICK_MS);
+}
+
+function stopReadingClock(): void {
+  if (readingTimer !== null) {
+    window.clearInterval(readingTimer);
+    readingTimer = null;
+  }
+  flushReadingTime();
+}
+
+function handleVisibilityChange(): void {
+  if (window.document.visibilityState !== "visible") {
+    flushReadingTime();
+  }
+}
 
 const documentItem = computed<PaperDocumentSummary | null>(
   () => (currentPaper.value?.documents ?? [])[0] ?? null,
@@ -101,6 +153,10 @@ async function generateGlossary(): Promise<void> {
   } finally {
     isGlossaryLoading.value = false;
   }
+}
+
+async function handleMetadataSaved(): Promise<void> {
+  await loadPaper(props.paperId);
 }
 
 function jumpToSection(title: string): void {
@@ -218,16 +274,22 @@ async function deleteNote(annotation: AnnotationSummary): Promise<void> {
 
 onMounted(async () => {
   await refresh();
+  startReadingClock();
+  window.document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 watch(
   () => props.paperId,
   async () => {
+    stopReadingClock();
     await refresh();
+    startReadingClock();
   },
 );
 
 onBeforeUnmount(() => {
+  stopReadingClock();
+  window.document.removeEventListener("visibilitychange", handleVisibilityChange);
   if (progressTimer !== null) {
     window.clearTimeout(progressTimer);
   }
@@ -262,11 +324,26 @@ onBeforeUnmount(() => {
             {{ option.label }}
           </option>
         </select>
+        <button
+          type="button"
+          class="paper-workspace__refresh"
+          :disabled="!currentPaper"
+          @click="isMetadataDialogOpen = true"
+        >
+          编辑信息
+        </button>
         <button type="button" class="paper-workspace__refresh" :disabled="isLoading" @click="refresh">
           <Refresh class="paper-workspace__icon" /> 刷新
         </button>
       </div>
     </header>
+
+    <PaperMetadataDialog
+      :visible="isMetadataDialogOpen"
+      :paper="currentPaper"
+      @close="isMetadataDialogOpen = false"
+      @saved="handleMetadataSaved"
+    />
 
     <p v-if="errorMessage" class="paper-workspace__error">{{ errorMessage }}</p>
 

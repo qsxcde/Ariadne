@@ -6,6 +6,7 @@ from typing import Any
 from backend.storage.sqlite import collections as collection_repo
 from backend.storage.sqlite import feed as feed_repo
 from backend.storage.sqlite import papers as paper_repo
+from backend.storage.sqlite import reading as reading_repo
 from backend.storage.sqlite.connection import connect
 
 
@@ -25,6 +26,7 @@ def library_stats(user_id: str | None) -> dict[str, Any]:
         counts = {str(row["type"]): int(row["total"]) for row in rows}
         notes = counts.get("note", 0) + counts.get("highlight", 0)
         questions = counts.get("question", 0)
+    reading = reading_repo.summarize(user_id)
     return {
         "total": len(papers),
         "by_status": {status: statuses.get(status, 0) for status in ("inbox", "queued", "skimming", "reading", "read", "archived")},
@@ -32,4 +34,6 @@ def library_stats(user_id: str | None) -> dict[str, Any]:
         "questions": questions,
         "collections": len(collection_repo.list_collections(user_id)),
         "feed_saved": len(feed_repo.list_feed_items(user_id, status="saved")),
+        "reading_seconds_today": reading["today_seconds"],
+        "reading_seconds_week": reading["week_seconds"],
     }

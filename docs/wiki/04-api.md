@@ -54,7 +54,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | PATCH | `/sessions/{id}` | 改标题 / 置顶 | 200 | 401 / 404 |
 | DELETE | `/sessions/{id}` | 归档会话并删磁盘目录 | 200 | 401 |
 | GET | `/documents` | 文献库列表（跨会话，legacy） | 200 | 401 |
-| GET | `/papers/stats` | 文献库 Dashboard 统计 | 200 | 401 |
+| GET | `/papers/stats` | 文献库 Dashboard 统计（含今日/本周阅读时长） | 200 | 401 |
+| GET | `/papers/reading-stats` | 阅读时长统计；按天与按论文聚合，默认 7 天 | 200 | 401 / 422 |
 | GET | `/papers` | 论文列表；支持 status / collection_id / tag / q / limit | 200 | 401 |
 | POST | `/papers` | 上传 PDF：创建论文 + reading session + 文档 + 摄取任务 | **202** | 401 / 409 / 413 / 422 |
 | POST | `/papers/import` | 按 arXiv / DOI / 网页链接导入；有开放 PDF 时下载解析，否则只入库题录 | **202** | 401 / 409 / 422 / 502 |
@@ -64,6 +65,7 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/papers/{paper_id}/citations` | OpenAlex 引用/被引关系 | 200 | 401 / 404 / 409 / 502 |
 | POST | `/papers/{paper_id}/brief` | 生成 5 分钟速读卡（带 chunk 引用） | 200 | 401 / 404 / 409 |
 | POST | `/papers/{paper_id}/explain` | 划词解释/翻译/简化 | 200 | 401 / 404 / 422 |
+| POST | `/papers/{paper_id}/reading-time` | 记录一次阅读时长（秒） | 201 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
 | POST | `/papers/{paper_id}/annotations` | 新建高亮/笔记/问题 | 201 | 401 / 404 / 422 |
 | PATCH / DELETE | `/annotations/{annotation_id}` | 编辑/删除批注 | 200 | 401 / 404 |

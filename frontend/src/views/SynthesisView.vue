@@ -27,6 +27,30 @@ const isLoading = ref(false);
 const isAsking = ref(false);
 const isComparing = ref(false);
 const errorMessage = ref("");
+const activeTab = ref<"ask" | "compare" | "matrix">("ask");
+
+const TABS = [
+  { value: "ask", label: "问答" },
+  { value: "compare", label: "对比表" },
+  { value: "matrix", label: "综述矩阵" },
+] as const;
+
+const MATRIX_FIELDS = [
+  { key: "method", label: "方法" },
+  { key: "datasets", label: "数据集" },
+  { key: "metrics", label: "指标" },
+  { key: "limitations", label: "局限" },
+] as const;
+
+const fieldCoverage = computed(() =>
+  MATRIX_FIELDS.map((field) => ({
+    ...field,
+    covered: comparison.value.filter((row) => {
+      const value = (row[field.key] ?? "").trim();
+      return value.length > 0 && value !== "未提及";
+    }).length,
+  })),
+);
 
 const selectedCollection = computed(
   () => collections.value.find((item) => item.id === selectedCollectionId.value) ?? null,
@@ -108,6 +132,38 @@ function exportComparison(): void {
   URL.revokeObjectURL(url);
 }
 
+function escapeMarkdownCell(value: string): string {
+  return String(value ?? "")
+    .replaceAll("|", "\\|")
+    .replaceAll("\n", " ")
+    .trim();
+}
+
+function exportMatrixMarkdown(): void {
+  if (!comparison.value.length) {
+    return;
+  }
+  const header = `| 论文 | ${MATRIX_FIELDS.map((field) => field.label).join(" | ")} |`;
+  const separator = `| --- | ${MATRIX_FIELDS.map(() => "---").join(" | ")} |`;
+  const rows = comparison.value.map(
+    (row) =>
+      `| ${[row.title, ...MATRIX_FIELDS.map((field) => row[field.key])]
+        .map(escapeMarkdownCell)
+        .join(" | ")} |`,
+  );
+  const coverage = `\n覆盖：${fieldCoverage.value
+    .map((field) => `${field.label} ${field.covered}/${comparison.value.length}`)
+    .join(" · ")}`;
+  const markdown = [header, separator, ...rows, coverage].join("\n");
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = "survey-matrix.md";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function compare(): Promise<void> {
   if (selectedPaperIds.value.length < 2) {
     ElMessage.warning("至少选择 2 篇论文");
@@ -164,6 +220,21 @@ onMounted(() => {
       </span>
     </div>
 
+    <div class="synthesis__tabs" role="tablist" aria-label="综合作业">
+      <button
+        v-for="tab in TABS"
+        :key="tab.value"
+        type="button"
+        role="tab"
+        class="synthesis__tab"
+        :class="{ 'is-active': activeTab === tab.value }"
+        :aria-selected="activeTab === tab.value"
+        @click="activeTab = tab.value"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+
     <p v-if="errorMessage" class="synthesis__error">{{ errorMessage }}</p>
     <p v-if="isLoading" class="synthesis__state">正在读取集合…</p>
     <p v-else-if="!collections.length" class="synthesis__state">
@@ -171,7 +242,11 @@ onMounted(() => {
     </p>
 
     <div v-else class="synthesis__grid">
-      <section class="synthesis__panel synthesis__panel--wide">
+      <section
+        v-if="activeTab === 'ask'"
+        class="synthesis__panel"
+        :class="{ 'synthesis__panel--full': activeTab === 'ask' }"
+      >
         <header class="synthesis__panel-head">
           <h2>集合问答</h2>
           <span>{{ papers.length }} 篇论文</span>
@@ -200,9 +275,9 @@ onMounted(() => {
         </article>
       </section>
 
-      <section class="synthesis__panel">
+      <section v-if="activeTab !== 'ask'" class="synthesis__panel">
         <header class="synthesis__panel-head">
-          <h2>选择论文对比</h2>
+          <h2>{{ activeTab === "matrix" ? "选择综述矩阵论文" : "选择论文对比" }}</h2>
           <span>{{ selectedPaperIds.length }}/5</span>
         </header>
         <p v-if="!papers.length" class="synthesis__state">这个集合还没有论文。</p>
@@ -231,7 +306,10 @@ onMounted(() => {
         </button>
       </section>
 
-      <section v-if="comparison.length" class="synthesis__panel synthesis__panel--full">
+      <section
+        v-if="activeTab === 'compare' && comparison.length"
+        class="synthesis__panel synthesis__panel--full"
+      >
         <header class="synthesis__panel-head">
           <h2>对比表</h2>
           <button type="button" class="synthesis__link" @click="exportComparison">
@@ -260,6 +338,49 @@ onMounted(() => {
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section v-if="activeTab === 'matrix'" class="synthesis__panel synthesis__panel--full">
+        <header class="synthesis__panel-head">
+          <h2>综述矩阵</h2>
+          <button
+            v-if="comparison.length"
+            type="button"
+            class="synthesis__link"
+            @click="exportMatrixMarkdown"
+          >
+            导出 Markdown
+          </button>
+        </header>
+        <p v-if="!comparison.length" class="synthesis__state">
+          选择 2–5 篇论文并生成对比后，这里会按「方法 / 数据集 / 指标 / 局限」排成矩阵。
+        </p>
+        <template v-else>
+          <div class="synthesis__table-wrap">
+            <table class="synthesis__table">
+              <thead>
+                <tr>
+                  <th>论文</th>
+                  <th v-for="field in MATRIX_FIELDS" :key="field.key">{{ field.label }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in comparison" :key="row.paper_id">
+                  <td>{{ row.title }}</td>
+                  <td v-for="field in MATRIX_FIELDS" :key="field.key">
+                    {{ row[field.key] || "未提及" }}
+                  </td>
+                </tr>
+                <tr class="synthesis__coverage">
+                  <td>覆盖</td>
+                  <td v-for="field in fieldCoverage" :key="field.key">
+                    {{ field.covered }}/{{ comparison.length }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </section>
     </div>
   </section>
@@ -352,6 +473,31 @@ onMounted(() => {
 
 .synthesis__hint {
   color: var(--color-text-muted);
+}
+
+.synthesis__tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.synthesis__tab {
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-panel);
+  padding: 6px 12px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.synthesis__tab.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.synthesis__coverage td {
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 
 .synthesis__error {

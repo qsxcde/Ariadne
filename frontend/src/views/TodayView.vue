@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { usePapers } from "../composables/usePapers";
 import { getLibraryStats, getWeeklyReview } from "../api/papers";
+import { formatDuration } from "../utils/format";
 import type { LibraryStats, PaperSummary, WeeklyReview } from "../api";
 
 const emit = defineEmits<{
@@ -73,6 +74,7 @@ onMounted(async () => {
       <div><strong>{{ (stats.by_status?.queued ?? 0) + (stats.by_status?.inbox ?? 0) }}</strong><span>队列</span></div>
       <div><strong>{{ stats.notes }}</strong><span>笔记</span></div>
       <div><strong>{{ stats.questions }}</strong><span>开放问题</span></div>
+      <div><strong>{{ formatDuration(stats.reading_seconds_today ?? 0) }}</strong><span>今日阅读</span></div>
     </div>
     <p v-if="isLoading && !papers.length" class="today__state">正在读取阅读进度…</p>
 
@@ -113,6 +115,7 @@ onMounted(async () => {
         </header>
         <p class="today__metric">{{ readThisWeek }}<small> / 3 篇读完</small></p>
         <p class="today__hint">本周笔记 {{ notesThisWeek }} 条 · 开放问题 {{ openQuestions }} 个</p>
+        <p class="today__hint">本周阅读 {{ formatDuration(stats?.reading_seconds_week ?? 0) }}</p>
         <p class="today__hint">读完的论文会进入文献库「已读」，笔记仍可回看。</p>
       </section>
 

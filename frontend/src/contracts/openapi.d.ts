@@ -474,6 +474,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/papers/reading-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reading Stats
+         * @description 阅读时长统计：按天与按论文聚合，默认最近 7 天。
+         */
+        get: operations["get_reading_stats_papers_reading_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/papers/stats": {
         parameters: {
             query?: never;
@@ -589,6 +609,26 @@ export interface paths {
         get: operations["generate_glossary_papers__paper_id__glossary_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/{paper_id}/reading-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Reading Time
+         * @description 记录一次前台阅读时长（秒），累加到论文总时长与阅读日志。
+         */
+        post: operations["record_reading_time_papers__paper_id__reading_time_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1441,6 +1481,16 @@ export interface components {
              * @default 0
              */
             questions: number;
+            /**
+             * Reading Seconds Today
+             * @default 0
+             */
+            reading_seconds_today: number;
+            /**
+             * Reading Seconds Week
+             * @default 0
+             */
+            reading_seconds_week: number;
             /** Total */
             total: number;
         };
@@ -1756,6 +1806,51 @@ export interface components {
             /** Sources */
             sources?: components["schemas"]["SourceRef"][];
             status: components["schemas"]["MessageStatus"];
+        };
+        /** ReadingDayStat */
+        ReadingDayStat: {
+            /** Day */
+            day: string;
+            /** Seconds */
+            seconds: number;
+        };
+        /** ReadingPaperStat */
+        ReadingPaperStat: {
+            /** Paper Id */
+            paper_id: string;
+            /** Seconds */
+            seconds: number;
+            /** Title */
+            title: string;
+        };
+        /** ReadingStats */
+        ReadingStats: {
+            /** By Day */
+            by_day?: components["schemas"]["ReadingDayStat"][];
+            /** By Paper */
+            by_paper?: components["schemas"]["ReadingPaperStat"][];
+            /** Days */
+            days: number;
+            /** Today Seconds */
+            today_seconds: number;
+            /** Total Seconds */
+            total_seconds: number;
+            /** Week Seconds */
+            week_seconds: number;
+        };
+        /** ReadingTimeRequest */
+        ReadingTimeRequest: {
+            /** Seconds */
+            seconds: number;
+        };
+        /** ReadingTimeResponse */
+        ReadingTimeResponse: {
+            /** Added Seconds */
+            added_seconds: number;
+            /** Paper Id */
+            paper_id: string;
+            /** Total Seconds */
+            total_seconds: number;
         };
         /** RetrievalIndexSummary */
         RetrievalIndexSummary: {
@@ -2886,6 +2981,37 @@ export interface operations {
             };
         };
     };
+    get_reading_stats_papers_reading_stats_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_library_stats_papers_stats_get: {
         parameters: {
             query?: never;
@@ -3155,6 +3281,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GlossaryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_reading_time_papers__paper_id__reading_time_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadingTimeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadingTimeResponse"];
                 };
             };
             /** @description Validation Error */

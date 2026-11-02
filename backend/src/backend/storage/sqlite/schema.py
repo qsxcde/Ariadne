@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 11
+CURRENT_SCHEMA_VERSION = 12
 
 _init_lock = threading.RLock()
 
@@ -74,6 +74,8 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_alert_settings(conn)
     if from_version < 11:
         _migrate_add_notifications(conn)
+    if from_version < 12:
+        _migrate_add_reading_log(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -534,6 +536,26 @@ def _migrate_add_notifications(conn) -> None:
     )
 
 
+def _migrate_add_reading_log(conn) -> None:
+    """Add per-day reading time log (v12)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS reading_log (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          paper_id TEXT NOT NULL,
+          day TEXT NOT NULL,
+          seconds INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_reading_log_user_day
+          ON reading_log(user_id, day);
+        CREATE INDEX IF NOT EXISTS idx_reading_log_paper
+          ON reading_log(paper_id, day);
+        """
+    )
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -767,8 +789,19 @@ def _create_initial_schema(conn) -> None:
           delivered_at TEXT NULL,
           CHECK (status IN ('unread', 'read', 'delivered'))
         );
+
+        CREATE TABLE IF NOT EXISTS reading_log (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL,
+          paper_id TEXT NOT NULL,
+          day TEXT NOT NULL,
+          seconds INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        );
         """
     )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_reading_log_user_day ON reading_log(user_id, day)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_reading_log_paper ON reading_log(paper_id, day)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_papers_user_status ON papers(user_id, reading_status, updated_at DESC)")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_papers_user_doi ON papers(user_id, doi) WHERE doi IS NOT NULL")
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_papers_user_arxiv ON papers(user_id, arxiv_id) WHERE arxiv_id IS NOT NULL")

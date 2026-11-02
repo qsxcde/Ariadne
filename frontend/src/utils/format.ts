@@ -24,6 +24,17 @@ export function formatUpdatedAt(value: string): string {
   });
 }
 
+/** 阅读时长展示：不足 1 分钟按 1 分钟，超过 1 小时拆成小时与分钟。 */
+export function formatDuration(seconds: number): string {
+  const totalMinutes = Math.max(0, Math.round(seconds / 60));
+  if (totalMinutes < 60) {
+    return `${totalMinutes} 分钟`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes ? `${hours} 小时 ${minutes} 分` : `${hours} 小时`;
+}
+
 /** 页码展示：单页 `p.4`，跨页 `p.4-5`，缺省返回空串。 */
 export function formatPageRange(start?: number | null, end?: number | null): string {
   if (start == null && end == null) {

@@ -26,6 +26,9 @@ from backend.api.schemas import (
     PaperSummary,
     PaperUpdateRequest,
     PaperUploadResponse,
+    ReadingStats,
+    ReadingTimeRequest,
+    ReadingTimeResponse,
     WeeklyReview,
 )
 from backend.api.security import get_current_user
@@ -39,6 +42,7 @@ from backend.application import export as export_service
 from backend.application import glossary as glossary_service
 from backend.application import paper_import as paper_import_service
 from backend.application import papers as paper_service
+from backend.application import reading as reading_service
 from backend.application import review as review_service
 from backend.application import stats as stats_service
 from backend.application import synthesis as synthesis_service
@@ -68,6 +72,32 @@ def _summary(row: dict) -> PaperSummary:
 @router.get("/papers/stats", response_model=LibraryStats)
 def get_library_stats(user: dict = Depends(get_current_user)) -> LibraryStats:
     return LibraryStats(**stats_service.library_stats(user.get("id") or None))
+
+
+@router.get("/papers/reading-stats", response_model=ReadingStats)
+def get_reading_stats(
+    days: int = Query(default=7, ge=1, le=365),
+    user: dict = Depends(get_current_user),
+) -> ReadingStats:
+    """阅读时长统计：按天与按论文聚合，默认最近 7 天。"""
+    return ReadingStats(**reading_service.reading_stats(user.get("id") or None, days))
+
+
+@router.post(
+    "/papers/{paper_id}/reading-time",
+    status_code=201,
+    response_model=ReadingTimeResponse,
+)
+def record_reading_time(
+    paper_id: str,
+    payload: ReadingTimeRequest,
+    user: dict = Depends(get_current_user),
+) -> ReadingTimeResponse:
+    """记录一次前台阅读时长（秒），累加到论文总时长与阅读日志。"""
+    result = reading_service.record_reading_time(
+        paper_id, user.get("id") or None, payload.seconds
+    )
+    return ReadingTimeResponse(**result)
 
 
 @router.get("/review/weekly", response_model=WeeklyReview)

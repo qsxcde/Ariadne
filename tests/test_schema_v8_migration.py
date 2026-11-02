@@ -10,7 +10,7 @@ from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import jobs as job_repo
 from backend.storage.sqlite import sessions as session_repo
-from backend.storage.sqlite.schema import init_db
+from backend.storage.sqlite.schema import CURRENT_SCHEMA_VERSION, init_db
 
 V7_SCHEMA = """
 CREATE TABLE users (
@@ -186,7 +186,7 @@ def test_v7_database_migrates_to_papers(tmp_path, monkeypatch):
 
     init_db()
 
-    assert _row(db_path, "PRAGMA user_version")[0][0] == 11
+    assert _row(db_path, "PRAGMA user_version")[0][0] == CURRENT_SCHEMA_VERSION
     papers = _row(db_path, "SELECT * FROM papers ORDER BY id")
     assert [row["id"] for row in papers] == ["paper_doc-1", "paper_doc-2"]
     assert [row["title"] for row in papers] == ["paper-one", "paper-two"]

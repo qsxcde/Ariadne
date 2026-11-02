@@ -59,6 +59,16 @@ export function importPaperByReference(
   });
 }
 
+export function recordReadingTime(
+  paperId: string,
+  seconds: number,
+): Promise<{ paper_id: string; added_seconds: number; total_seconds: number }> {
+  return requestJson(`/papers/${paperId}/reading-time`, "记录阅读时长失败", {
+    method: "POST",
+    ...jsonRequest({ seconds }),
+  });
+}
+
 export function getCitations(paperId: string): Promise<CitationGraph> {
   return requestJson<CitationGraph>(`/papers/${paperId}/citations`, "读取引用关系失败");
 }

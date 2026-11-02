@@ -183,6 +183,38 @@ class LibraryStats(BaseModel):
     questions: int = 0
     collections: int = 0
     feed_saved: int = 0
+    reading_seconds_today: int = 0
+    reading_seconds_week: int = 0
+
+
+class ReadingTimeRequest(BaseModel):
+    seconds: int = Field(ge=1, le=3600)
+
+
+class ReadingTimeResponse(BaseModel):
+    paper_id: str
+    added_seconds: int
+    total_seconds: int
+
+
+class ReadingDayStat(BaseModel):
+    day: str
+    seconds: int
+
+
+class ReadingPaperStat(BaseModel):
+    paper_id: str
+    title: str
+    seconds: int
+
+
+class ReadingStats(BaseModel):
+    days: int
+    today_seconds: int
+    week_seconds: int
+    total_seconds: int
+    by_day: list[ReadingDayStat] = Field(default_factory=list)
+    by_paper: list[ReadingPaperStat] = Field(default_factory=list)
 
 
 class GlossaryTerm(BaseModel):

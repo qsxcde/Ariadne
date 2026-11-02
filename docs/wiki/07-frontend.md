@@ -182,10 +182,10 @@ handleUpload(file)
 | 路由 | 组件 | 用途 |
 |---|---|---|
 | `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
-| `/synthesis` | `views/SynthesisView.vue` | 集合选择、跨论文问答、对比表 |
+| `/synthesis` | `views/SynthesisView.vue` | 集合选择、问答 / 对比表 / 综述矩阵三 Tab |
 | `/feed` | `views/FeedView.vue` | 订阅、Feed 刷新、保存到队列/忽略 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量上传、按 arXiv/DOI/链接导入 |
-| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
+| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏、元数据编辑 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
 | `/` | `ChatWorkspace` | 对话（legacy 主入口） |
@@ -200,8 +200,11 @@ handleUpload(file)
 - 术语表/引用：右侧栏可生成术语表、查询 OpenAlex 引用关系。
 - 通知：Settings 显示未读通知，支持 Webhook 投递；邮件需另配 SMTP。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
-- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题来自 GET /review/weekly。
-- 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV；文献库导出 BibTeX。
+- 元数据：阅读工作台「编辑信息」弹窗 PATCH /papers/{id}，可改标题/作者/年份/venue/DOI/arXiv/链接/摘要。
+- 阅读时长：工作台每 5s 累计可见停留时间，满 60s 或离开页面时 POST /papers/{id}/reading-time；Today 展示今日/本周时长。
+- Synthesis：三个 Tab——问答、对比表、综述矩阵；矩阵按方法/数据集/指标/局限排列并显示覆盖率，可导出 Markdown。
+- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题来自 GET /review/weekly，阅读时长来自 GET /papers/stats。
+- 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV、综述矩阵导出 Markdown；文献库导出 BibTeX。
 - 设置：提醒开关与 Digest 频率写入 /settings/alerts；当前只保存本地偏好，邮件/推送投递尚未接入。
 
 ## 9. 本地开发

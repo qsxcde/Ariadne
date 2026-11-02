@@ -329,6 +329,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/papers/export.csl.json` | Export Csl |
 | GET | `/papers/export.md` | Export Markdown |
 | POST | `/papers/import` | 按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。 |
+| GET | `/papers/reading-stats` | 阅读时长统计：按天与按论文聚合，默认最近 7 天。 |
 | GET | `/papers/stats` | Get Library Stats |
 | GET | `/papers/{paper_id}` | Get Paper |
 | PATCH | `/papers/{paper_id}` | Update Paper |
@@ -338,6 +339,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/papers/{paper_id}/citations` | Get Citations |
 | POST | `/papers/{paper_id}/explain` | Explain Selection |
 | GET | `/papers/{paper_id}/glossary` | Generate Glossary |
+| POST | `/papers/{paper_id}/reading-time` | 记录一次前台阅读时长（秒），累加到论文总时长与阅读日志。 |
 | GET | `/review/weekly` | Get Weekly Review |
 | GET | `/sessions` | 按当前用户列出会话（不含已归档）。 |
 | POST | `/sessions` | 新建空会话。 |

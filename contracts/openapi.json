@@ -1651,6 +1651,16 @@
             "title": "Questions",
             "type": "integer"
           },
+          "reading_seconds_today": {
+            "default": 0,
+            "title": "Reading Seconds Today",
+            "type": "integer"
+          },
+          "reading_seconds_week": {
+            "default": 0,
+            "title": "Reading Seconds Week",
+            "type": "integer"
+          },
           "total": {
             "title": "Total",
             "type": "integer"
@@ -2654,6 +2664,127 @@
           "created_at"
         ],
         "title": "PersistedMessage",
+        "type": "object"
+      },
+      "ReadingDayStat": {
+        "properties": {
+          "day": {
+            "title": "Day",
+            "type": "string"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "seconds"
+        ],
+        "title": "ReadingDayStat",
+        "type": "object"
+      },
+      "ReadingPaperStat": {
+        "properties": {
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "seconds": {
+            "title": "Seconds",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id",
+          "title",
+          "seconds"
+        ],
+        "title": "ReadingPaperStat",
+        "type": "object"
+      },
+      "ReadingStats": {
+        "properties": {
+          "by_day": {
+            "items": {
+              "$ref": "#/components/schemas/ReadingDayStat"
+            },
+            "title": "By Day",
+            "type": "array"
+          },
+          "by_paper": {
+            "items": {
+              "$ref": "#/components/schemas/ReadingPaperStat"
+            },
+            "title": "By Paper",
+            "type": "array"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "today_seconds": {
+            "title": "Today Seconds",
+            "type": "integer"
+          },
+          "total_seconds": {
+            "title": "Total Seconds",
+            "type": "integer"
+          },
+          "week_seconds": {
+            "title": "Week Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "days",
+          "today_seconds",
+          "week_seconds",
+          "total_seconds"
+        ],
+        "title": "ReadingStats",
+        "type": "object"
+      },
+      "ReadingTimeRequest": {
+        "properties": {
+          "seconds": {
+            "maximum": 3600.0,
+            "minimum": 1.0,
+            "title": "Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "title": "ReadingTimeRequest",
+        "type": "object"
+      },
+      "ReadingTimeResponse": {
+        "properties": {
+          "added_seconds": {
+            "title": "Added Seconds",
+            "type": "integer"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "total_seconds": {
+            "title": "Total Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "paper_id",
+          "added_seconds",
+          "total_seconds"
+        ],
+        "title": "ReadingTimeResponse",
         "type": "object"
       },
       "RetrievalIndexSummary": {
@@ -4612,6 +4743,54 @@
         "summary": "Import Paper By Reference"
       }
     },
+    "/papers/reading-stats": {
+      "get": {
+        "description": "阅读时长统计：按天与按论文聚合，默认最近 7 天。",
+        "operationId": "get_reading_stats_papers_reading_stats_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Reading Stats"
+      }
+    },
     "/papers/stats": {
       "get": {
         "operationId": "get_library_stats_papers_stats_get",
@@ -5031,6 +5210,61 @@
           }
         ],
         "summary": "Generate Glossary"
+      }
+    },
+    "/papers/{paper_id}/reading-time": {
+      "post": {
+        "description": "记录一次前台阅读时长（秒），累加到论文总时长与阅读日志。",
+        "operationId": "record_reading_time_papers__paper_id__reading_time_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "paper_id",
+            "required": true,
+            "schema": {
+              "title": "Paper Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadingTimeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadingTimeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Record Reading Time"
       }
     },
     "/review/weekly": {
