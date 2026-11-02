@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 12
+CURRENT_SCHEMA_VERSION = 13
 
 _init_lock = threading.RLock()
 
@@ -76,6 +76,8 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_notifications(conn)
     if from_version < 12:
         _migrate_add_reading_log(conn)
+    if from_version < 13:
+        _migrate_add_weekly_reports(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -556,6 +558,22 @@ def _migrate_add_reading_log(conn) -> None:
     )
 
 
+def _migrate_add_weekly_reports(conn) -> None:
+    """Add editable weekly review notes (v13)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS weekly_reports (
+          user_id TEXT NOT NULL,
+          week_start TEXT NOT NULL,
+          content TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (user_id, week_start)
+        );
+        """
+    )
+
+
 def _create_initial_schema(conn) -> None:
     conn.executescript(
         """
@@ -797,6 +815,15 @@ def _create_initial_schema(conn) -> None:
           day TEXT NOT NULL,
           seconds INTEGER NOT NULL,
           created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS weekly_reports (
+          user_id TEXT NOT NULL,
+          week_start TEXT NOT NULL,
+          content TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (user_id, week_start)
         );
         """
     )

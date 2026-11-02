@@ -181,7 +181,8 @@ onMounted(() => {
       <select v-model="filters.collectionId" class="paper-library__select" @change="loadLibrary">
         <option value="">全部集合</option>
         <option v-for="collection in collections" :key="collection.id" :value="collection.id">
-          {{ collection.name }}（{{ collection.paper_count }}）
+          {{ collection.name }}（{{ collection.paper_count }}）· 已读
+          {{ collection.by_status?.read ?? 0 }}
         </option>
       </select>
       <input

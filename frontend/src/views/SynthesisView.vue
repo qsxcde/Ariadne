@@ -216,7 +216,13 @@ onMounted(() => {
         </select>
       </label>
       <span v-if="selectedCollection" class="synthesis__hint">
-        {{ selectedCollection.description || "按论文片段回答，引用保留 section 与 chunk。" }}
+        {{ selectedCollection.description || "按论文片段回答，引用保留 section 与 chunk。" }} ·
+        已读 {{ selectedCollection.by_status?.read ?? 0 }} · 在读
+        {{ selectedCollection.by_status?.reading ?? 0 }} · 待读
+        {{
+          (selectedCollection.by_status?.inbox ?? 0) +
+          (selectedCollection.by_status?.queued ?? 0)
+        }}
       </span>
     </div>
 

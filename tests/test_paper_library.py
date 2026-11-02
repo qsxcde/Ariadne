@@ -2,6 +2,7 @@
 
 import pytest
 
+from backend.application import collections as collection_service
 from backend.domain.models import Chunk, ChunkMetadata
 from backend.storage.sqlite import annotations as annotation_repo
 from backend.storage.sqlite import chunks as chunk_repo
@@ -226,3 +227,18 @@ def test_annotations_validate_anchor_and_round_trip():
             annotation_type="note",
             content="   ",
         )
+
+
+@pytest.mark.integration
+def test_collection_summary_counts_reading_status():
+    first = _seed_paper(session_title="A", user_id="u1", filename="a.pdf")
+    second = _seed_paper(session_title="B", user_id="u1", filename="b.pdf")
+    collection = collection_repo.create_collection(user_id="u1", name="Thesis")
+    collection_repo.add_paper_to_collection(collection["id"], first["paper_id"])
+    collection_repo.add_paper_to_collection(collection["id"], second["paper_id"])
+    paper_repo.update_reading_state(first["paper_id"], reading_status="read")
+    paper_repo.update_reading_state(second["paper_id"], reading_status="reading")
+
+    summary = collection_service.list_for_user("u1")[0]
+    assert summary["paper_count"] == 2
+    assert summary["by_status"] == {"read": 1, "reading": 1}

@@ -73,6 +73,7 @@ class CollectionSummary(BaseModel):
     name: str
     description: str | None = None
     paper_count: int = 0
+    by_status: dict[str, int] = Field(default_factory=dict)
     updated_at: str
 
 
@@ -102,6 +103,11 @@ class WeeklyReview(BaseModel):
     notes: int
     open_questions: int
     read_paper_ids: list[str] = Field(default_factory=list)
+    note: str = ""
+
+
+class WeeklyNoteRequest(BaseModel):
+    note: str = Field(default="", max_length=5000)
 
 
 class AlertSettings(BaseModel):

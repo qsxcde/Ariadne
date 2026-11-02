@@ -4,7 +4,12 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from backend.storage.sqlite import papers as paper_repo
+from backend.storage.sqlite import weekly as weekly_repo
 from backend.storage.sqlite.connection import connect
+
+
+def current_week_start(days: int = 7) -> str:
+    return (datetime.now(UTC).date() - timedelta(days=days - 1)).isoformat()
 
 
 def weekly_review(user_id: str | None, days: int = 7) -> dict[str, Any]:
@@ -45,12 +50,19 @@ def weekly_review(user_id: str | None, days: int = 7) -> dict[str, Any]:
         notes = counts.get("note", 0) + counts.get("highlight", 0)
         open_questions = counts.get("question", 0)
 
+    week_start = current_week_start(days)
     return {
-        "week_start": cutoff,
+        "week_start": week_start,
         "read_papers": len(read_papers),
         "reading_papers": len(reading_papers),
         "queued_papers": len(queued_papers),
         "notes": notes,
         "open_questions": open_questions,
         "read_paper_ids": [paper["id"] for paper in read_papers],
+        "note": weekly_repo.get_note(user_id, week_start),
     }
+
+
+def save_weekly_note(user_id: str | None, note: str, days: int = 7) -> dict[str, Any]:
+    weekly_repo.save_note(user_id, current_week_start(days), note.strip())
+    return weekly_review(user_id, days)

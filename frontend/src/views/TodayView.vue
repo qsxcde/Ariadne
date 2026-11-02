@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { ElMessage } from "element-plus";
 import { usePapers } from "../composables/usePapers";
-import { getLibraryStats, getWeeklyReview } from "../api/papers";
+import { getLibraryStats, getWeeklyReview, saveWeeklyNote } from "../api/papers";
 import { formatDuration } from "../utils/format";
 import type { LibraryStats, PaperSummary, WeeklyReview } from "../api";
 
@@ -14,6 +15,8 @@ const emit = defineEmits<{
 const { papers, isLoading, errorMessage, loadLibrary } = usePapers();
 const review = ref<WeeklyReview | null>(null);
 const stats = ref<LibraryStats | null>(null);
+const weeklyNote = ref("");
+const isSavingNote = ref(false);
 
 const reading = computed(() =>
   papers.value
@@ -37,6 +40,19 @@ function openPaper(paper: PaperSummary): void {
   emit("open", paper.id);
 }
 
+async function saveNote(): Promise<void> {
+  isSavingNote.value = true;
+  try {
+    review.value = await saveWeeklyNote(weeklyNote.value);
+    weeklyNote.value = review.value.note ?? "";
+    ElMessage.success("已保存本周复盘");
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "保存复盘失败");
+  } finally {
+    isSavingNote.value = false;
+  }
+}
+
 onMounted(async () => {
   await loadLibrary();
   try {
@@ -48,6 +64,7 @@ onMounted(async () => {
     review.value = null;
     stats.value = null;
   }
+  weeklyNote.value = review.value?.note ?? "";
 });
 </script>
 
@@ -116,6 +133,23 @@ onMounted(async () => {
         <p class="today__metric">{{ readThisWeek }}<small> / 3 篇读完</small></p>
         <p class="today__hint">本周笔记 {{ notesThisWeek }} 条 · 开放问题 {{ openQuestions }} 个</p>
         <p class="today__hint">本周阅读 {{ formatDuration(stats?.reading_seconds_week ?? 0) }}</p>
+        <label class="today__note">
+          <span>本周复盘</span>
+          <textarea
+            v-model="weeklyNote"
+            rows="4"
+            maxlength="5000"
+            placeholder="这周读完什么、卡在哪里、下周读什么…"
+          />
+        </label>
+        <button
+          type="button"
+          class="today__button"
+          :disabled="isSavingNote"
+          @click="saveNote"
+        >
+          {{ isSavingNote ? "保存中…" : "保存复盘" }}
+        </button>
         <p class="today__hint">读完的论文会进入文献库「已读」，笔记仍可回看。</p>
       </section>
 
@@ -272,6 +306,26 @@ onMounted(async () => {
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.today__note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.today__note textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  padding: 7px 9px;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
 }
 
 .today__error {

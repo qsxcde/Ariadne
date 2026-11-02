@@ -17,6 +17,7 @@
 | `alert_settings` | 提醒设置 | 新论文/版本/引用提醒与 Digest 频率 |
 | `notifications` | 通知 | 站内通知 outbox 与 Webhook 投递状态 |
 | `reading_log` | 阅读日志 | 按天的前台阅读秒数，聚合今日/本周/单篇时长 |
+| `weekly_reports` | 周报 | 每周复盘文字，按 `(user_id, week_start)` 唯一 |
 | `sessions` | 会话 | 标题、置顶、归档、归属用户、关联论文 |
 | `documents` | 文档 | PDF 元数据、状态机、解析产物路径、论文归属 |
 | `chunks` | 分块 | 检索事实表，正文 + 结构化元数据 |
@@ -367,7 +368,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 | 版本 | 变更 |
 |---|---|
-| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 12` |
+| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 13` |
 | v2 | `chunks(document_id, chunk_index)` 唯一索引 |
 | v3 | `retrieval_indexes.created_at` 补列并回填；新增 `idx_sessions_list` 部分索引 |
 | v4 | 重建 6 张含外键表，补全 `ON DELETE CASCADE` / `SET NULL` |
@@ -379,6 +380,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v10 | 新增 `alert_settings`（M4 提醒与 Digest 偏好） |
 | v11 | 新增 `notifications`（站内通知与 Webhook 投递） |
 | v12 | 新增 `reading_log`（按天阅读时长），并在记录时累加 `papers.time_spent_seconds` |
+| v13 | 新增 `weekly_reports`（可编辑周报复盘） |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

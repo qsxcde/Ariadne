@@ -66,6 +66,7 @@ from backend.api.schemas.paper import (
     ReadingStats,
     ReadingTimeRequest,
     ReadingTimeResponse,
+    WeeklyNoteRequest,
     WeeklyReview,
     ZoteroExportRequest,
 )
@@ -139,6 +140,7 @@ __all__ = [
     "ReadingStats",
     "ReadingTimeRequest",
     "ReadingTimeResponse",
+    "WeeklyNoteRequest",
     "PersistedMessage",
     "RetrievalIndexSummary",
     "SessionCreateResponse",

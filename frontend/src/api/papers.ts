@@ -85,6 +85,13 @@ export function exportBibtex(): Promise<string> {
   return requestText("/papers/export.bib", "导出 BibTeX 失败");
 }
 
+export function saveWeeklyNote(note: string): Promise<WeeklyReview> {
+  return requestJson<WeeklyReview>("/review/weekly/note", "保存复盘失败", {
+    method: "PUT",
+    ...jsonRequest({ note }),
+  });
+}
+
 export function getWeeklyReview(): Promise<WeeklyReview> {
   return requestJson<WeeklyReview>("/review/weekly", "读取周报失败");
 }

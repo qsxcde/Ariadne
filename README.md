@@ -341,6 +341,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | GET | `/papers/{paper_id}/glossary` | Generate Glossary |
 | POST | `/papers/{paper_id}/reading-time` | 记录一次前台阅读时长（秒），累加到论文总时长与阅读日志。 |
 | GET | `/review/weekly` | Get Weekly Review |
+| PUT | `/review/weekly/note` | 保存本周复盘文字，返回更新后的周报。 |
 | GET | `/sessions` | 按当前用户列出会话（不含已归档）。 |
 | POST | `/sessions` | 新建空会话。 |
 | DELETE | `/sessions/{session_id}` | 归档会话（幂等，不暴露会话是否存在）。 |

@@ -4,7 +4,11 @@ from datetime import UTC, datetime
 
 import pytest
 
-from backend.application.review import weekly_review
+from backend.application.review import save_weekly_note, weekly_review
+from fastapi.testclient import TestClient
+
+from backend.api.security import get_current_user
+from backend.main import app
 from backend.storage.sqlite import annotations as annotation_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import papers as paper_repo
@@ -47,3 +51,32 @@ def test_weekly_review_counts_read_notes_and_questions():
     assert result["notes"] == 1
     assert result["open_questions"] == 1
     assert result["read_paper_ids"] == [read]
+
+
+@pytest.mark.integration
+def test_weekly_note_is_saved_and_user_scoped():
+    assert weekly_review("u1")["note"] == ""
+    assert save_weekly_note("u1", "  本周读完两篇  ")["note"] == "本周读完两篇"
+    assert weekly_review("u1")["note"] == "本周读完两篇"
+    assert weekly_review("u2")["note"] == ""
+    assert save_weekly_note("u1", "更新后的复盘")["note"] == "更新后的复盘"
+    assert weekly_review("u1")["note"] == "更新后的复盘"
+
+
+@pytest.mark.integration
+def test_weekly_note_api_round_trip():
+    app.dependency_overrides[get_current_user] = lambda: {"id": "u1", "username": "alice"}
+    client = TestClient(app)
+    try:
+        saved = client.put("/review/weekly/note", json={"note": "本周复盘"})
+        assert saved.status_code == 200, saved.text
+        assert saved.json()["note"] == "本周复盘"
+
+        fetched = client.get("/review/weekly")
+        assert fetched.status_code == 200
+        assert fetched.json()["note"] == "本周复盘"
+
+        too_long = client.put("/review/weekly/note", json={"note": "x" * 5001})
+        assert too_long.status_code == 422
+    finally:
+        app.dependency_overrides.clear()

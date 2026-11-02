@@ -785,6 +785,13 @@
       },
       "CollectionSummary": {
         "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Status",
+            "type": "object"
+          },
           "description": {
             "anyOf": [
               {
@@ -863,6 +870,11 @@
       },
       "DigestResponse": {
         "properties": {
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
           "notes": {
             "title": "Notes",
             "type": "integer"
@@ -3379,8 +3391,25 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WeeklyNoteRequest": {
+        "properties": {
+          "note": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "title": "WeeklyNoteRequest",
+        "type": "object"
+      },
       "WeeklyReview": {
         "properties": {
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
           "notes": {
             "title": "Notes",
             "type": "integer"
@@ -5288,6 +5317,50 @@
           }
         ],
         "summary": "Get Weekly Review"
+      }
+    },
+    "/review/weekly/note": {
+      "put": {
+        "description": "保存本周复盘文字，返回更新后的周报。",
+        "operationId": "save_weekly_note_review_weekly_note_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeeklyNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Save Weekly Note"
       }
     },
     "/sessions": {

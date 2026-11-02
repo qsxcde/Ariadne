@@ -71,5 +71,11 @@ def remove_paper(collection_id: str, paper_id: str, user_id: str | None) -> None
 
 def _serialize(row: Mapping[str, Any]) -> dict[str, Any]:
     result = dict(row)
-    result["paper_count"] = len(collection_repo.list_collection_papers(row["id"]))
+    papers = collection_repo.list_collection_papers(row["id"])
+    result["paper_count"] = len(papers)
+    counts: dict[str, int] = {}
+    for paper in papers:
+        status = str(paper["reading_status"])
+        counts[status] = counts.get(status, 0) + 1
+    result["by_status"] = counts
     return result

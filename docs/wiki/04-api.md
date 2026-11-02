@@ -87,7 +87,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | POST | `/feed/refresh` | 从 arXiv 抓取并去重 | 200 | 401 / 502 |
 | POST | `/feed/{id}/save` | 存入阅读队列并创建 paper | 200 | 401 / 404 |
 | POST | `/feed/{id}/ignore` | 忽略 | 200 | 401 / 404 |
-| GET | `/review/weekly` | 本周阅读/笔记/开放问题汇总 | 200 | 401 |
+| GET | `/review/weekly` | 本周阅读/笔记/开放问题/复盘文字汇总 | 200 | 401 |
+| PUT | `/review/weekly/note` | 保存本周复盘（≤5000 字） | 200 | 401 / 422 |
 | POST | `/collections/{collection_id}/ask` | 集合内跨论文问答 | 200 | 401 / 404 / 422 |
 | POST | `/collections/{collection_id}/compare` | 2–5 篇论文结构化对比 | 200 | 401 / 404 / 422 |
 | GET | `/collections` | 集合列表（含论文数） | 200 | 401 |

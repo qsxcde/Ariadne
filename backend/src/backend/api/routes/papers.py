@@ -29,6 +29,7 @@ from backend.api.schemas import (
     ReadingStats,
     ReadingTimeRequest,
     ReadingTimeResponse,
+    WeeklyNoteRequest,
     WeeklyReview,
 )
 from backend.api.security import get_current_user
@@ -103,6 +104,17 @@ def record_reading_time(
 @router.get("/review/weekly", response_model=WeeklyReview)
 def get_weekly_review(user: dict = Depends(get_current_user)) -> WeeklyReview:
     return WeeklyReview(**review_service.weekly_review(user.get("id") or None))
+
+
+@router.put("/review/weekly/note", response_model=WeeklyReview)
+def save_weekly_note(
+    payload: WeeklyNoteRequest,
+    user: dict = Depends(get_current_user),
+) -> WeeklyReview:
+    """保存本周复盘文字，返回更新后的周报。"""
+    return WeeklyReview(
+        **review_service.save_weekly_note(user.get("id") or None, payload.note)
+    )
 
 
 @router.get("/papers", response_model=list[PaperSummary])

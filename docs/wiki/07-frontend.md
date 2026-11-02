@@ -203,7 +203,8 @@ handleUpload(file)
 - 元数据：阅读工作台「编辑信息」弹窗 PATCH /papers/{id}，可改标题/作者/年份/venue/DOI/arXiv/链接/摘要。
 - 阅读时长：工作台每 5s 累计可见停留时间，满 60s 或离开页面时 POST /papers/{id}/reading-time；Today 展示今日/本周时长。
 - Synthesis：三个 Tab——问答、对比表、综述矩阵；矩阵按方法/数据集/指标/局限排列并显示覆盖率，可导出 Markdown。
-- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题来自 GET /review/weekly，阅读时长来自 GET /papers/stats。
+- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题/复盘文字来自 GET /review/weekly，阅读时长来自 GET /papers/stats；复盘通过 PUT /review/weekly/note 保存。
+- 集合进度：`CollectionSummary.by_status` 提供各状态计数，文献库集合下拉与 Synthesis 工具条显示已读/在读/待读。
 - 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV、综述矩阵导出 Markdown；文献库导出 BibTeX。
 - 设置：提醒开关与 Digest 频率写入 /settings/alerts；当前只保存本地偏好，邮件/推送投递尚未接入。
 

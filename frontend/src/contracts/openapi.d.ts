@@ -652,6 +652,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/review/weekly/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save Weekly Note
+         * @description 保存本周复盘文字，返回更新后的周报。
+         */
+        put: operations["save_weekly_note_review_weekly_note_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions": {
         parameters: {
             query?: never;
@@ -1163,6 +1183,10 @@ export interface components {
         };
         /** CollectionSummary */
         CollectionSummary: {
+            /** By Status */
+            by_status?: {
+                [key: string]: number;
+            };
             /** Description */
             description?: string | null;
             /** Id */
@@ -1188,6 +1212,11 @@ export interface components {
         };
         /** DigestResponse */
         DigestResponse: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
             /** Notes */
             notes: number;
             /** Open Questions */
@@ -2067,8 +2096,21 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** WeeklyNoteRequest */
+        WeeklyNoteRequest: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
         /** WeeklyReview */
         WeeklyReview: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
             /** Notes */
             notes: number;
             /** Open Questions */
@@ -3345,6 +3387,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeeklyReview"];
+                };
+            };
+        };
+    };
+    save_weekly_note_review_weekly_note_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeeklyNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyReview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
