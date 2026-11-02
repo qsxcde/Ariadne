@@ -94,6 +94,7 @@ class SubscriptionRecord(TypedDict):
     user_id: str | None
     kind: str
     value: str
+    source: str
     is_active: int
     created_at: str
     last_checked_at: str | None

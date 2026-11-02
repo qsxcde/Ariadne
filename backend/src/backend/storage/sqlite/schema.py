@@ -2,7 +2,7 @@ import threading
 
 from backend.storage.sqlite.connection import connect
 
-CURRENT_SCHEMA_VERSION = 15
+CURRENT_SCHEMA_VERSION = 16
 
 _init_lock = threading.RLock()
 
@@ -82,6 +82,8 @@ def _migrate_schema(conn, from_version: int) -> None:
         _migrate_add_citation_count(conn)
     if from_version < 15:
         _migrate_add_arxiv_updated(conn)
+    if from_version < 16:
+        _migrate_add_subscription_source(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -470,6 +472,7 @@ def _migrate_add_feed(conn) -> None:
           user_id TEXT NULL,
           kind TEXT NOT NULL,
           value TEXT NOT NULL,
+          source TEXT NOT NULL DEFAULT 'arxiv',
           is_active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
           last_checked_at TEXT NULL,
@@ -592,6 +595,15 @@ def _migrate_add_arxiv_updated(conn) -> None:
     columns = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
     if "last_arxiv_updated" not in columns:
         conn.execute("ALTER TABLE papers ADD COLUMN last_arxiv_updated TEXT NULL")
+
+
+def _migrate_add_subscription_source(conn) -> None:
+    """Track which feed source a subscription belongs to (v16)."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(subscriptions)")}
+    if "source" not in columns:
+        conn.execute(
+            "ALTER TABLE subscriptions ADD COLUMN source TEXT NOT NULL DEFAULT 'arxiv'"
+        )
 
 
 def _create_initial_schema(conn) -> None:
@@ -783,6 +795,7 @@ def _create_initial_schema(conn) -> None:
           user_id TEXT NULL,
           kind TEXT NOT NULL,
           value TEXT NOT NULL,
+          source TEXT NOT NULL DEFAULT 'arxiv',
           is_active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
           last_checked_at TEXT NULL,

@@ -1311,6 +1311,13 @@
       },
       "FeedRefreshResponse": {
         "properties": {
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
           "items": {
             "title": "Items",
             "type": "integer"
@@ -3276,6 +3283,17 @@
             "title": "Kind",
             "type": "string"
           },
+          "source": {
+            "default": "arxiv",
+            "enum": [
+              "arxiv",
+              "openalex",
+              "pubmed",
+              "rss"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
           "value": {
             "title": "Value",
             "type": "string"
@@ -3318,6 +3336,17 @@
               }
             ],
             "title": "Last Checked At"
+          },
+          "source": {
+            "default": "arxiv",
+            "enum": [
+              "arxiv",
+              "openalex",
+              "pubmed",
+              "rss"
+            ],
+            "title": "Source",
+            "type": "string"
           },
           "value": {
             "title": "Value",

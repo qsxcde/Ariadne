@@ -1406,6 +1406,8 @@ export interface components {
         };
         /** FeedRefreshResponse */
         FeedRefreshResponse: {
+            /** Errors */
+            errors?: string[];
             /** Items */
             items: number;
             /** Subscriptions */
@@ -2097,6 +2099,12 @@ export interface components {
              * @enum {string}
              */
             kind: "keyword" | "author" | "venue" | "institution";
+            /**
+             * Source
+             * @default arxiv
+             * @enum {string}
+             */
+            source: "arxiv" | "openalex" | "pubmed" | "rss";
             /** Value */
             value: string;
         };
@@ -2113,6 +2121,12 @@ export interface components {
             kind: "keyword" | "author" | "venue" | "institution";
             /** Last Checked At */
             last_checked_at?: string | null;
+            /**
+             * Source
+             * @default arxiv
+             * @enum {string}
+             */
+            source: "arxiv" | "openalex" | "pubmed" | "rss";
             /** Value */
             value: string;
         };

@@ -83,7 +83,7 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | POST | `/notifications/check-citations` | 检查新引用并生成提醒；首跑只记基线 | 200 | 401 |
 | POST | `/notifications/check-versions` | 检查 arXiv 新版本并生成提醒；首跑只记基线 | 200 | 401 |
 | GET | `/subscriptions` | 订阅列表 | 200 | 401 |
-| POST | `/subscriptions` | 新建订阅 | 201 | 401 / 422 |
+| POST | `/subscriptions` | 新建订阅；`source` 支持 arxiv/openalex/pubmed/rss | 201 | 401 / 422 |
 | DELETE | `/subscriptions/{id}` | 删除订阅 | 200 | 401 / 404 |
 | GET | `/feed` | Feed 列表；按 new/saved/ignored 过滤 | 200 | 401 |
 | POST | `/feed/refresh` | 从 arXiv 抓取并去重 | 200 | 401 / 502 |

@@ -8,16 +8,22 @@ from backend.storage.sqlite.connection import connect, row_to_dict, transaction
 from backend.storage.sqlite.sessions import now_iso
 
 
+_SOURCES = {"arxiv", "openalex", "pubmed", "rss"}
+
+
 def create_subscription(
     *,
     user_id: str | None,
     kind: str,
     value: str,
+    source: str = "arxiv",
     subscription_id: str | None = None,
 ) -> SubscriptionRecord:
     normalized = value.strip()
     if kind not in {"keyword", "author", "venue", "institution"}:
         raise ValueError(f"Invalid subscription kind: {kind}")
+    if source not in _SOURCES:
+        raise ValueError(f"Invalid subscription source: {source}")
     if not normalized:
         raise ValueError("Subscription value is empty")
     resolved_id = subscription_id or str(uuid.uuid4())
@@ -25,11 +31,11 @@ def create_subscription(
         conn.execute(
             """
             INSERT OR IGNORE INTO subscriptions (
-              id, user_id, kind, value, is_active, created_at, last_checked_at
+              id, user_id, kind, value, source, is_active, created_at, last_checked_at
             )
-            VALUES (?, ?, ?, ?, 1, ?, NULL)
+            VALUES (?, ?, ?, ?, ?, 1, ?, NULL)
             """,
-            (resolved_id, user_id, kind, normalized, now_iso()),
+            (resolved_id, user_id, kind, normalized, source, now_iso()),
         )
         row = conn.execute(
             """

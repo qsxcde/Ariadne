@@ -368,7 +368,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 | 版本 | 变更 |
 |---|---|
-| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 15` |
+| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 16` |
 | v2 | `chunks(document_id, chunk_index)` 唯一索引 |
 | v3 | `retrieval_indexes.created_at` 补列并回填；新增 `idx_sessions_list` 部分索引 |
 | v4 | 重建 6 张含外键表，补全 `ON DELETE CASCADE` / `SET NULL` |
@@ -383,6 +383,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v13 | 新增 `weekly_reports`（可编辑周报复盘） |
 | v14 | `papers.last_citation_count`：上次观察到的被引次数 |
 | v15 | `papers.last_arxiv_updated`：上次观察到的 arXiv 更新时间 |
+| v16 | `subscriptions.source`：订阅来源（arxiv/openalex/pubmed/rss） |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

@@ -43,7 +43,7 @@
 - M3：订阅/Feed、真实 arXiv、Docker mock LLM。
 - M4：提醒/Digest、Feed/引用/arXiv 版本检查、OpenAlex 引用（按标题检索 + 相似度校验）、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
 - 测试：
-  - 普通 pytest：211 passed, 9 skipped。
+  - 普通 pytest：217 passed, 12 skipped。
   - 前端 vitest：16 passed。
   - 本地真实模型：50 题 QA（45/50）、20 个多轮脚本（20/20）、30 题跨论文（26/30）、10 篇对比引用（10/10）。
   - Docker mock LLM：3 passed。

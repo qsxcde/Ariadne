@@ -61,7 +61,10 @@ def create_subscription(
 ) -> SubscriptionSummary:
     try:
         row = feed_service.create_subscription(
-            user.get("id") or None, kind=payload.kind, value=payload.value
+            user.get("id") or None,
+            kind=payload.kind,
+            value=payload.value,
+            source=payload.source,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

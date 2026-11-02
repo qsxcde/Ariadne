@@ -20,6 +20,7 @@ const emit = defineEmits<{
 const subscriptions = ref<SubscriptionSummary[]>([]);
 const items = ref<FeedItemSummary[]>([]);
 const kind = ref<SubscriptionCreatePayload["kind"]>("keyword");
+const source = ref<SubscriptionCreatePayload["source"]>("arxiv");
 const value = ref("");
 const statusFilter = ref("new");
 const isLoading = ref(false);
@@ -31,6 +32,13 @@ const KIND_OPTIONS = [
   { value: "author", label: "作者" },
   { value: "venue", label: "会议/期刊" },
   { value: "institution", label: "机构" },
+];
+
+const SOURCE_OPTIONS = [
+  { value: "arxiv", label: "arXiv" },
+  { value: "openalex", label: "OpenAlex" },
+  { value: "pubmed", label: "PubMed" },
+  { value: "rss", label: "RSS" },
 ];
 
 async function load(): Promise<void> {
@@ -53,7 +61,11 @@ async function load(): Promise<void> {
 async function addSubscription(): Promise<void> {
   if (!value.value.trim()) return;
   try {
-    await createSubscription({ kind: kind.value, value: value.value.trim() });
+    await createSubscription({
+      kind: kind.value,
+      value: value.value.trim(),
+      source: source.value,
+    });
     value.value = "";
     await load();
     ElMessage.success("已添加订阅");
@@ -78,6 +90,9 @@ async function refresh(): Promise<void> {
     const result = await refreshFeed();
     await load();
     ElMessage.success("已刷新：订阅 " + result.subscriptions + " 个，抓取 " + result.items + " 条");
+    if ((result.errors ?? []).length) {
+      ElMessage.warning((result.errors ?? []).length + " 个订阅抓取失败");
+    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "刷新 Feed 失败";
   } finally {
@@ -148,6 +163,11 @@ onMounted(() => {
           <span>{{ subscriptions.length }} 个</span>
         </header>
         <div class="feed-view__form">
+          <select v-model="source" class="feed-view__select">
+            <option v-for="option in SOURCE_OPTIONS" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
           <select v-model="kind" class="feed-view__select">
             <option v-for="option in KIND_OPTIONS" :key="option.value" :value="option.value">
               {{ option.label }}
@@ -168,7 +188,7 @@ onMounted(() => {
         <ul v-else class="feed-view__subs">
           <li v-for="subscription in subscriptions" :key="subscription.id">
             <span>{{ subscription.value }}</span>
-            <small>{{ subscription.kind }}</small>
+            <small>{{ subscription.source }} · {{ subscription.kind }}</small>
             <button type="button" class="feed-view__link" @click="removeSubscription(subscription)">
               删除
             </button>

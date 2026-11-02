@@ -5,18 +5,21 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 SubscriptionKind = Literal["keyword", "author", "venue", "institution"]
+SubscriptionSource = Literal["arxiv", "openalex", "pubmed", "rss"]
 FeedStatus = Literal["new", "saved", "ignored"]
 
 
 class SubscriptionCreateRequest(BaseModel):
     kind: SubscriptionKind
     value: str
+    source: SubscriptionSource = "arxiv"
 
 
 class SubscriptionSummary(BaseModel):
     id: str
     kind: SubscriptionKind
     value: str
+    source: SubscriptionSource = "arxiv"
     is_active: int
     last_checked_at: str | None = None
 
@@ -38,3 +41,4 @@ class FeedItemSummary(BaseModel):
 class FeedRefreshResponse(BaseModel):
     subscriptions: int
     items: int
+    errors: list[str] = Field(default_factory=list)
