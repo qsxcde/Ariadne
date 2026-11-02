@@ -11,12 +11,20 @@ class TextPDFBackend:
     version = "unknown"
 
     def parse(self, pdf_bytes: bytes, filename: str | None = None) -> RawParserResult:
-        from pypdf import PdfReader, PdfEncryptedError
+        from pypdf import PdfReader
+        from pypdf.errors import FileNotDecryptedError, PdfReadError
 
         try:
             reader = PdfReader(BytesIO(pdf_bytes))
-        except PdfEncryptedError:
-            raise RuntimeError("PDF is encrypted and cannot be parsed")
+        except FileNotDecryptedError as exc:
+            raise RuntimeError("PDF is encrypted and cannot be parsed") from exc
+        except PdfReadError as exc:
+            raise RuntimeError(f"PDF cannot be parsed: {exc}") from exc
+        if reader.is_encrypted:
+            try:
+                reader.decrypt("")
+            except Exception as exc:  # 空密码也不可用时视为加密文件
+                raise RuntimeError("PDF is encrypted and cannot be parsed") from exc
         page_texts: list[str] = []
         pages: list[dict] = []
         for index, page in enumerate(reader.pages, start=1):
