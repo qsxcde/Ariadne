@@ -19,7 +19,7 @@
    backend/.env 的 DEEPSEEK_API_KEY 返回 401。未执行 DeepSeek 50 题/10 篇真实评测。
 
 2. **完整 PDF 精读评测**
-   真实 arXiv abstracts 50 题达到 45/50 正确（90%）、47/50 引用（94%），10 篇对比引用 10/10。全文 PDF 探索：3 篇真实 PDF 可解析（6/27/30 页），本地 3B + 4k 上下文下元数据问答仅 1/9（首块检索与长上下文截断），需要 DeepSeek 或更大上下文模型 + 人工标注集才能作为发布门禁。
+   真实 arXiv abstracts 50 题达到 45/50 正确（90%）、47/50 引用（94%），10 篇对比引用 10/10。全文 PDF 探索：3 篇真实 PDF 可解析（6/27/30 页）；本地 3B + 4k 上下文下元数据问答 1/9，且标注来自 arXiv 元数据、与 PDF 作者顺序可能不一致，结果不可作为门禁。需要人工标注集 + DeepSeek/大上下文模型才能给出可信的全文精读准确率。
 
 3. **Zotero / Notion OAuth 双向同步**
    已实现 CSL JSON / Markdown 导出与 token-based 官方 API 导出；OAuth 授权、回调、双向同步未实现。
@@ -43,7 +43,7 @@
 - M3：订阅/Feed、真实 arXiv、Docker mock LLM。
 - M4：提醒/Digest、Feed/引用/arXiv 版本检查、OpenAlex 引用（按标题检索 + 相似度校验）、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
 - 测试：
-  - 普通 pytest：209 passed, 9 skipped。
+  - 普通 pytest：211 passed, 9 skipped。
   - 前端 vitest：16 passed。
   - 本地真实模型：50 题 QA（45/50）、20 个多轮脚本（20/20）、30 题跨论文（26/30）、10 篇对比引用（10/10）。
   - Docker mock LLM：3 passed。

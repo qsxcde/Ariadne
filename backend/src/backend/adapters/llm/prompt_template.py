@@ -1,3 +1,4 @@
+from backend.config import settings
 from backend.domain.models import Chunk
 from backend.prompts.loader import load_prompt
 
@@ -11,8 +12,10 @@ def build_prompt(
     chunks: list[Chunk],
     question: str,
     history: list[dict] | None = None,
+    max_context_chars: int | None = None,
 ) -> str:
-    context = "\n\n---\n\n".join(_format_chunk_for_prompt(chunk) for chunk in chunks)
+    budget = max_context_chars or settings.llm_context_chars
+    context = _format_context(chunks, budget)
     parts = [SYSTEM_PROMPT]
     history_block = _format_history(history, question)
     if history_block:
@@ -21,6 +24,31 @@ def build_prompt(
     parts.append(f"用户问题: {question}")
     parts.append("请用中文作答。")
     return "\n\n".join(parts)
+
+
+def _format_context(chunks: list[Chunk], budget: int) -> str:
+    """Include whole chunks until the character budget is reached.
+
+    The first chunk is always kept (truncated if needed) so a tight budget for a
+    small-context local model never silently drops the best-matching evidence.
+    """
+    blocks: list[str] = []
+    used = 0
+    for chunk in chunks:
+        block = _format_chunk_for_prompt(chunk)
+        separator = 5 if blocks else 0
+        if used + separator + len(block) <= budget:
+            blocks.append(block)
+            used += separator + len(block)
+            continue
+        remaining = budget - used - separator
+        header = _format_chunk_header(chunk)
+        text_budget = remaining - len(header) - 2
+        if text_budget < 120:
+            break
+        blocks.append(f"{header}\n{chunk.text[:text_budget]}…")
+        break
+    return "\n\n---\n\n".join(blocks)
 
 
 def _format_history(history: list[dict] | None, question: str) -> str:

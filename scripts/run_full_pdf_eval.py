@@ -89,10 +89,10 @@ def main() -> None:
     for question, expected, scope in cases:
         options = RetrievalOptions(
             strategy="hybrid",
-            bm25_top_k=1,
-            dense_top_k=1,
-            seed_top_k=1,
-            max_expanded_chunks=1,
+            bm25_top_k=3,
+            dense_top_k=3,
+            seed_top_k=3,
+            max_expanded_chunks=3,
             same_section_window=0,
             adjacent_window=0,
             include_linked_blocks=False,
