@@ -216,7 +216,7 @@ CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + 
 
 | 关卡 | 命令 | 结果 |
 |---|---|---|
-| 后端测试 | `uv run --project backend pytest` | 156 passed, 3 skipped |
+| 后端测试 | `uv run --project backend pytest` | 156 passed, 4 skipped |
 | 后端 lint | `uv run --project backend ruff check backend/src tests` | All checks passed |
 | 后端类型检查 | `uv run --project backend mypy --config-file backend/pyproject.toml backend/src/backend/storage backend/src/backend/core backend/src/backend/application` | 30 source files, no issues |
 | 前端 lint | `cd frontend && npm run lint` | 通过 |

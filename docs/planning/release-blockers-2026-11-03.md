@@ -15,7 +15,7 @@
 
 ## 2. 自动化基线
 
-- 后端 pytest：156 passed，3 skipped（Docker mock 用例默认 skip）。
+- 后端 pytest：156 passed，4 skipped（3 个 Docker mock 用例 + 1 个真实 arXiv 网络用例默认 skip）。
 - 前端 Vitest：8 passed；typecheck/lint/build 通过。
 - ruff / mypy：通过。
 - Docker mock LLM：`./scripts/run_mock_llm_tests.sh` → 3 passed。
