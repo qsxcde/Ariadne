@@ -349,6 +349,14 @@ onBeforeUnmount(() => {
               <p v-if="node.block.page_number" class="paper-reader__anchor" aria-hidden="true">
                 p.{{ node.block.page_number }}
               </p>
+              <button
+                v-if="node.block.type === 'table' || node.block.type === 'formula'"
+                type="button"
+                class="paper-reader__block-action"
+                @click.stop="emit('ask', node.block.text, 'explain')"
+              >
+                {{ node.block.type === "table" ? "解释表格" : "解释公式" }}
+              </button>
               <p v-if="node.block.type === 'title'" class="paper-reader__title">
                 {{ node.block.text }}
               </p>
@@ -531,6 +539,19 @@ onBeforeUnmount(() => {
 
 .paper-reader__block + .paper-reader__block {
   margin-top: 4px;
+}
+
+.paper-reader__block-action {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: 11px;
 }
 
 .paper-reader__block.is-active {

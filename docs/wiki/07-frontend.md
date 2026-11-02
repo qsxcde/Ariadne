@@ -200,6 +200,7 @@ handleUpload(file)
 - 术语表/引用：右侧栏可生成术语表、查询 OpenAlex 引用关系。
 - 通知：Settings 显示未读通知，支持 Webhook 投递；邮件需另配 SMTP。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
+- 结构化块：table / formula 块右上角提供「解释表格 / 解释公式」，复用同一 explain 端点。
 - 元数据：阅读工作台「编辑信息」弹窗 PATCH /papers/{id}，可改标题/作者/年份/venue/DOI/arXiv/链接/摘要。
 - 阅读时长：工作台每 5s 累计可见停留时间，满 60s 或离开页面时 POST /papers/{id}/reading-time；Today 展示今日/本周时长。
 - Synthesis：三个 Tab——问答、对比表、综述矩阵；矩阵按方法/数据集/指标/局限排列并显示覆盖率，可导出 Markdown。
