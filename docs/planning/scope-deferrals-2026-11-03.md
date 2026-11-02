@@ -7,10 +7,10 @@
 
 | 阶段 | 原始计划基线 | 实际交付基线 | 是否等价 |
 |---|---|---|---|
-| M1 | DeepSeek + 50 题真实论文 QA，citation precision ≥0.9 | 合成 50 题通过；真实 arXiv abstracts 50 题：45/50 正确、47/50 引用 | 部分等价：真实摘要语料通过，provider 不是 DeepSeek |
-| M2 | 10 篇真实论文对比，准确率 ≥0.8 | 合成 10 篇通过；真实 10 篇摘要对比引用 10/10 | 部分等价：真实摘要对比通过引用断言，准确率未人工标注 |
+| M1 | DeepSeek + 50 题真实论文 QA，citation precision ≥0.9；20 个多轮脚本 ≥90% | 真实 arXiv abstracts 50 题：45/50 正确、47/50 引用；多轮 20/20 | 部分等价：真实摘要语料与多轮门禁通过，provider 不是 DeepSeek |
+| M2 | 10 篇真实论文对比，准确率 ≥0.8；30 题跨论文 ≥0.8 | 真实 10 篇摘要对比引用 10/10；跨论文 26/30（86.7%） | 部分等价：跨论文门禁通过，对比准确率未人工标注 |
 | M3 | 真实 arXiv 抓取 | 真实 arXiv API 已验证（10 条结果） | 是 |
-| M4 | Zotero/Notion OAuth 双向同步、真实 SMTP 邮箱 | token-based Zotero/Notion 导出；MailHog SMTP 实测；Webhook + SMTP 代码 | 否，OAuth/真实邮箱未闭环 |
+| M4 | Zotero/Notion OAuth 双向同步、真实 SMTP 邮箱、引用覆盖率 ≥80% | token-based Zotero/Notion 导出；MailHog SMTP 实测；OpenAlex 5 篇抽测 4/5 可解析 | 部分等价：覆盖率恰好 80%，OAuth/真实邮箱未闭环 |
 | 部署 | 前后端 Docker 镜像 | docker-compose.app.yml 构建/启动，前端与 /health 验证通过 | 是 |
 
 ## 2. 当前明确未完成项
@@ -41,10 +41,11 @@
 - M0：schema v8、v7/v5 迁移、论文资产/阅读闭环，commit 7626a0a。
 - M1/M2：历史注入、scope 检索、chunk 引用、brief/explain、Today、集合问答、对比、周报、导出。
 - M3：订阅/Feed、真实 arXiv、Docker mock LLM。
-- M4：提醒/Digest、OpenAlex 引用、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
+- M4：提醒/Digest、OpenAlex 引用（按标题检索 + 相似度校验）、CSL/Markdown/BibTeX、通知 outbox、Webhook + SMTP。
 - 测试：
-  - 普通 pytest：166 passed, 8 skipped。
-  - 本地真实模型：50 题 + 10 篇对比通过。
+  - 普通 pytest：196 passed, 9 skipped。
+  - 前端 vitest：16 passed。
+  - 本地真实模型：50 题 QA（45/50）、20 个多轮脚本（20/20）、30 题跨论文（26/30）、10 篇对比引用（10/10）。
   - Docker mock LLM：3 passed。
   - MailHog SMTP：1 passed。
   - 真实 arXiv / OpenAlex：2 passed。
