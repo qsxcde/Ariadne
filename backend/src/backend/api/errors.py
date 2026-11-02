@@ -4,9 +4,13 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from backend.domain.exceptions import (
+    AnnotationNotFoundError,
     ChunkNotFoundError,
+    CollectionNotFoundError,
     DocumentNotFoundError,
+    DuplicatePaperError,
     JobInProgressError,
+    PaperNotFoundError,
     SessionNotFoundError,
     UploadTooLargeError,
     UploadValidationError,
@@ -21,6 +25,38 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": detail or "Session not found"},
+        )
+
+    @app.exception_handler(PaperNotFoundError)
+    async def _paper_not_found(_request: Request, exc: PaperNotFoundError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc) or "Paper not found"},
+        )
+
+    @app.exception_handler(CollectionNotFoundError)
+    async def _collection_not_found(
+        _request: Request, exc: CollectionNotFoundError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc) or "Collection not found"},
+        )
+
+    @app.exception_handler(AnnotationNotFoundError)
+    async def _annotation_not_found(
+        _request: Request, exc: AnnotationNotFoundError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc) or "Annotation not found"},
+        )
+
+    @app.exception_handler(DuplicatePaperError)
+    async def _duplicate_paper(_request: Request, exc: DuplicatePaperError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": str(exc) or "Paper already exists", "paper_id": exc.paper_id},
         )
 
     @app.exception_handler(ChunkNotFoundError)

@@ -20,6 +20,19 @@ from backend.api.schemas.document import (
     SourceBlockBox,
     SourceChunkResponse,
 )
+from backend.api.schemas.paper import (
+    AnnotationCreateRequest,
+    AnnotationSummary,
+    AnnotationUpdateRequest,
+    CollectionCreateRequest,
+    CollectionSummary,
+    CollectionUpdateRequest,
+    PaperDetail,
+    PaperDocumentSummary,
+    PaperSummary,
+    PaperUpdateRequest,
+    PaperUploadResponse,
+)
 from backend.api.schemas.session import (
     IndexSnapshotSummary,
     JobSummary,
@@ -32,6 +45,9 @@ from backend.api.schemas.session import (
 )
 
 __all__ = [
+    "AnnotationCreateRequest",
+    "AnnotationSummary",
+    "AnnotationUpdateRequest",
     "AuthRequest",
     "AuthResponse",
     "ChatMessage",
@@ -42,6 +58,9 @@ __all__ = [
     "ChatStreamStatusEvent",
     "ChatStreamTokenEvent",
     "ChatStreamWarningEvent",
+    "CollectionCreateRequest",
+    "CollectionSummary",
+    "CollectionUpdateRequest",
     "DocumentContentResponse",
     "DocumentIntakeResponse",
     "DocumentSummary",
@@ -49,6 +68,11 @@ __all__ = [
     "IndexSnapshotSummary",
     "JobSummary",
     "PaperBlock",
+    "PaperDetail",
+    "PaperDocumentSummary",
+    "PaperSummary",
+    "PaperUpdateRequest",
+    "PaperUploadResponse",
     "PersistedMessage",
     "RetrievalIndexSummary",
     "SessionCreateResponse",

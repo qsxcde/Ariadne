@@ -8,11 +8,15 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     // 未设置 VITE_API_BASE_URL 时，前端走同源相对路径，由 dev server 代理到后端
-    proxy: {
-      "/auth": BACKEND_ORIGIN,
-      "/sessions": BACKEND_ORIGIN,
-      "/health": BACKEND_ORIGIN,
-    },
+      proxy: {
+        "/auth": BACKEND_ORIGIN,
+        "/sessions": BACKEND_ORIGIN,
+        "/health": BACKEND_ORIGIN,
+        "/documents": BACKEND_ORIGIN,
+        "/papers": BACKEND_ORIGIN,
+        "/annotations": BACKEND_ORIGIN,
+        "/collections": BACKEND_ORIGIN,
+      },
   },
   build: {
     // Element Plus 体积较大，单独成 chunk 便于长期缓存

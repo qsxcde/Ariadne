@@ -53,13 +53,26 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | GET | `/sessions/{id}` | 会话快照 | 200 | 401 / 404 |
 | PATCH | `/sessions/{id}` | 改标题 / 置顶 | 200 | 401 / 404 |
 | DELETE | `/sessions/{id}` | 归档会话并删磁盘目录 | 200 | 401 |
-| GET | `/documents` | 文献库列表（跨会话） | 200 | 401 |
-| POST | `/sessions/{id}/documents` | 上传 PDF（异步摄取） | **202** | 400 / 401 / 404 / 413 |
+| GET | `/documents` | 文献库列表（跨会话，legacy） | 200 | 401 |
+| GET | `/papers` | 论文列表；支持 status / collection_id / tag / q / limit | 200 | 401 |
+| POST | `/papers` | 上传 PDF：创建论文 + reading session + 文档 + 摄取任务 | **202** | 401 / 409 / 413 / 422 |
+| GET | `/papers/{paper_id}` | 论文详情：文档、批注、集合、阅读进度 | 200 | 401 / 404 |
+| PATCH | `/papers/{paper_id}` | 编辑元数据与阅读状态/进度 | 200 | 401 / 404 / 422 |
+| GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
+| POST | `/papers/{paper_id}/annotations` | 新建高亮/笔记/问题 | 201 | 401 / 404 / 422 |
+| PATCH / DELETE | `/annotations/{annotation_id}` | 编辑/删除批注 | 200 | 401 / 404 |
+| GET | `/collections` | 集合列表（含论文数） | 200 | 401 |
+| POST | `/collections` | 新建集合 | 201 | 401 |
+| PATCH | `/collections/{collection_id}` | 编辑集合 | 200 | 401 / 404 |
+| PUT / DELETE | `/collections/{collection_id}/papers/{paper_id}` | 加入/移出集合 | 200 | 401 / 404 |
+| POST | `/sessions/{id}/documents` | 上传 PDF（异步摄取，legacy） | **202** | 400 / 401 / 404 / 413 |
 | DELETE | `/sessions/{id}/documents/{document_id}` | 删除文档并重建索引 | 200 | 401 / 404 |
 | GET | `/sessions/{id}/documents/{document_id}/content` | 结构化正文（阅读器） | 200 | 401 / 404 |
 | GET | `/sessions/{id}/documents/{document_id}/file` | 原始 PDF 字节（原页渲染） | 200 | 401 / 404 |
 | GET | `/sessions/{id}/documents/{document_id}/chunks/{chunk_index}` | 引用定位（还原原文段落 + 坐标） | 200 | 401 / 404 |
 | POST | `/sessions/{id}/messages` | 流式对话 | 200（SSE） | 401 / 404 |
+
+> v8 论文资产：`POST /papers` 会自动创建 reading session，并以 SHA-256 去重；`GET /papers/{id}` 返回 `primary_session_id` 与当前 `document_id`，阅读器继续复用 session/document 的 content/file/chunks 端点。重复上传返回 409，body 带 `paper_id`。
 
 ## 3. 端点详情
 

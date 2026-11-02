@@ -30,5 +30,18 @@ export type RetrievalIndexSummary = Schemas["RetrievalIndexSummary"];
 export type PaperBlock = Schemas["PaperBlock"];
 export type PaperContent = Schemas["DocumentContentResponse"];
 
+export type PaperSummary = Schemas["PaperSummary"];
+export type PaperDetail = Schemas["PaperDetail"];
+export type PaperDocumentSummary = Schemas["PaperDocumentSummary"];
+export type PaperUpdatePayload = Schemas["PaperUpdateRequest"];
+export type PaperUploadResult = Schemas["PaperUploadResponse"];
+
+export type AnnotationSummary = Schemas["AnnotationSummary"];
+export type AnnotationCreatePayload = Schemas["AnnotationCreateRequest"];
+export type AnnotationUpdatePayload = Schemas["AnnotationUpdateRequest"];
+
+export type CollectionSummary = Schemas["CollectionSummary"];
+export type CollectionCreatePayload = Schemas["CollectionCreateRequest"];
+
 /** SSE 事件载荷：六类事件的判别联合，同样来自 OpenAPI components。 */
 export type MessageChunk = Schemas["ChatStreamEvent"];

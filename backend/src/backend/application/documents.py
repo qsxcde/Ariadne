@@ -41,6 +41,7 @@ def intake_document_upload(
     mime_type: str,
     pdf_bytes: bytes,
     file_size: int | None = None,
+    file_hash: str | None = None,
 ) -> dict:
     """Persist upload intake state and enqueue an ingestion job."""
     _validate_upload(file_size or len(pdf_bytes), pdf_bytes)
@@ -62,6 +63,7 @@ def intake_document_upload(
             mime_type=mime_type,
             file_size=len(pdf_bytes),
             document_id=document_id,
+            file_hash=file_hash,
         )
         job = job_repo.create_job(
             session_id=session_id,

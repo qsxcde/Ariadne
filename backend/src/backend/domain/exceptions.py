@@ -46,6 +46,38 @@ class ChunkNotFoundError(Exception):
         super().__init__(message)
 
 
+class PaperNotFoundError(Exception):
+    """Raised when a paper does not exist or the caller cannot access it."""
+
+    def __init__(self, message: str = "", paper_id: str | None = None):
+        self.paper_id = paper_id
+        super().__init__(message)
+
+
+class CollectionNotFoundError(Exception):
+    """Raised when a collection does not exist or cannot be accessed."""
+
+    def __init__(self, message: str = "", collection_id: str | None = None):
+        self.collection_id = collection_id
+        super().__init__(message)
+
+
+class AnnotationNotFoundError(Exception):
+    """Raised when an annotation does not exist or cannot be accessed."""
+
+    def __init__(self, message: str = "", annotation_id: str | None = None):
+        self.annotation_id = annotation_id
+        super().__init__(message)
+
+
+class DuplicatePaperError(Exception):
+    """Raised when an upload already exists in the caller's library."""
+
+    def __init__(self, message: str = "", paper_id: str | None = None):
+        self.paper_id = paper_id
+        super().__init__(message)
+
+
 class DocumentNotFoundError(Exception):
     """Raised when a document does not exist inside the requested session."""
 

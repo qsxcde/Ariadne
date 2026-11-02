@@ -13,14 +13,26 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/papers/:sessionId",
+      path: "/papers/:paperId",
       name: "paper",
+      component: AppShell,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/sessions/:sessionId/reader",
+      name: "session-reader",
       component: AppShell,
       meta: { requiresAuth: true },
     },
     {
       path: "/library",
       name: "library",
+      component: AppShell,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/settings",
+      name: "settings",
       component: AppShell,
       meta: { requiresAuth: true },
     },

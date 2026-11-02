@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class DocumentSummary(BaseModel):
     id: str
+    paper_id: str
     session_id: str
     filename: str
     file_path: str
@@ -29,6 +30,7 @@ class LibraryDocumentSummary(BaseModel):
     """文献库列表项：文档 + 所属会话标题。"""
 
     document_id: str
+    paper_id: str
     session_id: str
     session_title: str
     filename: str

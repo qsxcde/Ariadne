@@ -9,5 +9,6 @@ export { useAuth } from "../composables/useAuth";
 export { useLibrary } from "../composables/useLibrary";
 export { usePaperChat, resetPaperChat } from "../composables/usePaperChat";
 export { usePaperReader } from "../composables/usePaperReader";
+export { usePapers } from "../composables/usePapers";
 export { useSourcePreview } from "../composables/useSourcePreview";
 export { resetClientState } from "./reset";

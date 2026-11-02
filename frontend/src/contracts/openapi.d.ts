@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/annotations/{annotation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Annotation */
+        delete: operations["delete_annotation_annotations__annotation_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Annotation */
+        patch: operations["update_annotation_annotations__annotation_id__patch"];
+        trace?: never;
+    };
     "/auth/login": {
         parameters: {
             query?: never;
@@ -64,6 +82,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Collections */
+        get: operations["list_collections_collections_get"];
+        put?: never;
+        /** Create Collection */
+        post: operations["create_collection_collections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/{collection_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Collection */
+        patch: operations["update_collection_collections__collection_id__patch"];
+        trace?: never;
+    };
+    "/collections/{collection_id}/papers/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Add Paper To Collection */
+        put: operations["add_paper_to_collection_collections__collection_id__papers__paper_id__put"];
+        post?: never;
+        /** Remove Paper From Collection */
+        delete: operations["remove_paper_from_collection_collections__collection_id__papers__paper_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -98,6 +169,66 @@ export interface paths {
         get: operations["health_health_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Papers
+         * @description 文献库列表：按用户、状态、集合、标签与标题过滤。
+         */
+        get: operations["list_papers_papers_get"];
+        put?: never;
+        /**
+         * Upload Paper
+         * @description 上传 PDF：创建论文、reading session、文档与摄取任务。
+         */
+        post: operations["upload_paper_papers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/{paper_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Paper */
+        get: operations["get_paper_papers__paper_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Paper */
+        patch: operations["update_paper_papers__paper_id__patch"];
+        trace?: never;
+    };
+    "/papers/{paper_id}/annotations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Annotations */
+        get: operations["list_annotations_papers__paper_id__annotations_get"];
+        put?: never;
+        /** Create Annotation */
+        post: operations["create_annotation_papers__paper_id__annotations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -280,6 +411,73 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnnotationCreateRequest */
+        AnnotationCreateRequest: {
+            /** Bbox */
+            bbox?: {
+                [key: string]: number;
+            } | null;
+            /** Chunk Id */
+            chunk_id?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Document Id */
+            document_id?: string | null;
+            /** Page End */
+            page_end?: number | null;
+            /** Page Start */
+            page_start?: number | null;
+            /** Quote */
+            quote?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "highlight" | "note" | "question";
+        };
+        /** AnnotationSummary */
+        AnnotationSummary: {
+            /** Bbox */
+            bbox?: {
+                [key: string]: number;
+            } | null;
+            /** Chunk Id */
+            chunk_id?: string | null;
+            /** Color */
+            color?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Created At */
+            created_at: string;
+            /** Document Id */
+            document_id?: string | null;
+            /** Id */
+            id: string;
+            /** Page End */
+            page_end?: number | null;
+            /** Page Start */
+            page_start?: number | null;
+            /** Quote */
+            quote?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "highlight" | "note" | "question";
+            /** Updated At */
+            updated_at: string;
+        };
+        /** AnnotationUpdateRequest */
+        AnnotationUpdateRequest: {
+            /** Color */
+            color?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Quote */
+            quote?: string | null;
+        };
         /** AuthRequest */
         AuthRequest: {
             /** Password */
@@ -295,6 +493,11 @@ export interface components {
         };
         /** Body_upload_document_sessions__session_id__documents_post */
         Body_upload_document_sessions__session_id__documents_post: {
+            /** File */
+            file: string;
+        };
+        /** Body_upload_paper_papers_post */
+        Body_upload_paper_papers_post: {
             /** File */
             file: string;
         };
@@ -379,6 +582,38 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** CollectionCreateRequest */
+        CollectionCreateRequest: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+        };
+        /** CollectionSummary */
+        CollectionSummary: {
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Paper Count
+             * @default 0
+             */
+            paper_count: number;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** CollectionUpdateRequest */
+        CollectionUpdateRequest: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
         /** DocumentContentResponse */
         DocumentContentResponse: {
             /** Blocks */
@@ -441,6 +676,8 @@ export interface components {
             id: string;
             /** Mime Type */
             mime_type: string;
+            /** Paper Id */
+            paper_id: string;
             /** Parse Quality Status */
             parse_quality_status?: string | null;
             /** Parsed Ir Path */
@@ -529,6 +766,8 @@ export interface components {
             file_size: number;
             /** Filename */
             filename: string;
+            /** Paper Id */
+            paper_id: string;
             /** Parse Quality Status */
             parse_quality_status?: string | null;
             /** Session Id */
@@ -560,6 +799,157 @@ export interface components {
             text: string;
             /** Type */
             type: string;
+        };
+        /** PaperDetail */
+        PaperDetail: {
+            /** Abstract */
+            abstract?: string | null;
+            /** Annotations */
+            annotations?: components["schemas"]["AnnotationSummary"][];
+            /** Arxiv Id */
+            arxiv_id?: string | null;
+            /** Authors */
+            authors?: string[];
+            /** Collections */
+            collections?: components["schemas"]["CollectionSummary"][];
+            /** Documents */
+            documents?: components["schemas"]["PaperDocumentSummary"][];
+            /** Doi */
+            doi?: string | null;
+            /** Id */
+            id: string;
+            /** Last Location */
+            last_location?: {
+                [key: string]: unknown;
+            } | null;
+            /** Last Read At */
+            last_read_at?: string | null;
+            /** Primary Session Id */
+            primary_session_id?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Reading Status
+             * @default inbox
+             * @enum {string}
+             */
+            reading_status: "inbox" | "queued" | "skimming" | "reading" | "read" | "archived";
+            /** Tags */
+            tags?: string[];
+            /**
+             * Time Spent Seconds
+             * @default 0
+             */
+            time_spent_seconds: number;
+            /** Title */
+            title: string;
+            /** Updated At */
+            updated_at: string;
+            /** Url */
+            url?: string | null;
+            /** Venue */
+            venue?: string | null;
+            /** Year */
+            year?: number | null;
+        };
+        /** PaperDocumentSummary */
+        PaperDocumentSummary: {
+            /** Chunk Count */
+            chunk_count: number;
+            /** File Size */
+            file_size: number;
+            /** Filename */
+            filename: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** PaperSummary */
+        PaperSummary: {
+            /** Abstract */
+            abstract?: string | null;
+            /** Arxiv Id */
+            arxiv_id?: string | null;
+            /** Authors */
+            authors?: string[];
+            /** Doi */
+            doi?: string | null;
+            /** Id */
+            id: string;
+            /** Last Read At */
+            last_read_at?: string | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Reading Status
+             * @default inbox
+             * @enum {string}
+             */
+            reading_status: "inbox" | "queued" | "skimming" | "reading" | "read" | "archived";
+            /** Tags */
+            tags?: string[];
+            /** Title */
+            title: string;
+            /** Updated At */
+            updated_at: string;
+            /** Url */
+            url?: string | null;
+            /** Venue */
+            venue?: string | null;
+            /** Year */
+            year?: number | null;
+        };
+        /** PaperUpdateRequest */
+        PaperUpdateRequest: {
+            /** Abstract */
+            abstract?: string | null;
+            /** Arxiv Id */
+            arxiv_id?: string | null;
+            /** Authors */
+            authors?: string[] | null;
+            /** Doi */
+            doi?: string | null;
+            /** Last Location */
+            last_location?: {
+                [key: string]: unknown;
+            } | null;
+            /** Progress */
+            progress?: number | null;
+            /** Reading Status */
+            reading_status?: ("inbox" | "queued" | "skimming" | "reading" | "read" | "archived") | null;
+            /** Time Spent Seconds */
+            time_spent_seconds?: number | null;
+            /** Title */
+            title?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Venue */
+            venue?: string | null;
+            /** Year */
+            year?: number | null;
+        };
+        /** PaperUploadResponse */
+        PaperUploadResponse: {
+            /** Document Id */
+            document_id: string;
+            /** Document Status */
+            document_status: string;
+            /** Job Id */
+            job_id: string;
+            /** Job Status */
+            job_status: string;
+            paper: components["schemas"]["PaperSummary"];
+            /** Session Id */
+            session_id: string;
         };
         /** PersistedMessage */
         PersistedMessage: {
@@ -778,6 +1168,74 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    delete_annotation_annotations__annotation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                annotation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_annotation_annotations__annotation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                annotation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_auth_login_post: {
         parameters: {
             query?: never;
@@ -864,6 +1322,162 @@ export interface operations {
             };
         };
     };
+    list_collections_collections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"][];
+                };
+            };
+        };
+    };
+    create_collection_collections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_collection_collections__collection_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_paper_to_collection_collections__collection_id__papers__paper_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_paper_from_collection_collections__collection_id__papers__paper_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_documents_documents_get: {
         parameters: {
             query?: never;
@@ -900,6 +1514,208 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_papers_papers_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                collection_id?: string | null;
+                tag?: string | null;
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_paper_papers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_paper_papers_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_paper_papers__paper_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_paper_papers__paper_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_annotations_papers__paper_id__annotations_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+            };
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_annotation_papers__paper_id__annotations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnotationCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnotationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

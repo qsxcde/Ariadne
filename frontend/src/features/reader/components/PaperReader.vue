@@ -21,10 +21,13 @@ import type { SelectionAskMode } from "../../../types";
 const props = defineProps<{
   sessionId: string;
   documentId: string;
+  initialProgress?: number;
 }>();
 
 const emit = defineEmits<{
   ask: [text: string, mode: SelectionAskMode];
+  note: [text: string];
+  progress: [ratio: number];
   close: [];
 }>();
 
@@ -115,7 +118,23 @@ function handleScroll(): void {
   scrollFrame = window.requestAnimationFrame(() => {
     scrollFrame = 0;
     syncActiveSection();
+    const container = scrollRef.value;
+    if (!container) {
+      return;
+    }
+    const max = container.scrollHeight - container.clientHeight;
+    emit("progress", max > 0 ? container.scrollTop / max : 0);
   });
+}
+
+function restoreScroll(): void {
+  const container = scrollRef.value;
+  const ratio = props.initialProgress ?? 0;
+  if (!container || ratio <= 0) {
+    return;
+  }
+  const max = container.scrollHeight - container.clientHeight;
+  container.scrollTop = Math.max(0, Math.min(1, ratio)) * max;
 }
 
 function scrollToBlock(blockId: string): void {
@@ -160,6 +179,16 @@ function handleMouseUp(): void {
   };
 }
 
+function noteSelection(): void {
+  const menu = selectionMenu.value;
+  if (!menu) {
+    return;
+  }
+  emit("note", menu.text);
+  selectionMenu.value = null;
+  window.getSelection()?.removeAllRanges();
+}
+
 function askSelection(mode: SelectionAskMode): void {
   const menu = selectionMenu.value;
   if (!menu) {
@@ -196,6 +225,7 @@ onMounted(async () => {
   await load(props.sessionId, props.documentId);
   await nextTick();
   scrollToActiveBlock();
+  restoreScroll();
   syncActiveSection();
   window.document.addEventListener("mouseup", handleMouseUp);
   window.document.addEventListener("keydown", handleKeydown);
@@ -329,6 +359,9 @@ onBeforeUnmount(() => {
       class="paper-selection"
       :style="{ left: `${selectionMenu.x}px`, top: `${selectionMenu.y}px` }"
     >
+      <button type="button" class="paper-selection__action" @click="noteSelection">
+        记笔记
+      </button>
       <button type="button" class="paper-selection__action" @click="askSelection('explain')">
         解释这段
       </button>

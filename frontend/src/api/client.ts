@@ -7,7 +7,7 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_KEY = "scipal_token";
 
-export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST";
+export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
 
 export type RequestOptions = {
   body?: BodyInit | null;
@@ -66,6 +66,24 @@ export async function requestVoid(
   if (!res.ok) {
     throw await readError(res, fallback);
   }
+}
+
+/** 发送 multipart/form-data（文件上传）：不设置 Content-Type，交给浏览器带 boundary。 */
+export async function requestForm<T>(
+  path: string,
+  fallback: string,
+  body: FormData,
+  method: HttpMethod = "POST",
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: authHeaders(),
+    body,
+  });
+  if (!res.ok) {
+    throw await readError(res, fallback);
+  }
+  return (await res.json()) as T;
 }
 
 export type JsonRequestPayload = {

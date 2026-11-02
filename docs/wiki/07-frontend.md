@@ -169,14 +169,32 @@ handleUpload(file)
 
 ## 7. 已知问题
 
-1. **路由未注册**：`router/index.ts` 用 `createWebHashHistory` 定义了 `/login` 与 `/`，但 `main.ts` 未 `.use(router)`，`App.vue` 也没有 `<router-view>`。页面切换实际由 `useAuth.isAuthenticated` 驱动，路由表当前是死代码。
-2. **`frontend/README.md` 是未清理的 React 模板**，不可作为事实来源。
-3. **`status` 事件未消费**：用户看不到"等待索引/检索中/生成中"的细粒度状态，只有 `MessageBubble` 的静态 pending 文案。
-4. **无 dev 代理**：本地换后端端口必须改 `frontend/.env` 的 `VITE_API_BASE_URL` 并重启 dev server。
-5. **工具条部分按钮是占位**：`ComposerTools` 的检索开关/更多未接后端能力。
-6. **上传轮询有上限**：约 10 分钟（600 × 1s）后停止轮询，界面停留在最后一个状态。
+1. **`status` / `warning` 事件仍未呈现**：`useChatStream` 收到后直接忽略，用户看不到「等待索引 / 检索中 / 生成中」。
+2. **工具条部分按钮是占位**：`ComposerTools` 的检索开关/更多未接后端能力。
+3. **上传轮询有上限**：约 10 分钟（600 × 1s）后停止轮询，界面停留在最后一个状态。
+4. **笔记锚点仍是 paper/quote 级**：M0 的批注面板支持高亮、笔记、问题，但 PDF 原页 bbox 高亮层尚未接入。
+5. **旧 Chat 页仍保留**：目标形态是 Reader/Synthesis 侧栏问答；当前 `/` 仍是独立聊天页，`/sessions/:sessionId/reader` 保留为 legacy。
 
-## 8. 本地开发
+> 路由已注册，`/documents`、`/papers`、`/annotations`、`/collections` 均已加入 Vite dev proxy。
+
+## 8. 论文资产界面（v8）
+
+| 路由 | 组件 | 用途 |
+|---|---|---|
+| `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量导入 |
+| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
+| `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
+| `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明 |
+| `/` | `ChatWorkspace` | 对话（legacy 主入口） |
+
+状态与 API：
+
+- `composables/usePapers.ts`：文献库、当前论文、筛选、阅读状态、笔记；通过 `stores/index.ts` 导出。
+- `api/papers.ts`：list / get / upload / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
+- 进度：`PaperReader` 滚动时 emit `progress`，`PaperWorkspace` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
+- 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
+
+## 9. 本地开发
 
 ```bash
 cd frontend

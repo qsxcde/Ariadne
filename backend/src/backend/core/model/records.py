@@ -9,11 +9,13 @@ from typing import TypedDict
 
 class DocumentRecord(TypedDict):
     id: str
+    paper_id: str
     session_id: str
     filename: str
     file_path: str
     mime_type: str
     file_size: int
+    file_hash: str | None
     chunk_count: int
     status: str
     error_message: str | None
@@ -41,6 +43,7 @@ class MessageRecord(TypedDict):
     created_at: str
 class JobRecord(TypedDict):
     id: str
+    paper_id: str | None
     session_id: str
     document_id: str | None
     type: str
@@ -56,11 +59,59 @@ class SessionRecord(TypedDict):
     id: str
     title: str
     user_id: str | None
+    paper_id: str | None
     created_at: str
     updated_at: str
     last_opened_at: str
     is_archived: int
     is_pinned: int
+
+
+class CollectionRecord(TypedDict):
+    id: str
+    user_id: str | None
+    name: str
+    description: str | None
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+class AnnotationRecord(TypedDict):
+    id: str
+    paper_id: str
+    document_id: str | None
+    chunk_id: str | None
+    type: str
+    quote: str | None
+    content: str | None
+    color: str | None
+    page_start: int | None
+    page_end: int | None
+    bbox_json: str | None
+    created_at: str
+    updated_at: str
+
+
+class PaperRecord(TypedDict):
+    id: str
+    user_id: str | None
+    title: str
+    authors_json: str | None
+    year: int | None
+    venue: str | None
+    doi: str | None
+    arxiv_id: str | None
+    abstract: str | None
+    url: str | None
+    metadata_json: str | None
+    reading_status: str
+    progress: float
+    last_location_json: str | None
+    last_read_at: str | None
+    time_spent_seconds: int
+    created_at: str
+    updated_at: str
 
 
 class IndexRecord(TypedDict):

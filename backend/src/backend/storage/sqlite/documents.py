@@ -3,8 +3,16 @@ import uuid
 from typing import cast
 
 from backend.core.model.records import DocumentRecord
+from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite.connection import connect, transaction
 from backend.storage.sqlite.sessions import now_iso
+
+
+def _paper_title(filename: str) -> str:
+    title = filename.strip()
+    if title.lower().endswith(".pdf"):
+        title = title[:-4]
+    return title or "Untitled"
 
 
 def create_document(
@@ -14,20 +22,38 @@ def create_document(
     mime_type: str,
     file_size: int,
     document_id: str | None = None,
+    paper_id: str | None = None,
+    file_hash: str | None = None,
 ) -> DocumentRecord:
 
     document_id = document_id or str(uuid.uuid4())
     timestamp = now_iso()
+    resolved_paper_id = paper_id or paper_repo.ensure_paper_for_session(
+        session_id,
+        _paper_title(filename),
+        paper_id=f"paper_{document_id}",
+    )
     with transaction() as conn:
         conn.execute(
             """
             INSERT INTO documents (
-              id, session_id, filename, file_path, mime_type, file_size,
-              chunk_count, status, error_message, created_at, updated_at
+              id, paper_id, session_id, filename, file_path, mime_type, file_size,
+              file_hash, chunk_count, status, error_message, created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, 0, 'uploaded', NULL, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'uploaded', NULL, ?, ?)
             """,
-            (document_id, session_id, filename, file_path, mime_type, file_size, timestamp, timestamp),
+            (
+                document_id,
+                resolved_paper_id,
+                session_id,
+                filename,
+                file_path,
+                mime_type,
+                file_size,
+                file_hash,
+                timestamp,
+                timestamp,
+            ),
         )
     document = get_document(document_id)
     if document is None:
@@ -40,6 +66,15 @@ def get_document(document_id: str) -> DocumentRecord | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM documents WHERE id = ?", (document_id,)).fetchone()
         return cast(DocumentRecord, dict(row)) if row else None
+
+
+def list_documents_for_paper(paper_id: str) -> list[DocumentRecord]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM documents WHERE paper_id = ? ORDER BY created_at ASC",
+            (paper_id,),
+        ).fetchall()
+    return [cast(DocumentRecord, dict(row)) for row in rows]
 
 
 def list_documents(session_id: str) -> list[DocumentRecord]:
@@ -78,6 +113,14 @@ def delete_document(document_id: str) -> None:
         conn.execute("DELETE FROM chunks WHERE document_id = ?", (document_id,))
         conn.execute("DELETE FROM jobs WHERE document_id = ?", (document_id,))
         conn.execute("DELETE FROM documents WHERE id = ?", (document_id,))
+
+
+def update_document_file_hash(document_id: str, file_hash: str) -> None:
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE documents SET file_hash = ?, updated_at = ? WHERE id = ?",
+            (file_hash, now_iso(), document_id),
+        )
 
 
 def update_document_status(

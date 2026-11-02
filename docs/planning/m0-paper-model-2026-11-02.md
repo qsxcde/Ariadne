@@ -1,6 +1,6 @@
 # M0 论文资产层设计（2026-11-02）
 
-> **状态：设计稿（2026-11-02），尚未实施；当前代码仍为 schema v7。**
+> **状态：M0.1–M0.4 已实施（2026-11-03）；M0.5 验收中；当前代码为 schema v8。**
 > 范围：SciPal 数据模型重构（schema v8），为「个人研究生 + 阅读进度优先」的论文助手打地基。
 > 前置决策：目标用户是个人用户、进度以阅读为主、先做数据模型再上 AI。
 > 相关文档：[产品规划](product-plan-2026-11-02.md)、[现状分析](../analysis/status-2026-11-02.md)、[数据模型](../wiki/03-data-model.md)
@@ -438,7 +438,7 @@ SET paper_id = (
 | 数据完整性 | foreign_key_check 为空；每篇 paper 至少 1 个 document；每篇 document 有 paper_id |
 | 阅读闭环 | 导入 → 打开 → 标记在读 → 高亮/笔记 → 关闭再开能续读 |
 | 列表 | 按 status/collection/tag 过滤；同文件不重复入库 |
-| 质量门禁 | 现有 128 用例 + 新增用例全绿；ruff/mypy 通过；前端 test/lint/typecheck/build 通过；契约无 diff |
+| 质量门禁 | 141 个后端用例全绿；ruff/mypy 通过；前端 test/lint/typecheck/build 通过；契约无 diff |
 | 回滚 | 备份可恢复；迁移失败不破坏旧库 |
 
 ## 10. 任务拆分与依赖

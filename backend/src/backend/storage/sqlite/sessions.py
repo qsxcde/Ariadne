@@ -28,6 +28,19 @@ def create_session(title: str, user_id: str | None = None) -> SessionRecord:
     return session
 
 
+def list_sessions_for_paper(paper_id: str) -> list[SessionRecord]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT * FROM sessions
+            WHERE paper_id = ? AND is_archived = 0
+            ORDER BY created_at ASC
+            """,
+            (paper_id,),
+        ).fetchall()
+    return [cast(SessionRecord, dict(row)) for row in rows]
+
+
 def get_session(session_id: str) -> SessionRecord | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM sessions WHERE id = ?", (session_id,)).fetchone()

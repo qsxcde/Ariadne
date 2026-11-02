@@ -11,22 +11,31 @@ def insert_chunks(session_id: str, document_id: str, parsed_chunks: list[Chunk])
     if not parsed_chunks:
         return
 
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT paper_id FROM documents WHERE id = ?", (document_id,)
+        ).fetchone()
+    if row is None:
+        raise RuntimeError(f"Document not found: {document_id}")
+    paper_id = row["paper_id"]
+
     timestamp = now_iso()
     with transaction() as conn:
         conn.executemany(
             """
             INSERT INTO chunks (
-              id, session_id, document_id, section, chunk_index,
+              id, paper_id, session_id, document_id, section, chunk_index,
               text_excerpt, text_content, type, section_path_json,
               page_start, page_end, bbox_json, block_ids_json,
               block_types_json, linked_block_ids_json, confidence,
               created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
                     str(uuid.uuid4()),
+                    paper_id,
                     session_id,
                     document_id,
                     chunk.metadata.section,

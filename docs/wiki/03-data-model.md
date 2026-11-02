@@ -1,14 +1,19 @@
 # 03 数据模型与存储
 
-权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 5`）。
+权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 8`）。
 仓储实现：`backend/src/backend/storage/sqlite/*.py`（纯 SQL，无 ORM）。
 
 ## 1. 表总览
 
 | 表 | 粒度 | 关键作用 |
 |---|---|---|
-| `sessions` | 会话 | 标题、置顶、归档、归属用户 |
-| `documents` | 文档 | PDF 元数据、状态机、解析产物路径 |
+| `papers` | 论文 | 文献库资产：元数据、阅读状态、进度与最后位置 |
+| `annotations` | 批注 | 高亮、笔记、问题，锚定 paper/document/chunk |
+| `collections` | 集合 | 课题/项目分组 |
+| `collection_papers` | 关系 | 论文与集合的多对多关系 |
+| `paper_tags` | 标签 | 论文标签 |
+| `sessions` | 会话 | 标题、置顶、归档、归属用户、关联论文 |
+| `documents` | 文档 | PDF 元数据、状态机、解析产物路径、论文归属 |
 | `chunks` | 分块 | 检索事实表，正文 + 结构化元数据 |
 | `messages` | 消息 | 对话历史与 `sources_json` |
 | `jobs` | 任务 | 单次摄取尝试、重试次数、错误 |
@@ -25,6 +30,7 @@
 | `id` | TEXT | PK | UUID |
 | `title` | TEXT | NOT NULL | 默认取 `settings.msg_default_session_title`（"新论文会话"）；首次上传时若仍是默认值则改为文件名 |
 | `user_id` | TEXT | NULL | 归属用户，**无外键**（弱关联） |
+| `paper_id` | TEXT | NULL, FK → `papers.id` SET NULL | 该会话所属论文；旧会话指向最早文档对应论文 |
 | `created_at` | TEXT | NOT NULL | ISO8601 UTC |
 | `updated_at` | TEXT | NOT NULL | 任何写操作刷新 |
 | `last_opened_at` | TEXT | NOT NULL | 与 `updated_at` 同步更新 |
@@ -40,11 +46,13 @@
 | 列 | 类型 | 约束 / 默认 | 说明 |
 |---|---|---|---|
 | `id` | TEXT | PK | UUID，同时是 PDF 文件名主干 |
-| `session_id` | TEXT | NOT NULL, FK → `sessions.id` CASCADE | |
+| `paper_id` | TEXT | NOT NULL, FK → `papers.id` CASCADE | 所属论文（v8） |
+| `session_id` | TEXT | NOT NULL, FK → `sessions.id` CASCADE | 摄取/索引所在会话 |
 | `filename` | TEXT | NOT NULL | 原始文件名 |
 | `file_path` | TEXT | NOT NULL | `<data>/raw/<session_id>/<document_id>.pdf` |
 | `mime_type` | TEXT | NOT NULL | |
 | `file_size` | INTEGER | NOT NULL | 字节数 |
+| `file_hash` | TEXT | NULL | SHA-256，用于去重（v8） |
 | `chunk_count` | INTEGER | NOT NULL DEFAULT 0 | 冗余计数，插入/删除 chunks 时同事务重算 |
 | `status` | TEXT | NOT NULL | `DocumentStage` |
 | `error_message` | TEXT | NULL | 失败原因 |
@@ -64,6 +72,7 @@
 | 列 | 类型 | 约束 / 默认 | 说明 |
 |---|---|---|---|
 | `id` | TEXT | PK | UUID |
+| `paper_id` | TEXT | NOT NULL, FK → `papers.id` CASCADE | 论文归属（v8） |
 | `session_id` | TEXT | NOT NULL, FK CASCADE | |
 | `document_id` | TEXT | NOT NULL, FK → `documents.id` CASCADE | 即 `ChunkMetadata.paper_id` |
 | `section` | TEXT | NOT NULL | `" > "` 拼接的章节路径 |
@@ -101,6 +110,7 @@
 | 列 | 类型 | 约束 / 默认 | 说明 |
 |---|---|---|---|
 | `id` | TEXT | PK | UUID |
+| `paper_id` | TEXT | NULL, FK → `papers.id` CASCADE | 论文归属（v8） |
 | `session_id` | TEXT | NOT NULL, FK CASCADE | |
 | `document_id` | TEXT | NULL, FK → `documents.id` **SET NULL** | |
 | `type` | TEXT | NOT NULL | 目前仅 `document_ingestion` |
@@ -153,10 +163,42 @@
 | `hashed_password` | TEXT | NOT NULL | bcrypt |
 | `created_at` / `updated_at` | TEXT | NOT NULL | |
 
+### 2.9 论文资产表（v8）
+
+**`papers`**：文献库的主资产。
+
+| 列 | 说明 |
+|---|---|
+| `id` | 主键；迁移旧数据时为 `paper_<document_id>` |
+| `user_id` | 归属用户；NULL 表示历史匿名数据（无外键，沿用 sessions 的弱关联） |
+| `title` / `authors_json` / `year` / `venue` / `doi` / `arxiv_id` / `abstract` / `url` | 元数据 |
+| `reading_status` | `inbox / queued / skimming / reading / read / archived` |
+| `progress` | 0–1，滚动位置冗余快照 |
+| `last_location_json` | `{document_id, scroll_ratio, page?, section?}` |
+| `last_read_at` / `time_spent_seconds` | 最近阅读与累计时长 |
+
+**`annotations`**：高亮、笔记、问题单表。
+
+| 列 | 说明 |
+|---|---|
+| `paper_id` | NOT NULL，FK → papers CASCADE |
+| `document_id` / `chunk_id` | 可选锚点；chunk 必须属于同一 paper |
+| `type` | `highlight / note / question` |
+| `quote` / `content` / `color` | 选中文本、笔记内容、颜色 |
+| `page_start` / `page_end` / `bbox_json` | 原文定位 |
+
+**`collections` / `collection_papers` / `paper_tags`**：集合与标签；`collection_papers` 为多对多关系，`paper_tags` 以 `(paper_id, tag)` 为主键。
+
 ## 3. 关系与文件系统映射
 
 ```
-users ──(弱关联, 无 FK)── sessions
+users ──(弱关联, 无 FK)── papers / sessions
+papers 1 ── N documents       (CASCADE)
+papers 1 ── N chunks          (CASCADE)
+papers 1 ── N annotations     (CASCADE)
+papers 1 ── N sessions        (SET NULL)
+papers N ── M collections     (collection_papers CASCADE)
+papers 1 ── N paper_tags      (CASCADE)
 sessions 1 ── N documents     (CASCADE)
 sessions 1 ── N messages      (CASCADE)
 sessions 1 ── N chunks        (CASCADE)
@@ -320,11 +362,14 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 | 版本 | 变更 |
 |---|---|
-| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 5` |
+| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 8` |
 | v2 | `chunks(document_id, chunk_index)` 唯一索引 |
 | v3 | `retrieval_indexes.created_at` 补列并回填；新增 `idx_sessions_list` 部分索引 |
 | v4 | 重建 6 张含外键表，补全 `ON DELETE CASCADE` / `SET NULL` |
 | v5 | 新增 `users` 表 |
+| v6 | `messages.client_message_id` + 唯一索引 |
+| v7 | `messages.model` / `prompt_tokens` / `completion_tokens` |
+| v8 | 新增 `papers` / `annotations` / `collections` / `collection_papers` / `paper_tags`；documents/chunks/jobs/sessions 增加 `paper_id`；documents 增加 `file_hash`；旧文档回填为 `paper_<document_id>` |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

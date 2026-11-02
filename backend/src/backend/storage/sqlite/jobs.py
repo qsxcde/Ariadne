@@ -22,16 +22,26 @@ def create_job(
 
     job_id = str(uuid.uuid4())
     timestamp = now_iso()
+    paper_id: str | None = None
+    if document_id is not None:
+        with connect() as conn:
+            row = conn.execute(
+                "SELECT paper_id FROM documents WHERE id = ?", (document_id,)
+            ).fetchone()
+        if row is None:
+            raise RuntimeError(f"Document not found: {document_id}")
+        paper_id = row["paper_id"]
+
     with transaction() as conn:
         conn.execute(
             """
             INSERT INTO jobs (
-              id, session_id, document_id, type, status, stage, attempt,
+              id, paper_id, session_id, document_id, type, status, stage, attempt,
               error_message, payload_json, created_at, started_at, finished_at
             )
-            VALUES (?, ?, ?, ?, 'queued', ?, 0, NULL, ?, ?, NULL, NULL)
+            VALUES (?, ?, ?, ?, ?, 'queued', ?, 0, NULL, ?, ?, NULL, NULL)
             """,
-            (job_id, session_id, document_id, job_type, stage, payload_json, timestamp),
+            (job_id, paper_id, session_id, document_id, job_type, stage, payload_json, timestamp),
         )
     job = get_job(job_id)
     if job is None:
