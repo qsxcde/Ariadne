@@ -95,8 +95,11 @@ def answer_collection(
     context_chunks, sources = retrieve_context(store, question, options=options)
     if not context_chunks:
         raise ValueError("No relevant chunks found in collection")
+    from backend.application.generation_log import generation_timer
+
     runner = completer or composition.text_completer()
-    answer = str(runner.complete(build_prompt(context_chunks, question))).strip()
+    with generation_timer("collection_ask", paper_id=collection_id):
+        answer = str(runner.complete(build_prompt(context_chunks, question))).strip()
     return {
         "answer": answer,
         "sources": [source.model_dump() for source in sources],
@@ -120,6 +123,8 @@ def compare_papers(
     get_accessible_collection(collection_id, user_id)
     if not paper_ids:
         raise ValueError("paper_ids is empty")
+    from backend.application.generation_log import generation_timer
+
     runner = completer or composition.text_completer()
     results: list[dict[str, Any]] = []
     for paper_id in paper_ids:
@@ -137,9 +142,10 @@ def compare_papers(
             f"[Section: {chunk.metadata.section} | Chunk: {chunk.metadata.chunk_index}] {chunk.text[:1200]}"
             for chunk in chunks[:12]
         )
-        raw = runner.complete(
-            _COMPARE_PROMPT.format(title=paper["title"], digest=digest)
-        )
+        with generation_timer("compare_paper", paper_id=paper_id):
+            raw = runner.complete(
+                _COMPARE_PROMPT.format(title=paper["title"], digest=digest)
+            )
         fields = _parse_fields(raw)
         citation = (
             f" [Section: {chunks[0].metadata.section} | "

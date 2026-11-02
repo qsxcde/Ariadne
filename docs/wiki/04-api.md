@@ -63,7 +63,7 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | PATCH | `/papers/{paper_id}` | 编辑元数据与阅读状态/进度 | 200 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/glossary` | 生成术语表 | 200 | 401 / 404 / 409 |
 | GET | `/papers/{paper_id}/citations` | OpenAlex 引用/被引关系 | 200 | 401 / 404 / 409 / 502 |
-| POST | `/papers/{paper_id}/brief` | 生成 5 分钟速读卡（带 chunk 引用） | 200 | 401 / 404 / 409 |
+| POST | `/papers/{paper_id}/brief` | 生成 5 分钟速读卡（带 chunk 引用）；`force=true` 跳过缓存 | 200 | 401 / 404 / 409 |
 | POST | `/papers/{paper_id}/explain` | 划词解释/翻译/简化 | 200 | 401 / 404 / 422 |
 | POST | `/papers/{paper_id}/reading-time` | 记录一次阅读时长（秒） | 201 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |

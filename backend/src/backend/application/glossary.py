@@ -73,8 +73,11 @@ def generate_glossary(
     )
     if not chunks:
         raise ValueError("Paper is not indexed yet")
+    from backend.application.generation_log import generation_timer
+
     runner = completer or composition.text_completer()
-    raw = runner.complete(_PROMPT.replace("{digest}", _digest(chunks)))
+    with generation_timer("glossary", paper_id=paper_id):
+        raw = runner.complete(_PROMPT.replace("{digest}", _digest(chunks)))
     return {
         "paper_id": paper["id"],
         "terms": _parse(raw),

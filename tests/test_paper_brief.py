@@ -95,3 +95,23 @@ def test_brief_rejects_unindexed_paper():
 
     with pytest.raises(ValueError, match="not indexed"):
         generate_paper_brief(document["paper_id"], "u1", completer=FakeCompleter({}))
+
+@pytest.mark.integration
+def test_brief_is_cached_until_forced():
+    seeded = _seed([("Method", 0, "We propose sparse attention.")])
+    first = FakeCompleter({"tldr": "第一版", "method": "未提及"})
+    second = FakeCompleter({"tldr": "第二版", "method": "未提及"})
+
+    generated = generate_paper_brief(seeded["paper_id"], "u1", completer=first)
+    cached = generate_paper_brief(seeded["paper_id"], "u1", completer=second)
+
+    assert generated["tldr"] == "第一版"
+    assert cached["tldr"] == "第一版"
+    assert second.prompts == []
+
+    forced = generate_paper_brief(
+        seeded["paper_id"], "u1", completer=second, force=True
+    )
+    assert forced["tldr"] == "第二版"
+    assert len(second.prompts) == 1
+

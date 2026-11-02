@@ -164,7 +164,7 @@ function jumpToSection(title: string): void {
 }
 
 async function generateBrief(): Promise<void> {
-  await loadBrief(props.paperId);
+  await loadBrief(props.paperId, Boolean(currentBrief.value));
   if (brief.value) {
     ElMessage.success("速读卡已生成");
   }

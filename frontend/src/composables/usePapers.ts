@@ -74,11 +74,11 @@ async function loadPaper(paperId: string): Promise<void> {
   }
 }
 
-async function loadBrief(paperId: string): Promise<void> {
+async function loadBrief(paperId: string, force = false): Promise<void> {
   isBriefLoading.value = true;
   errorMessage.value = "";
   try {
-    brief.value = await getPaperBrief(paperId);
+    brief.value = await getPaperBrief(paperId, force);
   } catch (error) {
     brief.value = null;
     errorMessage.value = toErrorMessage(error, "生成速读卡失败");

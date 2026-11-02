@@ -1,6 +1,8 @@
 """Generate a citation-bearing 5-minute brief for one paper."""
 
 import json
+import logging
+import time
 from typing import Any
 
 from backend import composition
@@ -8,8 +10,11 @@ from backend.application.papers import get_accessible_paper
 from backend.domain.models import Chunk
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
+from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite import sessions as session_repo
 from backend.storage.sqlite.sessions import now_iso
+
+logger = logging.getLogger(__name__)
 
 _MAX_SECTIONS = 8
 _SECTION_CHAR_BUDGET = 1600
@@ -105,16 +110,93 @@ def _parse_brief(raw: str, sections: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _document_signature(documents: list[dict[str, Any]]) -> str:
+    return ",".join(
+        f"{document['id']}:{document.get('updated_at', '')}:{document.get('status', '')}"
+        for document in documents
+    )
+
+
+def _load_cached_brief(paper: dict[str, Any], signature: str) -> dict[str, Any] | None:
+    raw = paper.get("metadata_json")
+    if not raw:
+        return None
+    try:
+        metadata = json.loads(raw)
+    except (TypeError, ValueError):
+        return None
+    if not isinstance(metadata, dict):
+        return None
+    cache = metadata.get("brief_cache")
+    if not isinstance(cache, dict) or cache.get("signature") != signature:
+        return None
+    payload = cache.get("payload")
+    if not isinstance(payload, dict):
+        return None
+    return {
+        "paper_id": paper["id"],
+        "generated_at": str(cache.get("generated_at") or now_iso()),
+        **payload,
+    }
+
+
+def _store_cached_brief(
+    paper: dict[str, Any], signature: str, brief: dict[str, Any]
+) -> None:
+    raw = paper.get("metadata_json")
+    try:
+        metadata = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        metadata = {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    metadata["brief_cache"] = {
+        "signature": signature,
+        "generated_at": brief["generated_at"],
+        "payload": {
+            key: value
+            for key, value in brief.items()
+            if key not in {"paper_id", "generated_at"}
+        },
+    }
+    try:
+        paper_repo.update_metadata_json(
+            paper["id"], json.dumps(metadata, ensure_ascii=False)
+        )
+    except Exception:  # 缓存失败不影响主流程
+        logger.warning("brief cache write failed for %s", paper["id"], exc_info=True)
+
+
+def _log_generation(paper_id: str, elapsed_ms: float) -> None:
+    from backend.adapters.llm.llm import last_usage
+
+    usage = last_usage() or {}
+    logger.info(
+        "llm_generation operation=brief paper_id=%s elapsed_ms=%.1f prompt_tokens=%s completion_tokens=%s",
+        paper_id,
+        elapsed_ms,
+        usage.get("prompt_tokens"),
+        usage.get("completion_tokens"),
+    )
+
+
 def generate_paper_brief(
     paper_id: str,
     user_id: str | None,
     *,
     completer: Any | None = None,
+    force: bool = False,
 ) -> dict[str, Any]:
     paper = get_accessible_paper(paper_id, user_id)
     documents = document_repo.list_documents_for_paper(paper_id)
     if not documents:
         raise ValueError("Paper has no document yet")
+    signature = _document_signature([dict(document) for document in documents])
+    if not force:
+        cached = _load_cached_brief(dict(paper), signature)
+        if cached is not None:
+            logger.info("brief_cache_hit paper_id=%s", paper_id)
+            return cached
     sessions = session_repo.list_sessions_for_paper(paper_id)
     if not sessions:
         raise ValueError("Paper has no reading session yet")
@@ -144,10 +226,14 @@ def generate_paper_brief(
         sections.append(item)
 
     runner = completer or composition.text_completer()
+    started = time.perf_counter()
     raw = runner.complete(_BRIEF_PROMPT.replace("{sections}", digest))
+    _log_generation(paper_id, (time.perf_counter() - started) * 1000)
     brief = _parse_brief(raw, sections)
-    return {
+    result = {
         "paper_id": paper["id"],
         "generated_at": now_iso(),
         **brief,
     }
+    _store_cached_brief(dict(paper), signature, result)
+    return result

@@ -3301,7 +3301,9 @@ export interface operations {
     };
     generate_brief_papers__paper_id__brief_post: {
         parameters: {
-            query?: never;
+            query?: {
+                force?: boolean;
+            };
             header?: never;
             path: {
                 paper_id: string;

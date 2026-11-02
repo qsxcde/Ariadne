@@ -241,6 +241,14 @@ def update_citation_count(paper_id: str, count: int) -> None:
         )
 
 
+def update_metadata_json(paper_id: str, metadata_json: str) -> None:
+    with transaction() as conn:
+        conn.execute(
+            "UPDATE papers SET metadata_json = ?, updated_at = ? WHERE id = ?",
+            (metadata_json, now_iso(), paper_id),
+        )
+
+
 def update_arxiv_updated(paper_id: str, updated_at: str) -> None:
     with transaction() as conn:
         conn.execute(

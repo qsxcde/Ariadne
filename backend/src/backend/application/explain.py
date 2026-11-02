@@ -28,6 +28,9 @@ def explain_selection(
     quote = text.strip()
     if not quote:
         raise ValueError("Selected text is empty")
+    from backend.application.generation_log import generation_timer
+
     runner = completer or composition.text_completer()
     prompt = f"{_PROMPTS[mode]}\n\n原文：\n{quote[:2000]}"
-    return str(runner.complete(prompt)).strip()
+    with generation_timer("explain", paper_id=paper_id):
+        return str(runner.complete(prompt)).strip()

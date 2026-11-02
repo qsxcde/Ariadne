@@ -96,8 +96,12 @@ export function getWeeklyReview(): Promise<WeeklyReview> {
   return requestJson<WeeklyReview>("/review/weekly", "读取周报失败");
 }
 
-export function getPaperBrief(paperId: string): Promise<PaperBrief> {
-  return requestJson<PaperBrief>(`/papers/${paperId}/brief`, "生成速读卡失败", {
+export function getPaperBrief(
+  paperId: string,
+  force = false,
+): Promise<PaperBrief> {
+  const query = force ? "?force=true" : "";
+  return requestJson<PaperBrief>(`/papers/${paperId}/brief${query}`, "生成速读卡失败", {
     method: "POST",
   });
 }

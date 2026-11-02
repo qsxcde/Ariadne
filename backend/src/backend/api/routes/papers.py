@@ -270,11 +270,15 @@ def generate_glossary(
 
 @router.post("/papers/{paper_id}/brief", response_model=PaperBrief)
 def generate_brief(
-    paper_id: str, user: dict = Depends(get_current_user)
+    paper_id: str,
+    force: bool = Query(default=False),
+    user: dict = Depends(get_current_user),
 ) -> PaperBrief:
     try:
         return PaperBrief(
-            **brief_service.generate_paper_brief(paper_id, user.get("id") or None)
+            **brief_service.generate_paper_brief(
+                paper_id, user.get("id") or None, force=force
+            )
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
