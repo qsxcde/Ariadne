@@ -3,15 +3,46 @@ from backend.prompts.loader import load_prompt
 
 SYSTEM_PROMPT = load_prompt("rag_answer")
 
+_HISTORY_MAX_MESSAGES = 6
+_HISTORY_MAX_CHARS = 1200
 
-def build_prompt(chunks: list[Chunk], question: str) -> str:
+
+def build_prompt(
+    chunks: list[Chunk],
+    question: str,
+    history: list[dict] | None = None,
+) -> str:
     context = "\n\n---\n\n".join(_format_chunk_for_prompt(chunk) for chunk in chunks)
-    return (
-        f"{SYSTEM_PROMPT}\n\n"
-        f"论文片段:\n{context}\n\n"
-        f"用户问题: {question}\n\n"
-        "请用中文作答。"
-    )
+    parts = [SYSTEM_PROMPT]
+    history_block = _format_history(history, question)
+    if history_block:
+        parts.append(history_block)
+    parts.append(f"论文片段:\n{context}")
+    parts.append(f"用户问题: {question}")
+    parts.append("请用中文作答。")
+    return "\n\n".join(parts)
+
+
+def _format_history(history: list[dict] | None, question: str) -> str:
+    if not history:
+        return ""
+    current = question.strip()
+    lines: list[str] = []
+    for message in history[-_HISTORY_MAX_MESSAGES:]:
+        role = message.get("role")
+        content = str(message.get("content") or "").strip()
+        if role not in {"user", "assistant"} or not content:
+            continue
+        if role == "user" and content == current:
+            continue
+        label = "用户" if role == "user" else "助手"
+        lines.append(f"{label}: {content[:500]}")
+    if not lines:
+        return ""
+    text = "\n".join(lines)
+    if len(text) > _HISTORY_MAX_CHARS:
+        text = text[-_HISTORY_MAX_CHARS:]
+    return "对话历史（仅用于理解指代，不要复述）：\n" + text
 
 
 def _format_chunk_header(chunk: Chunk) -> str:

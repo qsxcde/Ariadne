@@ -11,5 +11,11 @@ export function buildSelectionPrompt(text: string, mode: SelectionAskMode): stri
   if (mode === "explain") {
     return `请解释这段原文，并结合论文上下文说明它的作用：\n\n> ${quote}`;
   }
+  if (mode === "translate") {
+    return `请把这段原文翻译成中文，保留术语、公式和数字：\n\n> ${quote}`;
+  }
+  if (mode === "simplify") {
+    return `请用更简单的中文重述这段原文，保留技术含义：\n\n> ${quote}`;
+  }
   return `围绕这段原文继续追问：\n\n> ${quote}\n\n`;
 }

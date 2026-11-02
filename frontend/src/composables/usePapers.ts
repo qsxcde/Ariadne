@@ -1,10 +1,11 @@
 import { computed, ref } from "vue";
 import { listCollections } from "../api/collections";
 import { createAnnotation, deleteAnnotation } from "../api/annotations";
-import { getPaper, listPapers, updatePaper, uploadPaper } from "../api/papers";
+import { getPaper, getPaperBrief, listPapers, updatePaper, uploadPaper } from "../api/papers";
 import type {
   AnnotationSummary,
   CollectionSummary,
+  PaperBrief,
   PaperDetail,
   PaperSummary,
   PaperUpdatePayload,
@@ -20,6 +21,7 @@ export type PaperFilters = {
 
 const papers = ref<PaperSummary[]>([]);
 const currentPaper = ref<PaperDetail | null>(null);
+const brief = ref<PaperBrief | null>(null);
 const collections = ref<CollectionSummary[]>([]);
 const filters = ref<PaperFilters>({
   status: "",
@@ -29,6 +31,7 @@ const filters = ref<PaperFilters>({
 });
 const isLoading = ref(false);
 const isUploading = ref(false);
+const isBriefLoading = ref(false);
 const errorMessage = ref("");
 
 const paperCount = computed(() => papers.value.length);
@@ -68,6 +71,19 @@ async function loadPaper(paperId: string): Promise<void> {
     errorMessage.value = toErrorMessage(error, "读取论文失败");
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function loadBrief(paperId: string): Promise<void> {
+  isBriefLoading.value = true;
+  errorMessage.value = "";
+  try {
+    brief.value = await getPaperBrief(paperId);
+  } catch (error) {
+    brief.value = null;
+    errorMessage.value = toErrorMessage(error, "生成速读卡失败");
+  } finally {
+    isBriefLoading.value = false;
   }
 }
 
@@ -148,10 +164,12 @@ async function upload(file: File): Promise<PaperSummary | null> {
 function reset(): void {
   papers.value = [];
   currentPaper.value = null;
+  brief.value = null;
   collections.value = [];
   filters.value = { status: "", collectionId: "", tag: "", query: "" };
   isLoading.value = false;
   isUploading.value = false;
+  isBriefLoading.value = false;
   errorMessage.value = "";
 }
 
@@ -159,15 +177,18 @@ export function usePapers() {
   return {
     papers,
     currentPaper,
+    brief,
     collections,
     filters,
     isLoading,
     isUploading,
+    isBriefLoading,
     errorMessage,
     paperCount,
     readingCount,
     loadLibrary,
     loadPaper,
+    loadBrief,
     saveReadingState,
     addNote,
     removeAnnotation,

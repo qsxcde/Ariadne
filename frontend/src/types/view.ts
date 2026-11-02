@@ -68,4 +68,4 @@ export type ReaderOutlineItem = {
 };
 
 /** 选区提问的两种意图。 */
-export type SelectionAskMode = "explain" | "followup";
+export type SelectionAskMode = "explain" | "followup" | "translate" | "simplify";

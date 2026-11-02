@@ -8,6 +8,24 @@ ReadingStatus = Literal["inbox", "queued", "skimming", "reading", "read", "archi
 AnnotationType = Literal["highlight", "note", "question"]
 
 
+class PaperBriefSection(BaseModel):
+    title: str
+    summary: str = ""
+    chunk_indexes: list[int] = Field(default_factory=list)
+
+
+class PaperBrief(BaseModel):
+    paper_id: str
+    tldr: str
+    contributions: list[str] = Field(default_factory=list)
+    method: str
+    experiments: str
+    limitations: str
+    takeaways: list[str] = Field(default_factory=list)
+    sections: list[PaperBriefSection] = Field(default_factory=list)
+    generated_at: str
+
+
 class PaperSummary(BaseModel):
     id: str
     title: str
@@ -31,6 +49,7 @@ class PaperDocumentSummary(BaseModel):
     status: str
     chunk_count: int
     file_size: int
+    parse_quality_status: str | None = None
     updated_at: str
 
 
@@ -64,6 +83,15 @@ class PaperDetail(PaperSummary):
     annotations: list[AnnotationSummary] = Field(default_factory=list)
     collections: list[CollectionSummary] = Field(default_factory=list)
     primary_session_id: str | None = None
+
+
+class ExplainRequest(BaseModel):
+    text: str
+    mode: Literal["explain", "translate", "simplify"] = "explain"
+
+
+class ExplainResponse(BaseModel):
+    explanation: str
 
 
 class PaperUpdateRequest(BaseModel):

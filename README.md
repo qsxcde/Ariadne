@@ -183,7 +183,7 @@ uv run --project backend pytest -m unit -v
 uv run --project backend pytest -m integration -v
 ```
 
-当前覆盖 141 个后端用例：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
+当前覆盖 148 个后端用例：SQLite 仓储的状态流转与 CAS、schema v7→v8 迁移、论文/批注/集合仓储、上传入口校验、摄取失败回滚、SSE 事件顺序与中断语义、并发与 job 恢复、会话归属、契约快照、分层依赖边界（AST 静态校验）。需要 torch / faiss 的用例在缺少依赖时自动 skip。
 
 前端：
 
@@ -202,7 +202,7 @@ CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + 
 
 | 关卡 | 命令 | 结果 |
 |---|---|---|
-| 后端测试 | `uv run --project backend pytest` | 141 passed |
+| 后端测试 | `uv run --project backend pytest` | 148 passed |
 | 后端 lint | `uv run --project backend ruff check backend/src tests` | All checks passed |
 | 后端类型检查 | `uv run --project backend mypy --config-file backend/pyproject.toml backend/src/backend/storage backend/src/backend/core backend/src/backend/application` | 30 source files, no issues |
 | 前端 lint | `cd frontend && npm run lint` | 通过 |
@@ -278,6 +278,8 @@ uv run --project backend python -m scipal_eval.cli run \
 | PATCH | `/papers/{paper_id}` | Update Paper |
 | GET | `/papers/{paper_id}/annotations` | List Annotations |
 | POST | `/papers/{paper_id}/annotations` | Create Annotation |
+| POST | `/papers/{paper_id}/brief` | Generate Brief |
+| POST | `/papers/{paper_id}/explain` | Explain Selection |
 | GET | `/sessions` | 按当前用户列出会话（不含已归档）。 |
 | POST | `/sessions` | 新建空会话。 |
 | DELETE | `/sessions/{session_id}` | 归档会话（幂等，不暴露会话是否存在）。 |

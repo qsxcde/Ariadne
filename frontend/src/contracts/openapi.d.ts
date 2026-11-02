@@ -235,6 +235,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/papers/{paper_id}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Brief */
+        post: operations["generate_brief_papers__paper_id__brief_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/papers/{paper_id}/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Explain Selection */
+        post: operations["explain_selection_papers__paper_id__explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions": {
         parameters: {
             query?: never;
@@ -697,6 +731,22 @@ export interface components {
             /** Updated At */
             updated_at: string;
         };
+        /** ExplainRequest */
+        ExplainRequest: {
+            /**
+             * Mode
+             * @default explain
+             * @enum {string}
+             */
+            mode: "explain" | "translate" | "simplify";
+            /** Text */
+            text: string;
+        };
+        /** ExplainResponse */
+        ExplainResponse: {
+            /** Explanation */
+            explanation: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -800,6 +850,39 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** PaperBrief */
+        PaperBrief: {
+            /** Contributions */
+            contributions?: string[];
+            /** Experiments */
+            experiments: string;
+            /** Generated At */
+            generated_at: string;
+            /** Limitations */
+            limitations: string;
+            /** Method */
+            method: string;
+            /** Paper Id */
+            paper_id: string;
+            /** Sections */
+            sections?: components["schemas"]["PaperBriefSection"][];
+            /** Takeaways */
+            takeaways?: string[];
+            /** Tldr */
+            tldr: string;
+        };
+        /** PaperBriefSection */
+        PaperBriefSection: {
+            /** Chunk Indexes */
+            chunk_indexes?: number[];
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Title */
+            title: string;
+        };
         /** PaperDetail */
         PaperDetail: {
             /** Abstract */
@@ -865,6 +948,8 @@ export interface components {
             filename: string;
             /** Id */
             id: string;
+            /** Parse Quality Status */
+            parse_quality_status?: string | null;
             /** Status */
             status: string;
             /** Updated At */
@@ -1707,6 +1792,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnnotationSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_brief_papers__paper_id__brief_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperBrief"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_selection_papers__paper_id__explain_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplainResponse"];
                 };
             };
             /** @description Validation Error */

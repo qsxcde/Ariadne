@@ -58,6 +58,8 @@ frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手
 | POST | `/papers` | 上传 PDF：创建论文 + reading session + 文档 + 摄取任务 | **202** | 401 / 409 / 413 / 422 |
 | GET | `/papers/{paper_id}` | 论文详情：文档、批注、集合、阅读进度 | 200 | 401 / 404 |
 | PATCH | `/papers/{paper_id}` | 编辑元数据与阅读状态/进度 | 200 | 401 / 404 / 422 |
+| POST | `/papers/{paper_id}/brief` | 生成 5 分钟速读卡（带 chunk 引用） | 200 | 401 / 404 / 409 |
+| POST | `/papers/{paper_id}/explain` | 划词解释/翻译/简化 | 200 | 401 / 404 / 422 |
 | GET | `/papers/{paper_id}/annotations` | 批注列表；可按 type 过滤 | 200 | 401 / 404 |
 | POST | `/papers/{paper_id}/annotations` | 新建高亮/笔记/问题 | 201 | 401 / 404 / 422 |
 | PATCH / DELETE | `/annotations/{annotation_id}` | 编辑/删除批注 | 200 | 401 / 404 |

@@ -8,6 +8,7 @@ import { formatUpdatedAt } from "../../../utils/format";
 
 const emit = defineEmits<{
   open: [paperId: string];
+  today: [];
   settings: [];
 }>();
 
@@ -91,6 +92,9 @@ onMounted(() => {
         <p class="paper-library__subtitle">在读 {{ readingCount }} 篇 · 按状态、集合和标签整理阅读进度</p>
       </div>
       <div class="paper-library__actions">
+        <button type="button" class="paper-library__text-button" @click="emit('today')">
+          Today
+        </button>
         <button type="button" class="paper-library__text-button" @click="emit('settings')">
           设置
         </button>

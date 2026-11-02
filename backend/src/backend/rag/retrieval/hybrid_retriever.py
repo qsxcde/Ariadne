@@ -11,7 +11,7 @@ from backend.domain.models import Chunk
 from backend.core.contracts.ports import VectorStore
 from backend.rag.retrieval.bm25 import BM25Retriever
 from backend.rag.retrieval.context_builder import ExpansionDebugEntry, expand_context_with_debug
-from backend.rag.retrieval.filters import filter_indexable_chunks
+from backend.rag.retrieval.filters import chunk_matches_scope, filter_chunks_by_scope, filter_indexable_chunks
 from backend.rag.retrieval.fusion import RankedCandidate, RetrievalHit, reciprocal_rank_fusion
 from backend.rag.retrieval.language import Language, detect_language, infer_document_language
 from backend.rag.retrieval.query_rewriter import QueryPack, generate_query_pack
@@ -63,6 +63,9 @@ class HybridRetrievalOptions:
     term_expand_enabled: bool = True
     term_expand_llm_fallback: bool = True
     term_glossary_path: str | None = None
+    document_ids: list[str] | None = None
+    section: str | None = None
+    chunk_types: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -127,6 +130,16 @@ def _hybrid_search(
         )
     else:
         dense_hits, dense_used_ranked_hits = [], False
+    dense_hits = [
+        hit
+        for hit in dense_hits
+        if chunk_matches_scope(
+            hit.chunk,
+            document_ids=options.document_ids,
+            section=options.section,
+            chunk_types=options.chunk_types,
+        )
+    ]
     ranked_candidates = reciprocal_rank_fusion(
         {"bm25": bm25_hits, "dense": dense_hits},
         top_k=options.seed_top_k,
@@ -167,6 +180,12 @@ def retrieve_hybrid_context(
 ) -> HybridRetrievalResult:
     retrieval_options = options or HybridRetrievalOptions()
     all_chunks = filter_indexable_chunks(store.list_chunks())
+    all_chunks = filter_chunks_by_scope(
+        all_chunks,
+        document_ids=retrieval_options.document_ids,
+        section=retrieval_options.section,
+        chunk_types=retrieval_options.chunk_types,
+    )
 
     used_history_rewrite = False
     used_term_expand = False

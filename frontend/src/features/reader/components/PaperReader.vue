@@ -363,7 +363,13 @@ onBeforeUnmount(() => {
         记笔记
       </button>
       <button type="button" class="paper-selection__action" @click="askSelection('explain')">
-        解释这段
+        解释
+      </button>
+      <button type="button" class="paper-selection__action" @click="askSelection('translate')">
+        翻译
+      </button>
+      <button type="button" class="paper-selection__action" @click="askSelection('simplify')">
+        简化
       </button>
       <button type="button" class="paper-selection__action" @click="askSelection('followup')">
         追问

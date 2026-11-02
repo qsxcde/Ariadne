@@ -224,3 +224,12 @@ done
 4. **流式降级重复前缀**：provider 中途失败后整轮重跑。
 5. **参考文献过滤是全量扫描**：`retrieve_hybrid_context` 会对 `store.list_chunks()` 全量执行一次过滤，大库下有线性成本。
 6. **单轮改写依赖外部 LLM**：历史改写/术语扩展/跨语言改写失败时静默退回原 query，效果会退化但不会报错。
+
+## 8. M1 增强（2026-11-03）
+
+- **生成侧历史**：prompt 现在包含最近 6 条消息（每条截断 500 字，总预算 1200 字），并排除当前提问，解决「它/该方法」在生成侧失忆。实现：adapters/llm/prompt_template.py。
+- **检索 scope**：RetrievalOptions / HybridRetrievalOptions 增加 document_ids、section、chunk_types；BM25、dense 命中、上下文扩展都按 scope 过滤。实现：rag/retrieval/filters.py、hybrid_retriever.py。
+- **chunk 级引用**：prompt 要求 [Section: 章节 | Chunk: 序号]，校验同时检查章节与 chunk 序号；旧格式 [Section: 章节] 仍兼容。实现：rag/answer.py。
+- **速读卡**：POST /papers/{paper_id}/brief，按 section 聚合片段后调用 LLM 返回 TL;DR/贡献/方法/实验/局限/要点，带 chunk 引用。实现：application/brief.py。
+- **划词解释**：POST /papers/{paper_id}/explain，支持 explain / translate / simplify 三种模式。实现：application/explain.py。
+- **真实模型评测**：当前 DEEPSEEK_API_KEY 无效（401），真实 brief/QA 评测被标记为发布门禁，阶段门禁使用 fake-model 用例。详见 docs/planning/test-plan-2026-11-03.md。

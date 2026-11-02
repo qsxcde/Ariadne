@@ -4,7 +4,9 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
 import PaperReader from "./PaperReader.vue";
 import { usePapers } from "../../../composables/usePapers";
+import { explainSelection } from "../../../api/papers";
 import type { AnnotationSummary, PaperDocumentSummary } from "../../../api";
+import type { SelectionAskMode } from "../../../types";
 
 const props = defineProps<{
   paperId: string;
@@ -17,9 +19,12 @@ const emit = defineEmits<{
 
 const {
   currentPaper,
+  brief,
   isLoading,
+  isBriefLoading,
   errorMessage,
   loadPaper,
+  loadBrief,
   saveReadingState,
   addNote,
   removeAnnotation,
@@ -35,6 +40,9 @@ const documentItem = computed<PaperDocumentSummary | null>(
 );
 const primarySessionId = computed(() => currentPaper.value?.primary_session_id ?? "");
 const annotations = computed<AnnotationSummary[]>(() => currentPaper.value?.annotations ?? []);
+const currentBrief = computed(() =>
+  brief.value?.paper_id === props.paperId ? brief.value : null,
+);
 
 const STATUS_OPTIONS = [
   { value: "inbox", label: "待读" },
@@ -61,6 +69,13 @@ function annotationLabel(annotation: AnnotationSummary): string {
 
 async function refresh(): Promise<void> {
   await loadPaper(props.paperId);
+}
+
+async function generateBrief(): Promise<void> {
+  await loadBrief(props.paperId);
+  if (brief.value) {
+    ElMessage.success("速读卡已生成");
+  }
 }
 
 async function changeStatus(): Promise<void> {
@@ -93,6 +108,22 @@ function handleProgress(ratio: number): void {
       },
     });
   }, 1200);
+}
+
+async function handleAsk(text: string, mode: SelectionAskMode): Promise<void> {
+  if (mode === "followup") {
+    await quickNote(text);
+    return;
+  }
+  try {
+    const result = await explainSelection(props.paperId, text, mode);
+    const title = mode === "translate" ? "翻译" : mode === "simplify" ? "简化" : "解释";
+    await ElMessageBox.alert(result.explanation, title, {
+      confirmButtonText: "知道了",
+    });
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "解释失败");
+  }
 }
 
 async function quickNote(text: string): Promise<void> {
@@ -158,6 +189,7 @@ onBeforeUnmount(() => {
           <span v-if="(currentPaper?.authors ?? []).length">{{ (currentPaper?.authors ?? []).join("、") }}</span>
           <span v-if="currentPaper?.year"> · {{ currentPaper.year }}</span>
           <span v-if="currentPaper?.venue"> · {{ currentPaper.venue }}</span>
+          <span v-if="documentItem"> · 解析 {{ documentItem.status }}<template v-if="documentItem.parse_quality_status">（{{ documentItem.parse_quality_status }}）</template></span>
         </p>
       </div>
       <div class="paper-workspace__actions">
@@ -197,7 +229,7 @@ onBeforeUnmount(() => {
         :document-id="documentItem.id"
         :initial-progress="currentPaper.progress"
         @note="quickNote"
-        @ask="quickNote"
+        @ask="handleAsk"
         @progress="handleProgress"
         @close="emit('back')"
       />
@@ -205,10 +237,45 @@ onBeforeUnmount(() => {
       <aside class="paper-workspace__notes" aria-label="笔记">
         <header class="paper-workspace__notes-header">
           <div>
-            <p class="paper-workspace__eyebrow">笔记</p>
-            <h2 class="paper-workspace__notes-title">{{ annotations.length }} 条</h2>
+            <p class="paper-workspace__eyebrow">速读卡 · 笔记</p>
+            <h2 class="paper-workspace__notes-title">{{ annotations.length }} 条笔记</h2>
           </div>
         </header>
+
+        <section class="paper-workspace__brief">
+          <header class="paper-workspace__brief-head">
+            <span class="paper-workspace__eyebrow">5 分钟速读</span>
+            <button
+              type="button"
+              class="paper-workspace__secondary"
+              :disabled="isBriefLoading"
+              @click="generateBrief"
+            >
+              {{ isBriefLoading ? "生成中…" : currentBrief ? "重新生成" : "生成速读卡" }}
+            </button>
+          </header>
+          <p v-if="!currentBrief" class="paper-workspace__empty">
+            基于章节摘要生成 TL;DR、贡献、方法、实验与局限，每条结论带原文引用。
+          </p>
+          <div v-else class="paper-workspace__brief-body">
+            <p class="paper-workspace__tldr">{{ currentBrief.tldr }}</p>
+            <div v-if="(currentBrief.contributions ?? []).length">
+              <h3>贡献</h3>
+              <ul class="paper-workspace__brief-list">
+                <li v-for="item in currentBrief.contributions ?? []" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+            <p><strong>方法：</strong>{{ currentBrief.method }}</p>
+            <p><strong>实验：</strong>{{ currentBrief.experiments }}</p>
+            <p><strong>局限：</strong>{{ currentBrief.limitations }}</p>
+            <div v-if="(currentBrief.takeaways ?? []).length">
+              <h3>阅读要点</h3>
+              <ul class="paper-workspace__brief-list">
+                <li v-for="item in currentBrief.takeaways ?? []" :key="item">{{ item }}</li>
+              </ul>
+            </div>
+          </div>
+        </section>
 
         <div class="paper-workspace__note-compose">
           <textarea
@@ -387,6 +454,63 @@ onBeforeUnmount(() => {
 .paper-workspace__notes-title {
   margin: 0;
   font-size: 15px;
+}
+
+.paper-workspace__secondary {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.paper-workspace__secondary:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.paper-workspace__brief {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.paper-workspace__brief-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.paper-workspace__brief-body {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.paper-workspace__brief-body h3 {
+  margin: 10px 0 4px;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.paper-workspace__brief-body p {
+  margin: 0 0 6px;
+}
+
+.paper-workspace__tldr {
+  color: var(--color-text);
+  font-size: 13px !important;
+  font-weight: 600;
+}
+
+.paper-workspace__brief-list {
+  margin: 0 0 6px;
+  padding-left: 18px;
 }
 
 .paper-workspace__note-compose {

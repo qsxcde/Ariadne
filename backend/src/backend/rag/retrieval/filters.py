@@ -21,6 +21,45 @@ def filter_indexable_chunks(chunks: list[Chunk]) -> list[Chunk]:
     return [chunk for chunk in chunks if not is_reference_chunk(chunk)]
 
 
+def chunk_matches_scope(
+    chunk: Chunk,
+    *,
+    document_ids: list[str] | None = None,
+    section: str | None = None,
+    chunk_types: list[str] | None = None,
+) -> bool:
+    """Return whether a chunk is inside the requested paper/section/type scope."""
+    if document_ids and chunk.metadata.paper_id not in set(document_ids):
+        return False
+    if section:
+        labels = [chunk.metadata.section, *(chunk.metadata.section_path or [])]
+        wanted = section.strip().lower()
+        if not any(wanted in label.strip().lower() for label in labels if label):
+            return False
+    if chunk_types and chunk.metadata.type not in set(chunk_types):
+        return False
+    return True
+
+
+def filter_chunks_by_scope(
+    chunks: list[Chunk],
+    *,
+    document_ids: list[str] | None = None,
+    section: str | None = None,
+    chunk_types: list[str] | None = None,
+) -> list[Chunk]:
+    return [
+        chunk
+        for chunk in chunks
+        if chunk_matches_scope(
+            chunk,
+            document_ids=document_ids,
+            section=section,
+            chunk_types=chunk_types,
+        )
+    ]
+
+
 def _normalize_section_label(label: str | None) -> str:
     if label is None:
         return ""

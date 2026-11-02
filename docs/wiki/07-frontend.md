@@ -181,6 +181,7 @@ handleUpload(file)
 
 | 路由 | 组件 | 用途 |
 |---|---|---|
+| `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
@@ -193,6 +194,9 @@ handleUpload(file)
 - `api/papers.ts`：list / get / upload / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
 - 进度：`PaperReader` 滚动时 emit `progress`，`PaperWorkspace` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
+- 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点。
+- 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
+- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇。
 
 ## 9. 本地开发
 

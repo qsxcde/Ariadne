@@ -9,6 +9,9 @@ from backend.api.schemas import (
     CollectionCreateRequest,
     CollectionSummary,
     CollectionUpdateRequest,
+    ExplainRequest,
+    ExplainResponse,
+    PaperBrief,
     PaperDetail,
     PaperSummary,
     PaperUpdateRequest,
@@ -17,7 +20,9 @@ from backend.api.schemas import (
 from backend.api.security import get_current_user
 from backend.api.uploads import read_upload_with_limit, reject_by_content_length
 from backend.application import annotations as annotation_service
+from backend.application import brief as brief_service
 from backend.application import collections as collection_service
+from backend.application import explain as explain_service
 from backend.application import papers as paper_service
 
 router = APIRouter()
@@ -95,6 +100,36 @@ def get_paper(paper_id: str, user: dict = Depends(get_current_user)) -> PaperDet
     return PaperDetail(
         **paper_service.get_paper_detail(paper_id, user.get("id") or None)
     )
+
+
+@router.post("/papers/{paper_id}/explain", response_model=ExplainResponse)
+def explain_selection(
+    paper_id: str,
+    payload: ExplainRequest,
+    user: dict = Depends(get_current_user),
+) -> ExplainResponse:
+    try:
+        explanation = explain_service.explain_selection(
+            paper_id,
+            user.get("id") or None,
+            text=payload.text,
+            mode=payload.mode,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return ExplainResponse(explanation=explanation)
+
+
+@router.post("/papers/{paper_id}/brief", response_model=PaperBrief)
+def generate_brief(
+    paper_id: str, user: dict = Depends(get_current_user)
+) -> PaperBrief:
+    try:
+        return PaperBrief(
+            **brief_service.generate_paper_brief(paper_id, user.get("id") or None)
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.patch("/papers/{paper_id}", response_model=PaperDetail)

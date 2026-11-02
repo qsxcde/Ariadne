@@ -1,5 +1,12 @@
 import { jsonRequest, requestForm, requestJson } from "./client";
-import type { PaperDetail, PaperSummary, PaperUpdatePayload, PaperUploadResult } from "./types";
+import type {
+  ExplainResponse,
+  PaperBrief,
+  PaperDetail,
+  PaperSummary,
+  PaperUpdatePayload,
+  PaperUploadResult,
+} from "./types";
 
 export type PaperListFilters = {
   status?: string;
@@ -35,6 +42,24 @@ export function uploadPaper(file: File): Promise<PaperUploadResult> {
   const body = new FormData();
   body.append("file", file);
   return requestForm<PaperUploadResult>("/papers", "上传论文失败", body);
+}
+
+export function getPaperBrief(paperId: string): Promise<PaperBrief> {
+  return requestJson<PaperBrief>(`/papers/${paperId}/brief`, "生成速读卡失败", {
+    method: "POST",
+  });
+}
+
+export function explainSelection(
+  paperId: string,
+  text: string,
+  mode: "explain" | "translate" | "simplify",
+): Promise<ExplainResponse> {
+  return requestJson<ExplainResponse>(
+    `/papers/${paperId}/explain`,
+    "解释失败",
+    { method: "POST", ...jsonRequest({ text, mode }) },
+  );
 }
 
 export function updatePaper(

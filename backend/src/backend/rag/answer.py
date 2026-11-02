@@ -16,11 +16,12 @@ from backend.adapters.llm.answer_generator import stream_answer as stream_answer
 from backend.domain.models import Chunk, SourceRef
 from backend.core.contracts.ports import VectorStore
 from backend.rag.retrieval.context_builder import expand_context
+from backend.rag.retrieval.filters import filter_chunks_by_scope
 from backend.rag.retrieval.hybrid_retriever import HybridRetrievalOptions
 from backend.rag.retrieval.hybrid_retriever import retrieve_hybrid_context
 from backend.rag.retrieval.retriever import retrieve_seed_chunks
 
-CITATION_PATTERN = re.compile(r"\[Section:\s*(.+?)\]")
+CITATION_PATTERN = re.compile(r"\[Section:\s*(.+?)(?:\s*\|\s*Chunk:\s*(\d+))?\]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +81,9 @@ class RetrievalOptions(BaseModel):
     term_expand_enabled: bool = True
     term_expand_llm_fallback: bool = True
     term_glossary_path: str | None = None
+    document_ids: list[str] | None = None
+    section: str | None = None
+    chunk_types: list[str] | None = None
 
 
 class RetrievalDiagnostics(BaseModel):
@@ -144,6 +148,9 @@ def retrieve_context(
             history_rewrite_enabled=retrieval_options.history_rewrite_enabled,
             history_rewrite_max_rounds=retrieval_options.history_rewrite_max_rounds,
             term_expand_enabled=retrieval_options.term_expand_enabled,
+            document_ids=retrieval_options.document_ids,
+            section=retrieval_options.section,
+            chunk_types=retrieval_options.chunk_types,
         )
         try:
             hybrid_result = retrieve_hybrid_context(store, query, options=hybrid_opts, history=history)
@@ -163,6 +170,12 @@ def retrieve_context(
         return hybrid_result.prompt_chunks, sources
 
     seed_chunks = retrieve_seed_chunks(store, query, k=effective_top_k)
+    seed_chunks = filter_chunks_by_scope(
+        seed_chunks,
+        document_ids=retrieval_options.document_ids,
+        section=retrieval_options.section,
+        chunk_types=retrieval_options.chunk_types,
+    )
     chunks = expand_context(
         seed_chunks=seed_chunks,
         all_chunks=store.list_chunks(),
@@ -197,7 +210,7 @@ def stream_answer(
         yield {"type": "token", "value": policy.empty_retrieval_message}
         yield {"type": "sources", "value": []}
         return
-    token_stream = stream_answer_for_chunks(chunks, query)
+    token_stream = stream_answer_for_chunks(chunks, query, history=history)
     buffered_tokens: list[str] = []
     try:
         while True:
@@ -290,6 +303,21 @@ def _serialize_route(route: object) -> dict[str, object]:
 
 
 def _answer_has_valid_chunk_citations(answer: str, retrieved_chunks: list[Chunk]) -> bool:
-    valid_sections = {chunk.metadata.section for chunk in retrieved_chunks}
-    cited_sections = set(CITATION_PATTERN.findall(answer))
-    return bool(cited_sections) and cited_sections.issubset(valid_sections)
+    valid: dict[str, set[int]] = {}
+    for chunk in retrieved_chunks:
+        labels = {chunk.metadata.section}
+        if chunk.metadata.section_path:
+            labels.add(" > ".join(chunk.metadata.section_path))
+        for label in labels:
+            valid.setdefault(label, set()).add(chunk.metadata.chunk_index)
+
+    citations = CITATION_PATTERN.findall(answer)
+    if not citations:
+        return False
+    for section, chunk_index in citations:
+        indexes = valid.get(section.strip())
+        if indexes is None:
+            return False
+        if chunk_index and int(chunk_index) not in indexes:
+            return False
+    return True

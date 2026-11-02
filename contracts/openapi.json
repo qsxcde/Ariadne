@@ -866,6 +866,42 @@
         "title": "DocumentSummary",
         "type": "object"
       },
+      "ExplainRequest": {
+        "properties": {
+          "mode": {
+            "default": "explain",
+            "enum": [
+              "explain",
+              "translate",
+              "simplify"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ExplainRequest",
+        "type": "object"
+      },
+      "ExplainResponse": {
+        "properties": {
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "explanation"
+        ],
+        "title": "ExplainResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1153,6 +1189,90 @@
         "title": "PaperBlock",
         "type": "object"
       },
+      "PaperBrief": {
+        "properties": {
+          "contributions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Contributions",
+            "type": "array"
+          },
+          "experiments": {
+            "title": "Experiments",
+            "type": "string"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "limitations": {
+            "title": "Limitations",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "paper_id": {
+            "title": "Paper Id",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/PaperBriefSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "takeaways": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Takeaways",
+            "type": "array"
+          },
+          "tldr": {
+            "title": "Tldr",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paper_id",
+          "tldr",
+          "method",
+          "experiments",
+          "limitations",
+          "generated_at"
+        ],
+        "title": "PaperBrief",
+        "type": "object"
+      },
+      "PaperBriefSection": {
+        "properties": {
+          "chunk_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Chunk Indexes",
+            "type": "array"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "PaperBriefSection",
+        "type": "object"
+      },
       "PaperDetail": {
         "properties": {
           "abstract": {
@@ -1351,6 +1471,17 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "parse_quality_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Quality Status"
           },
           "status": {
             "title": "Status",
@@ -3127,6 +3258,104 @@
           }
         ],
         "summary": "Create Annotation"
+      }
+    },
+    "/papers/{paper_id}/brief": {
+      "post": {
+        "operationId": "generate_brief_papers__paper_id__brief_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "paper_id",
+            "required": true,
+            "schema": {
+              "title": "Paper Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperBrief"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Generate Brief"
+      }
+    },
+    "/papers/{paper_id}/explain": {
+      "post": {
+        "operationId": "explain_selection_papers__paper_id__explain_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "paper_id",
+            "required": true,
+            "schema": {
+              "title": "Paper Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Explain Selection"
       }
     },
     "/sessions": {

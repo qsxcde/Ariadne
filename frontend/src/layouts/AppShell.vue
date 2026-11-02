@@ -7,6 +7,7 @@ import PaperLibrary from "../features/library/components/PaperLibrary.vue";
 import PaperReader from "../features/reader/components/PaperReader.vue";
 import PaperWorkspace from "../features/reader/components/PaperWorkspace.vue";
 import SettingsView from "../views/SettingsView.vue";
+import TodayView from "../views/TodayView.vue";
 import SourceDrawer from "../components/SourceDrawer.vue";
 import { usePaperChat } from "../composables/usePaperChat";
 import { useAuth } from "../composables/useAuth";
@@ -55,6 +56,7 @@ const { setActiveSession } = useSourcePreview();
 const activeSessionId = computed(() => paperSession.value?.sessionId ?? "");
 const readerDocument = computed(() => documents.value[0] ?? null);
 const showReader = computed(() => route.name === "session-reader");
+const showToday = computed(() => route.name === "today");
 const showPaper = computed(() => route.name === "paper");
 const showLibrary = computed(() => route.name === "library");
 const showSettings = computed(() => route.name === "settings");
@@ -113,6 +115,10 @@ function openLibrary(): void {
 
 function openPaper(paperId: string): void {
   void router.push({ name: "paper", params: { paperId } });
+}
+
+function openToday(): void {
+  void router.push({ name: "today" });
 }
 
 function openSettings(): void {
@@ -206,6 +212,14 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
       <PaperLibrary
         v-if="showLibrary"
         @open="openPaper"
+        @today="openToday"
+        @settings="openSettings"
+      />
+
+      <TodayView
+        v-else-if="showToday"
+        @open="openPaper"
+        @library="openLibrary"
         @settings="openSettings"
       />
 
@@ -227,7 +241,7 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
       <SettingsView v-else-if="showSettings" @back="closeSettings" />
 
       <ChatWorkspace
-        v-if="!showLibrary && !showPaper && !showReader && !showSettings"
+        v-if="!showLibrary && !showToday && !showPaper && !showReader && !showSettings"
         v-model:draft="draft"
         :can-open-reader="Boolean(readerDocument)"
         :error-message="errorMessage"
