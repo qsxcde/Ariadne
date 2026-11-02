@@ -126,6 +126,7 @@ class ModelClient:
                     messages=msgs,
                     stream=False,
                     temperature=0,
+                    max_tokens=settings.llm_max_tokens,
                 )
                 if not response.choices:
                     raise RuntimeError(
@@ -213,12 +214,14 @@ class ModelClient:
                 messages=msgs,
                 stream=True,
                 stream_options={"include_usage": True},
+                max_tokens=settings.llm_max_tokens,
             )
         except Exception:
             return client.chat.completions.create(
                 model=provider.model,
                 messages=msgs,
                 stream=True,
+                max_tokens=settings.llm_max_tokens,
             )
 
     def _get_or_create_client(self, provider: ProviderConfig) -> OpenAI:

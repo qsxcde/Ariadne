@@ -41,6 +41,7 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `FALLBACK_BASE_URL` | `None` | 为空则不启用备用 provider |
 | `FALLBACK_MODEL` | `glm-4-flash` | |
 | `OLLAMA_BASE_URL` | `None` | 为空则不启用 Ollama |
+| `LLM_MAX_TOKENS` | `512` | 单次生成的最大 token 数，防止长回答拖慢/超预算 |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | |
 
 ### 2.3 Embedding

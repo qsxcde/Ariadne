@@ -19,7 +19,7 @@
    backend/.env 的 DEEPSEEK_API_KEY 返回 401。未执行 DeepSeek 50 题/10 篇真实评测。
 
 2. **真实论文语料评测**
-   当前 50 题/10 篇使用合成事实，不是真实论文 corpus；不能替代发布级质量结论。
+   当前 50 题/10 篇合成基线通过；补充的真实 arXiv abstracts 评测为 22/30 正确（73%）、29/30 引用（97%），低于 90% 正确率门槛。真实论文发布级评测仍未通过。
 
 3. **Zotero / Notion OAuth 双向同步**
    已实现 CSL JSON / Markdown 导出与 token-based 官方 API 导出；OAuth 授权、回调、双向同步未实现。

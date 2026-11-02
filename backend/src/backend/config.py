@@ -37,6 +37,7 @@ class RuntimeSettings(BaseSettings):
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-v4-flash"
+    llm_max_tokens: int = 512
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_model_source: str = "modelscope"
     embedding_auto_download: bool = True
