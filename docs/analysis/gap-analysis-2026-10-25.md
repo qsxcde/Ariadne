@@ -7,7 +7,7 @@
 >   支持正文定位与 PDF 原页坐标高亮。
 > - 其余已实现的缺口见 [审计报告](audit-2026-10-27.md) 第五节「文档与实现漂移」。
 >
-> 当前真实待办以 [整改计划](remediation-plan.md) 的「执行进度」表为准。
+> 当前真实待办以 [整改计划](../planning/remediation-plan.md) 的「执行进度」表为准。
 
 # SciPal 能力缺口分析
 
@@ -23,7 +23,7 @@
 | 评估范围 | `backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`、`.github/workflows` |
 | 评估方法 | 静态阅读 + 调用链核对；未执行端到端实测与压测 |
 | 结构基线 | 分层重构后（`api` / `application` / `worker` / `rag` / `storage`），提交 `e7325d2` |
-| 关联文档 | [Wiki 目录](README.md)（工程事实基线）、[README](../../README.md)（使用入口） |
+| 关联文档 | [Wiki 目录](../wiki/README.md)（工程事实基线）、[README](../../README.md)（使用入口） |
 
 **路径约定**：表格中的简写路径默认相对 `backend/src/backend/`（如 `application/chat.py`）；以 `frontend/`、`docs/`、`.github/` 开头的路径相对仓库根目录。
 

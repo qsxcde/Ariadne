@@ -2,8 +2,8 @@
 
 面向 SciPal 仓库的工程知识库。所有结论均以当前代码为准，正文中标注了对应的源码路径，便于随时回查验证。
 
-- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 5`
-- 最后核对：2026-10-25
+- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 7`
+- 最后核对：2026-11-02
 - 覆盖范围：`backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`
 
 ## 文档目录
@@ -20,9 +20,11 @@
 | [08 配置参考](08-configuration.md) | 全部 `RuntimeSettings` 字段、环境变量、路径解析、鉴权开关 | 运维 / 后端 |
 | [09 离线评测](09-evaluation.md) | `scipal_eval` CLI、数据集格式、指标、阈值、产物结构 | 算法 / 评测 |
 | [10 开发与运维](10-development.md) | 环境搭建、测试约定、常见改动 how-to、排障 FAQ、已知缺口 | 所有人 |
-| [11 能力缺口分析](11-gap-analysis.md) | 以"智能论文助手"为标准的差距评估、P0/P1/P2 缺口、路线图与证据索引 | 产品 / 所有人 |
-| [审计报告 2026-10-27](audit-2026-10-27.md) | 10 维度全量审计：健康度评分、P0/P1/P2 问题清单（带 file:line）、文档漂移对照、优先级路线图 | 负责人 / 所有人 |
-| [整改计划](remediation-plan.md) | P0–P7 分阶段整改方案、任务清单、验收标准、依赖与风险登记 | 负责人 / 开发 |
+
+> 本目录只放**工程事实基线**。审计、现状、能力缺口、产品规划、M0 设计、功能清单、界面清单与 RAG 策略已移至：
+> - [分析文档](../analysis/README.md)
+> - [规划文档](../planning/README.md)
+> - [文档总索引](../README.md)
 
 ## 推荐阅读路径
 

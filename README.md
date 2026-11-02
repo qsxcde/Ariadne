@@ -7,7 +7,7 @@
 
 SciPal 是一个面向学术论文阅读场景的 RAG 问答系统。用户上传 PDF 后，系统会在独立会话内完成文档持久化、异步解析、索引构建，并基于论文内容提供带来源引用的中文流式回答。
 
-> 实现细节（架构分层、数据模型、API/SSE 契约、摄取与检索链路、配置项、评测与排障）见 [docs/wiki](docs/wiki/README.md)。
+> 实现细节（架构分层、数据模型、API/SSE 契约、摄取与检索链路、配置项、评测与排障）见 [docs/wiki](docs/wiki/README.md)；文档总索引见 [docs/README.md](docs/README.md)。
 
 ## 项目特点
 
@@ -198,7 +198,7 @@ CI 见 `.github/workflows/ci.yml`（后端 ruff + mypy + pytest，前端 lint + 
 
 ## 验收记录
 
-2026-10-27 完成 P0–P7 全量整改，以下结果在仓库根目录实测，各阶段验收标准见 [remediation-plan.md](docs/wiki/remediation-plan.md)：
+2026-10-27 完成 P0–P7 全量整改，以下结果在仓库根目录实测，各阶段验收标准见 [remediation-plan.md](docs/planning/remediation-plan.md)：
 
 | 关卡 | 命令 | 结果 |
 |---|---|---|

@@ -1,7 +1,7 @@
 # SciPal 整改计划（Remediation Plan）
 
 > 制定日期：2026-10-27
-> 依据：[audit-2026-10-27.md](audit-2026-10-27.md)（10 维度审计，P0/P1 均经二次读码复核）
+> 依据：[audit-2026-10-27.md](../analysis/audit-2026-10-27.md)（10 维度审计，P0/P1 均经二次读码复核）
 > 适用范围：`backend/src/backend`、`frontend/src`、`tests/`、CI 与文档
 > 原则：**先止血 → 再立契约 → 再动结构**。结构重构必须在契约与测试之后，否则每改一次 schema，两端同时漂移，风险翻倍。
 

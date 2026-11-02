@@ -15,7 +15,10 @@ backend/storage/sqlite/scipal.db
 .vscode/
 eval_outputs/
 docs/*
+!docs/README.md
 !docs/wiki/
+!docs/analysis/
+!docs/planning/
 CLAUDE.md
 # SQLite runtime files, wherever they are created
 *.db
