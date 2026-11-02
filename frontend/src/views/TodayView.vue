@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { usePapers } from "../composables/usePapers";
-import type { PaperSummary } from "../api";
+import { getWeeklyReview } from "../api/papers";
+import type { PaperSummary, WeeklyReview } from "../api";
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -10,6 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const { papers, isLoading, errorMessage, loadLibrary } = usePapers();
+const review = ref<WeeklyReview | null>(null);
 
 const reading = computed(() =>
   papers.value
@@ -21,13 +23,9 @@ const queue = computed(() =>
     .filter((paper) => paper.reading_status === "queued" || paper.reading_status === "inbox")
     .slice(0, 8),
 );
-const readThisWeek = computed(() => {
-  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return papers.value.filter((paper) => {
-    if (paper.reading_status !== "read" || !paper.last_read_at) return false;
-    return new Date(paper.last_read_at).getTime() >= cutoff;
-  }).length;
-});
+const readThisWeek = computed(() => review.value?.read_papers ?? 0);
+const notesThisWeek = computed(() => review.value?.notes ?? 0);
+const openQuestions = computed(() => review.value?.open_questions ?? 0);
 
 function progressPercent(paper: PaperSummary): number {
   return Math.round(Math.max(0, Math.min(1, paper.progress)) * 100);
@@ -37,8 +35,13 @@ function openPaper(paper: PaperSummary): void {
   emit("open", paper.id);
 }
 
-onMounted(() => {
-  void loadLibrary();
+onMounted(async () => {
+  await loadLibrary();
+  try {
+    review.value = await getWeeklyReview();
+  } catch {
+    review.value = null;
+  }
 });
 </script>
 
@@ -95,6 +98,7 @@ onMounted(() => {
           <span>目标 3 篇</span>
         </header>
         <p class="today__metric">{{ readThisWeek }}<small> / 3 篇读完</small></p>
+        <p class="today__hint">本周笔记 {{ notesThisWeek }} 条 · 开放问题 {{ openQuestions }} 个</p>
         <p class="today__hint">读完的论文会进入文献库「已读」，笔记仍可回看。</p>
       </section>
 

@@ -2495,6 +2495,51 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WeeklyReview": {
+        "properties": {
+          "notes": {
+            "title": "Notes",
+            "type": "integer"
+          },
+          "open_questions": {
+            "title": "Open Questions",
+            "type": "integer"
+          },
+          "queued_papers": {
+            "title": "Queued Papers",
+            "type": "integer"
+          },
+          "read_paper_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Read Paper Ids",
+            "type": "array"
+          },
+          "read_papers": {
+            "title": "Read Papers",
+            "type": "integer"
+          },
+          "reading_papers": {
+            "title": "Reading Papers",
+            "type": "integer"
+          },
+          "week_start": {
+            "title": "Week Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week_start",
+          "read_papers",
+          "reading_papers",
+          "queued_papers",
+          "notes",
+          "open_questions"
+        ],
+        "title": "WeeklyReview",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -3568,6 +3613,29 @@
           }
         ],
         "summary": "Explain Selection"
+      }
+    },
+    "/review/weekly": {
+      "get": {
+        "operationId": "get_weekly_review_review_weekly_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Weekly Review"
       }
     },
     "/sessions": {

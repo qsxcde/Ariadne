@@ -145,6 +145,28 @@ async function saveNote(): Promise<void> {
   }
 }
 
+function exportNotes(): void {
+  if (!currentPaper.value) return;
+  const lines = [
+    `# ${currentPaper.value.title}`,
+    "",
+    ...annotations.value.map((annotation) => {
+      const quote = annotation.quote ? `> ${annotation.quote}\n\n` : "";
+      const body = annotation.content ?? "";
+      return `- [${annotationLabel(annotation)}] ${quote}${body}`.trim();
+    }),
+  ];
+  const blob = new Blob([lines.join("\n")], {
+    type: "text/markdown;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = `${currentPaper.value.title}-notes.md`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function deleteNote(annotation: AnnotationSummary): Promise<void> {
   try {
     await ElMessageBox.confirm("删除这条笔记？", "删除笔记", {
@@ -240,6 +262,9 @@ onBeforeUnmount(() => {
             <p class="paper-workspace__eyebrow">速读卡 · 笔记</p>
             <h2 class="paper-workspace__notes-title">{{ annotations.length }} 条笔记</h2>
           </div>
+          <button type="button" class="paper-workspace__secondary" @click="exportNotes">
+            导出笔记
+          </button>
         </header>
 
         <section class="paper-workspace__brief">

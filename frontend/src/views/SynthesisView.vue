@@ -86,6 +86,28 @@ async function ask(): Promise<void> {
   }
 }
 
+function exportComparison(): void {
+  if (!comparison.value.length) return;
+  const header = ["论文", "方法", "数据集", "指标", "局限"];
+  const rows = comparison.value.map((row) => [
+    row.title,
+    row.method,
+    row.datasets,
+    row.metrics,
+    row.limitations,
+  ]);
+  const csv = [header, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.download = "paper-comparison.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 async function compare(): Promise<void> {
   if (selectedPaperIds.value.length < 2) {
     ElMessage.warning("至少选择 2 篇论文");
@@ -212,7 +234,9 @@ onMounted(() => {
       <section v-if="comparison.length" class="synthesis__panel synthesis__panel--full">
         <header class="synthesis__panel-head">
           <h2>对比表</h2>
-          <span>方法 / 数据集 / 指标 / 局限</span>
+          <button type="button" class="synthesis__link" @click="exportComparison">
+            导出 CSV
+          </button>
         </header>
         <div class="synthesis__table-wrap">
           <table class="synthesis__table">

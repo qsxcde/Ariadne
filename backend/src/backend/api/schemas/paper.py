@@ -94,6 +94,16 @@ class ExplainResponse(BaseModel):
     explanation: str
 
 
+class WeeklyReview(BaseModel):
+    week_start: str
+    read_papers: int
+    reading_papers: int
+    queued_papers: int
+    notes: int
+    open_questions: int
+    read_paper_ids: list[str] = Field(default_factory=list)
+
+
 class CollectionAskRequest(BaseModel):
     question: str
 

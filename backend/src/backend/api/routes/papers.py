@@ -20,6 +20,7 @@ from backend.api.schemas import (
     PaperSummary,
     PaperUpdateRequest,
     PaperUploadResponse,
+    WeeklyReview,
 )
 from backend.api.security import get_current_user
 from backend.api.uploads import read_upload_with_limit, reject_by_content_length
@@ -28,6 +29,7 @@ from backend.application import brief as brief_service
 from backend.application import collections as collection_service
 from backend.application import explain as explain_service
 from backend.application import papers as paper_service
+from backend.application import review as review_service
 from backend.application import synthesis as synthesis_service
 
 router = APIRouter()
@@ -50,6 +52,11 @@ def _summary(row: dict) -> PaperSummary:
         updated_at=row["updated_at"],
         tags=row.get("tags") or [],
     )
+
+
+@router.get("/review/weekly", response_model=WeeklyReview)
+def get_weekly_review(user: dict = Depends(get_current_user)) -> WeeklyReview:
+    return WeeklyReview(**review_service.weekly_review(user.get("id") or None))
 
 
 @router.get("/papers", response_model=list[PaperSummary])

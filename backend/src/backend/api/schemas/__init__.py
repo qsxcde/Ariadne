@@ -40,6 +40,7 @@ from backend.api.schemas.paper import (
     PaperSummary,
     PaperUpdateRequest,
     PaperUploadResponse,
+    WeeklyReview,
 )
 from backend.api.schemas.session import (
     IndexSnapshotSummary,
@@ -98,4 +99,5 @@ __all__ = [
     "SourceBlockBox",
     "SourceChunkResponse",
     "UserResponse",
+    "WeeklyReview",
 ]

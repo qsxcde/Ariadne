@@ -6,6 +6,7 @@ import type {
   PaperSummary,
   PaperUpdatePayload,
   PaperUploadResult,
+  WeeklyReview,
 } from "./types";
 
 export type PaperListFilters = {
@@ -42,6 +43,10 @@ export function uploadPaper(file: File): Promise<PaperUploadResult> {
   const body = new FormData();
   body.append("file", file);
   return requestForm<PaperUploadResult>("/papers", "上传论文失败", body);
+}
+
+export function getWeeklyReview(): Promise<WeeklyReview> {
+  return requestJson<WeeklyReview>("/review/weekly", "读取周报失败");
 }
 
 export function getPaperBrief(paperId: string): Promise<PaperBrief> {

@@ -197,7 +197,8 @@ handleUpload(file)
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
 - 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点。
 - 划词动作：解释/翻译/简化调用 POST /papers/{id}/explain；追问仍转为高亮笔记。
-- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇。
+- Today：按 reading_status 展示继续阅读/队列/本周读完；目标当前固定 3 篇；本周笔记/开放问题来自 GET /review/weekly。
+- 导出：阅读器笔记导出 Markdown；Synthesis 对比表导出 CSV。
 
 ## 9. 本地开发
 

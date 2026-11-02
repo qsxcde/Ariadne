@@ -34,6 +34,7 @@ export type PaperSummary = Schemas["PaperSummary"];
 export type PaperDetail = Schemas["PaperDetail"];
 export type PaperDocumentSummary = Schemas["PaperDocumentSummary"];
 export type PaperBrief = Schemas["PaperBrief"];
+export type WeeklyReview = Schemas["WeeklyReview"];
 export type ExplainRequest = Schemas["ExplainRequest"];
 export type ExplainResponse = Schemas["ExplainResponse"];
 export type PaperUpdatePayload = Schemas["PaperUpdateRequest"];
