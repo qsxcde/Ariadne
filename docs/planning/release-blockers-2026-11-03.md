@@ -46,6 +46,8 @@
 3. E6：拆 PaperReader、settings 注入、status/warning 呈现。
 4. M4：RIS 导出、Zotero/Notion OAuth 双向同步、SMTP 邮件投递。
 
+> 范围偏差与待签收选项见 [scope-deferrals-2026-11-03.md](scope-deferrals-2026-11-03.md)。
+
 ## 5. 结论
 
 工程代码已覆盖 M0–M4 的核心闭环，Docker 测试中间件与各阶段测试计划已落地；**唯一无法在当前环境闭环的是真实模型质量评测和外部服务授权**。在有效 Key 与网络/授权到位前，不应宣称发布门禁通过。
