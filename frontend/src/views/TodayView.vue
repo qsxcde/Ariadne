@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
+import StateBlock from "../components/StateBlock.vue";
 import { usePapers } from "../composables/usePapers";
 import { getLibraryStats, getWeeklyReview, saveWeeklyNote } from "../api/papers";
 import { formatDuration } from "../utils/format";
@@ -101,8 +102,18 @@ onMounted(async () => {
       </button>
     </header>
 
-    <p v-if="errorMessage" class="today__error">{{ errorMessage }}</p>
-    <p v-if="isLoading && !papers.length" class="today__state">正在读取阅读进度…</p>
+    <StateBlock
+      v-if="errorMessage"
+      kind="error"
+      title="读取失败"
+      :description="errorMessage"
+      compact
+    />
+    <StateBlock
+      v-if="isLoading && !papers.length"
+      kind="loading"
+      description="正在读取阅读进度…"
+    />
 
     <div class="today__columns">
       <section class="today__reading">
@@ -111,9 +122,15 @@ onMounted(async () => {
           <span>{{ reading.length }} 篇在读</span>
         </header>
 
-        <p v-if="!reading.length" class="today__empty">
-          还没有在读的论文。去文献库打开一篇吧。
-        </p>
+        <StateBlock
+          v-if="!reading.length"
+          kind="empty"
+          compact
+          title="还没有在读的论文"
+          description="去文献库打开一篇，阅读进度会自动记录。"
+          action-label="去文献库"
+          @action="emit('library')"
+        />
 
         <article
           v-for="(paper, index) in readingPreview"
@@ -194,7 +211,12 @@ onMounted(async () => {
         <h2>阅读队列</h2>
         <span>{{ queue.length }} 篇</span>
       </header>
-      <p v-if="!queue.length" class="today__empty">队列是空的。</p>
+      <StateBlock
+        v-if="!queue.length"
+        kind="empty"
+        compact
+        description="队列是空的。把想读的论文标记为「队列中」即可出现在这里。"
+      />
       <div v-else class="today__queue-track">
         <button
           v-for="paper in queue"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import StateBlock from "../components/StateBlock.vue";
 import { getAlertSettings, updateAlertSettings } from "../api/settings";
 import {
   checkCitationUpdates,
@@ -166,7 +167,12 @@ onMounted(() => {
             <option value="off">关闭</option>
           </select>
         </label>
-        <p v-if="errorMessage" class="settings-error">{{ errorMessage }}</p>
+        <StateBlock
+          v-if="errorMessage"
+          kind="error"
+          compact
+          :description="errorMessage"
+        />
         <button type="button" class="settings-save" :disabled="isSaving" @click="save">
           {{ isSaving ? "保存中…" : "保存提醒设置" }}
         </button>

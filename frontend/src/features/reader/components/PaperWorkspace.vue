@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
+import StateBlock from "../../../components/StateBlock.vue";
 import PaperAskPanel from "./PaperAskPanel.vue";
 import PaperMetadataDialog from "./PaperMetadataDialog.vue";
 import PaperReader from "./PaperReader.vue";
@@ -384,7 +385,14 @@ onBeforeUnmount(() => {
       @saved="handleMetadataSaved"
     />
 
-    <p v-if="errorMessage" class="paper-workspace__error">{{ errorMessage }}</p>
+    <StateBlock
+      v-if="errorMessage"
+      kind="error"
+      compact
+      :description="errorMessage"
+      action-label="重试"
+      @action="refresh"
+    />
 
     <div v-if="currentPaper" class="paper-workspace__progress">
       <span>{{ STATUS_LABELS[currentPaper.reading_status] || currentPaper.reading_status }}</span>
@@ -596,13 +604,14 @@ onBeforeUnmount(() => {
       </aside>
     </div>
 
-    <div v-else-if="currentPaper" class="paper-workspace__waiting">
-      <p>论文已入库，正文还在解析或索引中。</p>
-      <p>稍后点击「刷新」；解析完成后即可在这里阅读、记笔记。</p>
-      <button type="button" class="paper-workspace__primary" @click="emit('openLibrary')">
-        回到文献库
-      </button>
-    </div>
+    <StateBlock
+      v-else-if="currentPaper"
+      kind="loading"
+      title="正文还在解析或索引中"
+      description="稍后点击「刷新」；解析完成后即可在这里阅读、记笔记。"
+      action-label="回到文献库"
+      @action="emit('openLibrary')"
+    />
   </section>
 </template>
 

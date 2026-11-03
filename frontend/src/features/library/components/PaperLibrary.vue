@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
+import StateBlock from "../../../components/StateBlock.vue";
 import LibraryTable from "./LibraryTable.vue";
 import PaperImportDialog from "./PaperImportDialog.vue";
 import { usePapers } from "../../../composables/usePapers";
@@ -207,32 +208,47 @@ watch(
       </div>
     </div>
 
-    <p v-if="errorMessage" class="paper-library__error">{{ errorMessage }}</p>
-    <p v-if="isLoading && !papers.length" class="paper-library__state">正在读取文献库…</p>
-
-    <div v-else-if="!papers.length" class="paper-library__empty">
-      <p class="paper-library__empty-title">还没有收录论文</p>
-      <p class="paper-library__empty-hint">
-        上传本地 PDF，或从 arXiv / DOI / 网页抓取题录。
-      </p>
-      <div class="paper-library__empty-actions">
-        <button type="button" class="paper-library__upload" @click="pickFiles">上传 PDF</button>
-        <button
-          type="button"
-          class="paper-library__text-button"
-          @click="isImportDialogOpen = true"
-        >
-          按标识导入
-        </button>
-      </div>
-    </div>
-
-    <LibraryTable
-      v-else
-      :papers="papers"
-      @open="emit('open', $event)"
-      @mark-read="markRead"
+    <StateBlock
+      v-if="errorMessage"
+      kind="error"
+      title="读取文献库失败"
+      :description="errorMessage"
+      action-label="重试"
+      @action="loadLibrary"
     />
+
+    <template v-else>
+      <StateBlock
+        v-if="isLoading && !papers.length"
+        kind="loading"
+        description="正在读取文献库…"
+      />
+      <StateBlock
+        v-else-if="!papers.length"
+        kind="empty"
+        title="还没有收录论文"
+        description="上传本地 PDF，或从 arXiv / DOI / 网页抓取题录。"
+      >
+        <template #actions>
+          <button type="button" class="paper-library__upload" @click="pickFiles">
+            上传 PDF
+          </button>
+          <button
+            type="button"
+            class="paper-library__text-button"
+            @click="isImportDialogOpen = true"
+          >
+            按标识导入
+          </button>
+        </template>
+      </StateBlock>
+      <LibraryTable
+        v-else
+        :papers="papers"
+        @open="emit('open', $event)"
+        @mark-read="markRead"
+      />
+    </template>
   </section>
 </template>
 

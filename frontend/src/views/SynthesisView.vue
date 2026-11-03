@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
+import StateBlock from "../components/StateBlock.vue";
 import { askCollection, compareCollectionPapers } from "../api/synthesis";
 import { listCollections } from "../api/collections";
 import { listPapers } from "../api/papers";
@@ -251,11 +252,25 @@ onMounted(() => {
       </div>
     </div>
 
-    <p v-if="errorMessage" class="synthesis__error">{{ errorMessage }}</p>
-    <p v-if="isLoading" class="synthesis__state">正在读取集合…</p>
-    <p v-else-if="!collections.length" class="synthesis__state">
-      还没有集合。先在文献库里创建集合并加入论文。
-    </p>
+    <StateBlock
+      v-if="errorMessage"
+      kind="error"
+      title="读取集合失败"
+      :description="errorMessage"
+      action-label="重试"
+      @action="loadCollections"
+    />
+    <StateBlock
+      v-else-if="isLoading"
+      kind="loading"
+      description="正在读取集合…"
+    />
+    <StateBlock
+      v-else-if="!collections.length"
+      kind="empty"
+      title="还没有集合"
+      description="先在文献库里创建集合并加入论文，再回到这里做跨论文综合。"
+    />
 
     <div v-else class="synthesis__body" :class="{ 'synthesis__body--single': activeTab === 'ask' }">
       <section v-if="activeTab === 'ask'" class="synthesis__ask-pane">
@@ -294,7 +309,12 @@ onMounted(() => {
             <h2>选择论文</h2>
             <span>{{ selectedPaperIds.length }}/5</span>
           </header>
-          <p v-if="!papers.length" class="synthesis__state">这个集合还没有论文。</p>
+          <StateBlock
+            v-if="!papers.length"
+            kind="empty"
+            compact
+            description="这个集合还没有论文。"
+          />
           <ul v-else class="synthesis__paper-list">
             <li v-for="paper in papers" :key="paper.id">
               <label
@@ -340,9 +360,16 @@ onMounted(() => {
         </aside>
 
         <section class="synthesis__result">
-          <p v-if="!comparison.length" class="synthesis__empty">
-            选择 2–5 篇论文并生成{{ activeTab === "matrix" ? "综述矩阵" : "对比表" }}。
-          </p>
+          <StateBlock
+            v-if="!comparison.length"
+            kind="empty"
+            compact
+            :description="
+              '选择 2–5 篇论文并生成' +
+              (activeTab === 'matrix' ? '综述矩阵' : '对比表') +
+              '。'
+            "
+          />
 
           <div v-else class="synthesis__table-wrap">
             <table class="synthesis__table">

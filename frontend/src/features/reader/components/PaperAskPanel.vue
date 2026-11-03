@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
 import MarkdownContent from "../../../components/MarkdownContent.vue";
+import StateBlock from "../../../components/StateBlock.vue";
 import SourceCitationList from "../../chat/components/SourceCitationList.vue";
 import { usePaperChat } from "../../../composables/usePaperChat";
 import { useSourcePreview } from "../../../composables/useSourcePreview";
@@ -91,7 +92,7 @@ watch(
 <template>
   <div class="ask-panel">
     <div ref="listRef" class="ask-panel__list">
-      <p v-if="!ready" class="ask-panel__state">正在载入对话…</p>
+      <StateBlock v-if="!ready" kind="loading" compact description="正在载入对话…" />
 
       <div v-else-if="!messages.length" class="ask-panel__empty">
         <p>针对本文提问，回答会带 chunk 引用。</p>

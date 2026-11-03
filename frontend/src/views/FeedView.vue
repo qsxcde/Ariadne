@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
+import StateBlock from "../components/StateBlock.vue";
 import {
   createSubscription,
   deleteSubscription,
@@ -218,7 +219,15 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <p v-if="errorMessage" class="feed-view__error">{{ errorMessage }}</p>
+    <StateBlock
+      v-if="errorMessage"
+      kind="error"
+      title="读取 Feed 失败"
+      :description="errorMessage"
+      action-label="重试"
+      compact
+      @action="load"
+    />
 
     <div class="feed-view__grid">
       <aside class="feed-view__subscriptions">
@@ -250,7 +259,12 @@ onBeforeUnmount(() => {
           <button type="button" class="feed-view__add" @click="addSubscription">添加订阅</button>
         </div>
 
-        <p v-if="!subscriptions.length" class="feed-view__empty">还没有订阅。</p>
+        <StateBlock
+          v-if="!subscriptions.length"
+          kind="empty"
+          compact
+          description="还没有订阅。添加关键词或作者后刷新。"
+        />
         <ul v-else class="feed-view__subs">
           <li v-for="subscription in subscriptions" :key="subscription.id">
             <span class="feed-view__sub-value">{{ subscription.value }}</span>
@@ -285,10 +299,13 @@ onBeforeUnmount(() => {
           <span class="feed-view__hint">J/K 移动 · S 保存 · X 忽略 · Enter 打开</span>
         </div>
 
-        <p v-if="isLoading" class="feed-view__empty">正在读取 Feed…</p>
-        <p v-else-if="!items.length" class="feed-view__empty">
-          没有内容。添加订阅后点「刷新 Feed」。
-        </p>
+        <StateBlock v-if="isLoading" kind="loading" description="正在读取 Feed…" />
+        <StateBlock
+          v-else-if="!items.length"
+          kind="empty"
+          title="没有待处理内容"
+          description="添加订阅后点「刷新 Feed」，新论文会进入这里。"
+        />
 
         <div v-else class="feed-view__list">
           <article
