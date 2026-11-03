@@ -6,6 +6,7 @@ import WorkbenchRail from "../components/WorkbenchRail.vue";
 import PaperLibrary from "../features/library/components/PaperLibrary.vue";
 import PaperWorkspace from "../features/reader/components/PaperWorkspace.vue";
 import SettingsView from "../views/SettingsView.vue";
+import SourceDrawer from "../components/SourceDrawer.vue";
 import SynthesisView from "../views/SynthesisView.vue";
 import FeedView from "../views/FeedView.vue";
 import TodayView from "../views/TodayView.vue";
@@ -138,6 +139,8 @@ watch(
         <SettingsView v-else-if="route.name === 'settings'" @back="openLibrary" />
       </div>
     </div>
+
+    <SourceDrawer />
   </main>
 </template>
 

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
+import PaperAskPanel from "./PaperAskPanel.vue";
 import PaperMetadataDialog from "./PaperMetadataDialog.vue";
 import PaperReader from "./PaperReader.vue";
 import { usePapers } from "../../../composables/usePapers";
@@ -42,10 +43,11 @@ const {
 } = usePapers();
 
 const noteDraft = ref("");
-const activeTab = ref<"brief" | "notes" | "terms" | "citations">("brief");
+const activeTab = ref<"brief" | "ask" | "notes" | "terms" | "citations">("brief");
 
 const INSPECTOR_TABS = [
   { value: "brief", label: "速读" },
+  { value: "ask", label: "问答" },
   { value: "notes", label: "笔记" },
   { value: "terms", label: "术语" },
   { value: "citations", label: "引用" },
@@ -400,7 +402,14 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="paper-workspace__inspector-body">
+        <div
+          class="paper-workspace__inspector-body"
+          :class="{ 'paper-workspace__inspector-body--flush': activeTab === 'ask' }"
+        >
+        <PaperAskPanel
+          v-if="activeTab === 'ask'"
+          :session-id="primarySessionId"
+        />
         <section v-show="activeTab === 'brief'" class="paper-workspace__brief">
           <header class="paper-workspace__brief-head">
             <span class="paper-workspace__eyebrow">5 分钟速读</span>
@@ -563,8 +572,10 @@ onBeforeUnmount(() => {
 .paper-workspace {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex: 1;
   flex-direction: column;
+  overflow: hidden;
   background: var(--color-bg);
 }
 
@@ -686,12 +697,16 @@ onBeforeUnmount(() => {
   min-height: 0;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .paper-workspace__inspector {
   display: flex;
   min-height: 0;
+  height: 100%;
   flex-direction: column;
+  overflow: hidden;
   border-left: 1px solid var(--color-border);
   background: var(--color-panel);
 }
@@ -728,9 +743,15 @@ onBeforeUnmount(() => {
 }
 
 .paper-workspace__inspector-body {
+  display: flex;
   min-height: 0;
   flex: 1;
+  flex-direction: column;
   overflow-y: auto;
+}
+
+.paper-workspace__inspector-body--flush {
+  overflow: hidden;
 }
 
 .paper-workspace__notes-pane {

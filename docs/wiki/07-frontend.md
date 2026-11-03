@@ -185,7 +185,7 @@ handleUpload(file)
 | `/synthesis` | `views/SynthesisView.vue` | 集合选择、问答 / 对比表 / 综述矩阵三 Tab |
 | `/feed` | `views/FeedView.vue` | 订阅（arXiv/OpenAlex/PubMed/RSS）、Feed 刷新、保存到队列/忽略 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 表格化论文列表（状态/进度/标签）、状态分段筛选、集合/标签筛选、批量上传、按标识导入 |
-| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·笔记·术语·引用） |
+| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·问答·笔记·术语·引用） |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
 | `/` | redirect | 默认进入 `/today` |

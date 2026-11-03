@@ -194,7 +194,7 @@ Settings           偏好：模型、提醒、数据
 - [x] P0 · WorkbenchShell / WorkbenchRail / TopBar，`/` 重定向 `/today`；搜索/导入/集合通过 query 传入文献库
 - [x] P1 · LibraryTable：46px 行高、状态点/进度/标签列、状态分段筛选、悬停操作、集合筛选
 - [x] P1 · Paper 三栏：大纲 | 正文/PDF | Inspector 340px
-- [x] P1 · Inspector 标签：速读 / 笔记 / 术语 / 引用（问答 Tab 待接入论文级会话）
+- [x] P1 · Inspector 标签：速读 / 问答 / 笔记 / 术语 / 引用；问答绑定当前论文会话
 - [ ] P2 · Today / Synthesis / Feed 重排
 - [ ] P3 · `⌘K` 与键盘操作
 
