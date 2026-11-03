@@ -134,7 +134,7 @@ function toggleMore(): void {
   flex-direction: column;
   gap: 8px;
   padding: 11px 12px;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: 16px;
   box-shadow: var(--shadow-input);

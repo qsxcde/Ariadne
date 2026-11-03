@@ -147,7 +147,7 @@ const displayText = computed(() => {
 .message-bubble--assistant {
   color: var(--color-text);
   padding: 18px 22px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
   border-radius: 17px;
   box-shadow: var(--shadow-shell);
@@ -192,7 +192,7 @@ const displayText = computed(() => {
 
 .message-bubble--user :deep(.markdown-content code) {
   color: var(--color-text);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--color-surface);
   border-color: var(--color-border);
 }
 

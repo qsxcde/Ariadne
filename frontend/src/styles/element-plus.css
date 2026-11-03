@@ -4,8 +4,8 @@
 .session-item__menu.el-button,
 .scroll-bottom-button.el-button {
   color: var(--color-text-soft);
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(217, 226, 238, 0.94);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   box-shadow: none;
 }
 
@@ -53,7 +53,7 @@
 
 .el-dropdown-menu {
   padding: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   box-shadow: var(--shadow-card);

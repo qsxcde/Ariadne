@@ -145,7 +145,7 @@ function handlePin(sessionId: string): void {
   padding: 18px 14px;
   overflow: hidden;
   color: var(--color-text);
-  background: rgba(248, 250, 252, 0.95);
+  background: var(--color-sidebar);
 }
 
 .app-sidebar--collapsed {
@@ -161,11 +161,10 @@ function handlePin(sessionId: string): void {
   align-items: center;
   gap: 8px;
   padding: 7px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(199, 211, 226, 0.92);
-  border-radius: 16px;
-  box-shadow: 0 14px 36px rgba(47, 69, 103, 0.12);
-  backdrop-filter: blur(14px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
 .app-sidebar__collapsed-brand,

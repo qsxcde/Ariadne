@@ -29,8 +29,8 @@ body {
   margin: 0;
   color: var(--color-text);
   background:
-    linear-gradient(120deg, rgba(71, 110, 230, 0.08), transparent 36%),
-    linear-gradient(180deg, #f7f9fd 0%, #eff4fa 100%);
+    radial-gradient(1200px 620px at 8% -12%, rgba(178, 58, 42, 0.06), transparent 62%),
+    linear-gradient(180deg, #f8f5ee 0%, var(--color-page) 58%, #f2ede2 100%);
 }
 
 button,
@@ -54,5 +54,10 @@ a {
 }
 
 ::selection {
-  background: rgba(123, 147, 232, 0.22);
+  background: rgba(178, 58, 42, 0.18);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
