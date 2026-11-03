@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
   z-index: 2400;
   display: flex;
   justify-content: flex-end;
-  background: rgba(23, 32, 51, 0.18);
+  background: rgba(25, 23, 19, 0.28);
   backdrop-filter: blur(2px);
 }
 
@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   background: var(--color-panel);
   border-left: 1px solid var(--color-border);
-  box-shadow: -18px 0 48px rgba(48, 68, 101, 0.12);
+  box-shadow: -18px 0 48px rgba(60, 50, 35, 0.14);
   outline: none;
 }
 

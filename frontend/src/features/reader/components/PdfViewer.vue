@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
 .pdf-viewer__page {
   position: relative;
   display: inline-block;
-  box-shadow: 0 12px 30px rgba(48, 68, 101, 0.14);
+  box-shadow: 0 12px 30px rgba(60, 50, 35, 0.14);
 }
 
 .pdf-viewer__canvas {
@@ -273,21 +273,21 @@ onBeforeUnmount(() => {
 
 .pdf-viewer__hit {
   position: absolute;
-  background: rgba(71, 110, 230, 0.22);
+  background: rgba(178, 58, 42, 0.18);
   border: 1px solid var(--color-accent);
-  border-radius: 3px;
-  box-shadow: 0 0 0 3px rgba(71, 110, 230, 0.12);
+  border-radius: 2px;
+  box-shadow: 0 0 0 3px rgba(178, 58, 42, 0.1);
   animation: pdf-hit-pulse 1.6s ease-in-out 2;
 }
 
 @keyframes pdf-hit-pulse {
   0%,
   100% {
-    background: rgba(71, 110, 230, 0.16);
+    background: rgba(178, 58, 42, 0.14);
   }
 
   50% {
-    background: rgba(71, 110, 230, 0.38);
+    background: rgba(178, 58, 42, 0.32);
   }
 }
 </style>

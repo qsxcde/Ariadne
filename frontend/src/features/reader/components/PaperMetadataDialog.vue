@@ -165,7 +165,7 @@ async function submit(): Promise<void> {
 .metadata-form__field input,
 .metadata-form__field textarea {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   padding: 7px 9px;
   color: var(--color-text);

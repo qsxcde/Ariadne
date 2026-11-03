@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { UploadFilled } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { Plus, Search, UploadFilled } from "@element-plus/icons-vue";
 import StateBlock from "../../../components/StateBlock.vue";
 import LibraryTable from "./LibraryTable.vue";
 import PaperImportDialog from "./PaperImportDialog.vue";
 import { usePapers } from "../../../composables/usePapers";
 import { exportBibtex } from "../../../api/papers";
+import { addPaperToCollection, createCollection } from "../../../api/collections";
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -36,6 +37,9 @@ const router = useRouter();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isImportDialogOpen = ref(false);
 const selectedIndex = ref(0);
+const checkedIds = ref<string[]>([]);
+const bulkCollectionId = ref("");
+const isBulkBusy = ref(false);
 const selectedPaperId = computed(() => papers.value[selectedIndex.value]?.id ?? "");
 
 const STATUS_OPTIONS = [
@@ -90,6 +94,89 @@ function selectStatus(value: string): void {
 
 function markRead(paperId: string): void {
   void saveReadingState(paperId, { reading_status: "read" });
+}
+
+function toggleCheck(paperId: string): void {
+  checkedIds.value = checkedIds.value.includes(paperId)
+    ? checkedIds.value.filter((id) => id !== paperId)
+    : [...checkedIds.value, paperId];
+}
+
+function toggleAll(): void {
+  checkedIds.value =
+    checkedIds.value.length === papers.value.length
+      ? []
+      : papers.value.map((paper) => paper.id);
+}
+
+function clearChecked(): void {
+  checkedIds.value = [];
+  bulkCollectionId.value = "";
+}
+
+async function markCheckedRead(): Promise<void> {
+  if (!checkedIds.value.length) return;
+  isBulkBusy.value = true;
+  const ids = [...checkedIds.value];
+  for (const paperId of ids) {
+    await saveReadingState(paperId, { reading_status: "read" });
+  }
+  await loadLibrary();
+  clearChecked();
+  isBulkBusy.value = false;
+  ElMessage.success(`已将 ${ids.length} 篇标记为已读`);
+}
+
+async function addCheckedToCollection(): Promise<void> {
+  if (!bulkCollectionId.value || !checkedIds.value.length) return;
+  isBulkBusy.value = true;
+  const collectionId = bulkCollectionId.value;
+  const ids = [...checkedIds.value];
+  try {
+    await Promise.all(ids.map((paperId) => addPaperToCollection(collectionId, paperId)));
+    await loadLibrary();
+    ElMessage.success(`已加入 ${ids.length} 篇论文`);
+    clearChecked();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "加入集合失败");
+  } finally {
+    isBulkBusy.value = false;
+  }
+}
+
+async function createNewCollection(): Promise<void> {
+  let result;
+  try {
+    result = await ElMessageBox.prompt("给集合起一个便于检索的名字。", "新建集合", {
+      confirmButtonText: "创建",
+      cancelButtonText: "取消",
+      inputPlaceholder: "例如：RAG 主线",
+      inputValidator: (value) => (value?.trim() ? true : "集合名称不能为空"),
+    });
+  } catch {
+    return;
+  }
+  const name = result.value.trim();
+  try {
+    const collection = await createCollection({ name });
+    const ids = [...checkedIds.value];
+    if (ids.length) {
+      await Promise.all(
+        ids.map((paperId) => addPaperToCollection(collection.id, paperId)),
+      );
+    }
+    await loadLibrary();
+    filters.value.collectionId = collection.id;
+    await loadLibrary();
+    clearChecked();
+    ElMessage.success(
+      ids.length
+        ? `已创建「${collection.name}」并加入 ${ids.length} 篇`
+        : `已创建「${collection.name}」`,
+    );
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : "创建集合失败");
+  }
 }
 
 function scrollToSelection(): void {
@@ -171,12 +258,14 @@ watch(
 );
 
 watch(
-  () => papers.value.length,
+  () => papers.value.map((paper) => paper.id).join("|"),
   () => {
     selectedIndex.value = Math.min(
       selectedIndex.value,
       Math.max(0, papers.value.length - 1),
     );
+    const visible = new Set(papers.value.map((paper) => paper.id));
+    checkedIds.value = checkedIds.value.filter((id) => visible.has(id));
   },
 );
 </script>
@@ -244,19 +333,25 @@ watch(
       </div>
 
       <div class="paper-library__controls">
-        <input
-          v-model="filters.query"
-          class="paper-library__search"
-          type="search"
-          placeholder="搜索标题或作者…"
-          @keyup.enter="loadLibrary"
-        />
+        <label class="paper-library__search-wrap">
+          <Search class="paper-library__search-icon" />
+          <input
+            v-model="filters.query"
+            class="paper-library__search"
+            type="search"
+            placeholder="搜索标题或作者…"
+            @keyup.enter="loadLibrary"
+          />
+        </label>
         <select v-model="filters.collectionId" class="paper-library__select" @change="loadLibrary">
           <option value="">全部集合</option>
           <option v-for="collection in collections" :key="collection.id" :value="collection.id">
             {{ collection.name }}（{{ collection.paper_count }}）
           </option>
         </select>
+        <button type="button" class="paper-library__text-button" @click="createNewCollection">
+          <Plus class="paper-library__button-icon" /> 新建集合
+        </button>
         <input
           v-model="filters.tag"
           class="paper-library__tag-input"
@@ -268,6 +363,31 @@ watch(
           刷新
         </button>
         <span class="paper-library__hint">J/K 移动 · Enter 打开 · S 已读</span>
+      </div>
+    </div>
+
+    <div v-if="checkedIds.length" class="paper-library__bulk">
+      <span class="paper-library__bulk-count">已选 {{ checkedIds.length }} 篇</span>
+      <div class="paper-library__bulk-actions">
+        <button type="button" :disabled="isBulkBusy" @click="markCheckedRead">
+          标记已读
+        </button>
+        <select v-model="bulkCollectionId" class="paper-library__select">
+          <option value="">加入集合…</option>
+          <option v-for="collection in collections" :key="collection.id" :value="collection.id">
+            {{ collection.name }}
+          </option>
+        </select>
+        <button
+          type="button"
+          :disabled="!bulkCollectionId || isBulkBusy"
+          @click="addCheckedToCollection"
+        >
+          加入
+        </button>
+        <button type="button" class="paper-library__bulk-clear" @click="clearChecked">
+          清除选择
+        </button>
       </div>
     </div>
 
@@ -309,8 +429,11 @@ watch(
         v-else
         :papers="papers"
         :selected-id="selectedPaperId"
+        :checked-ids="checkedIds"
         @open="emit('open', $event)"
         @mark-read="markRead"
+        @check="toggleCheck"
+        @check-all="toggleAll"
       />
     </template>
   </section>
@@ -323,7 +446,7 @@ watch(
   flex: 1;
   flex-direction: column;
   gap: 14px;
-  padding: 24px 28px 0;
+  padding: 24px max(28px, calc((100% - 1400px) / 2)) 0;
   overflow: hidden;
   background: var(--color-page);
 }
@@ -368,6 +491,11 @@ watch(
   flex-wrap: wrap;
 }
 
+.paper-library__controls {
+  flex: 1 1 560px;
+  justify-content: flex-end;
+}
+
 .paper-library__upload,
 .paper-library__text-button {
   display: inline-flex;
@@ -392,7 +520,8 @@ watch(
   opacity: 0.7;
 }
 
-.paper-library__upload-icon {
+.paper-library__upload-icon,
+.paper-library__button-icon {
   width: 13px;
   height: 13px;
 }
@@ -430,14 +559,31 @@ watch(
 }
 
 .paper-library__status.is-active {
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-text);
   color: var(--color-text);
   font-weight: 600;
 }
 
+.paper-library__search-wrap {
+  position: relative;
+  display: flex;
+  min-width: 210px;
+  flex: 1 1 240px;
+  align-items: center;
+}
+
+.paper-library__search-icon {
+  position: absolute;
+  left: 9px;
+  width: 13px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
 .paper-library__search {
-  min-width: 200px;
-  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding-left: 28px;
 }
 
 .paper-library__search,
@@ -462,6 +608,80 @@ watch(
   font-size: 9px;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+.paper-library__bulk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-accent);
+  background: var(--color-surface-alt);
+  padding: 7px 10px;
+}
+
+.paper-library__bulk-count {
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.paper-library__bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.paper-library__bulk-actions button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: 4px 9px;
+  color: var(--color-text-soft);
+  font-size: 11px;
+}
+
+.paper-library__bulk-actions button:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.paper-library__bulk-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.paper-library__bulk-actions .paper-library__select {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.paper-library__bulk-clear {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--color-text-muted) !important;
+}
+
+@media (max-width: 1320px) {
+  .paper-library__hint {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .paper-library__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .paper-library__controls {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+  }
 }
 
 .paper-library__error {

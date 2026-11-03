@@ -1,31 +1,53 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { Search } from "@element-plus/icons-vue";
+import { shortcutLabel } from "../utils/platform";
 
-defineProps<{
-  section: string;
-}>();
+withDefaults(
+  defineProps<{
+    section: string;
+    showSearch?: boolean;
+    showImport?: boolean;
+  }>(),
+  {
+    showSearch: true,
+    showImport: true,
+  },
+);
 
 const emit = defineEmits<{
   command: [];
   import: [];
 }>();
+
+const searchShortcut = computed(() => shortcutLabel("K"));
 </script>
 
 <template>
   <header class="topbar">
     <div class="topbar__identity">
-      <span class="topbar__mark">SciPal</span>
+      <span class="topbar__context">工作台</span>
       <span class="topbar__slash" aria-hidden="true">/</span>
       <span class="topbar__section">{{ section }}</span>
     </div>
 
     <div class="topbar__actions">
-      <button type="button" class="topbar__search" @click="emit('command')">
+      <button
+        v-if="showSearch"
+        type="button"
+        class="topbar__search"
+        @click="emit('command')"
+      >
         <Search class="topbar__search-icon" />
         <span class="topbar__placeholder">搜索论文、集合或命令</span>
-        <kbd class="topbar__kbd">⌘K</kbd>
+        <kbd class="topbar__kbd">{{ searchShortcut }}</kbd>
       </button>
-      <button type="button" class="topbar__action" @click="emit('import')">
+      <button
+        v-if="showImport"
+        type="button"
+        class="topbar__action"
+        @click="emit('import')"
+      >
         导入
       </button>
     </div>
@@ -52,25 +74,26 @@ const emit = defineEmits<{
   gap: 10px;
 }
 
-.topbar__mark {
-  color: var(--color-text);
-  font-family: var(--font-serif);
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
+.topbar__context {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .topbar__slash {
   color: var(--color-border-strong);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .topbar__section {
   overflow: hidden;
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-family: var(--font-serif);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -95,7 +118,7 @@ const emit = defineEmits<{
 }
 
 .topbar__search:hover {
-  border-color: var(--color-accent);
+  border-color: var(--color-border-strong);
 }
 
 .topbar__search-icon {
@@ -113,20 +136,22 @@ const emit = defineEmits<{
   padding: 0 4px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
+  white-space: nowrap;
 }
 
 .topbar__action {
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  padding: 7px 14px;
-  color: var(--color-white);
+  background: transparent;
+  padding: 6px 13px;
+  color: var(--color-accent);
   font-size: 12px;
   letter-spacing: 0.04em;
 }
 
 .topbar__action:hover {
-  background: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
 }
 </style>

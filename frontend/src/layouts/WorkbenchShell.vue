@@ -33,6 +33,9 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 const section = computed(() => SECTION_LABELS[String(route.name)] ?? "工作台");
+const activeSection = computed(() =>
+  route.name === "paper" ? "library" : String(route.name),
+);
 const routePaperId = computed(() =>
   typeof route.params.paperId === "string" ? route.params.paperId : "",
 );
@@ -128,7 +131,7 @@ watch(
 <template>
   <main class="workbench" aria-label="SciPal 研究工作台">
     <WorkbenchRail
-      :active="String(route.name)"
+      :active="activeSection"
       :collections="collections"
       :username="user?.username"
       @navigate="navigate"
@@ -137,7 +140,13 @@ watch(
     />
 
     <div class="workbench__main">
-      <TopBar :section="section" @command="openPalette" @import="importPaper" />
+      <TopBar
+        :section="section"
+        :show-search="route.name !== 'library'"
+        :show-import="route.name !== 'library'"
+        @command="openPalette"
+        @import="importPaper"
+      />
 
       <div class="workbench__body">
         <PaperLibrary

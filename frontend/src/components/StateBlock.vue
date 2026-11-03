@@ -20,9 +20,9 @@ defineEmits<{
 }>();
 
 const LABELS = {
-  loading: "LOADING",
-  empty: "EMPTY",
-  error: "ERROR",
+  loading: "载入中",
+  empty: "暂无内容",
+  error: "出错",
 } as const;
 </script>
 
@@ -35,6 +35,9 @@ const LABELS = {
   >
     <span class="state-block__eyebrow">{{ LABELS[kind] }}</span>
     <p v-if="title" class="state-block__title">{{ title }}</p>
+    <div v-if="kind === 'loading'" class="state-block__skeleton" aria-hidden="true">
+      <span v-for="index in compact ? 2 : 3" :key="index" />
+    </div>
     <p v-if="description" class="state-block__desc">{{ description }}</p>
     <div v-if="actionLabel || $slots.actions" class="state-block__actions">
       <slot name="actions">
@@ -62,10 +65,21 @@ const LABELS = {
 }
 
 .state-block__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.16em;
+}
+
+.state-block__eyebrow::before,
+.state-block__eyebrow::after {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: var(--color-border);
 }
 
 .state-block--error .state-block__eyebrow {
@@ -82,6 +96,35 @@ const LABELS = {
   font-family: var(--font-serif);
   font-size: 16px;
   font-weight: 600;
+}
+
+.state-block__skeleton {
+  display: flex;
+  width: min(320px, 100%);
+  flex-direction: column;
+  gap: 7px;
+  margin: 8px 0 2px;
+}
+
+.state-block__skeleton span {
+  display: block;
+  height: 9px;
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 0%,
+    var(--color-surface-alt) 50%,
+    var(--color-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: state-shimmer 1.4s linear infinite;
+}
+
+.state-block__skeleton span:nth-child(2) {
+  width: 86%;
+}
+
+.state-block__skeleton span:nth-child(3) {
+  width: 64%;
 }
 
 .state-block__desc {
@@ -123,6 +166,15 @@ const LABELS = {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes state-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
   }
 }
 </style>

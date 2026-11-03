@@ -49,6 +49,19 @@ const STATUS_OPTIONS = [
   { value: "", label: "全部" },
 ];
 
+const KIND_LABELS = Object.fromEntries(KIND_OPTIONS.map((option) => [option.value, option.label]));
+const SOURCE_LABELS = Object.fromEntries(
+  SOURCE_OPTIONS.map((option) => [option.value, option.label]),
+);
+
+function kindLabel(value: string): string {
+  return KIND_LABELS[value] ?? value;
+}
+
+function sourceLabel(value: string): string {
+  return SOURCE_LABELS[value] ?? value;
+}
+
 async function load(): Promise<void> {
   isLoading.value = true;
   errorMessage.value = "";
@@ -268,7 +281,7 @@ onBeforeUnmount(() => {
         <ul v-else class="feed-view__subs">
           <li v-for="subscription in subscriptions" :key="subscription.id">
             <span class="feed-view__sub-value">{{ subscription.value }}</span>
-            <small>{{ subscription.source }} · {{ subscription.kind }}</small>
+            <small>{{ sourceLabel(subscription.source) }} · {{ kindLabel(subscription.kind) }}</small>
             <button
               type="button"
               class="feed-view__link"
@@ -362,7 +375,7 @@ onBeforeUnmount(() => {
   flex: 1;
   flex-direction: column;
   gap: 16px;
-  padding: 26px 30px 40px;
+  padding: 26px max(30px, calc((100% - 1320px) / 2)) 40px;
   overflow-y: auto;
   background: var(--color-page);
 }
@@ -552,7 +565,7 @@ onBeforeUnmount(() => {
 }
 
 .feed-view__filter.is-active {
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-text);
   color: var(--color-text);
   font-weight: 600;
 }
@@ -626,7 +639,7 @@ onBeforeUnmount(() => {
 }
 
 .feed-row__reason {
-  color: var(--color-accent);
+  color: var(--color-text-muted);
 }
 
 .feed-row__actions {
@@ -645,8 +658,12 @@ onBeforeUnmount(() => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: 10px;
+}
+
+.feed-row__actions button:hover {
+  color: var(--color-text);
 }
 
 .feed-view__empty,

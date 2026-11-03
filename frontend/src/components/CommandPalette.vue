@@ -16,11 +16,14 @@ const emit = defineEmits<{
   openPaper: [paperId: string];
 }>();
 
+type CommandGroup = "导航" | "操作";
+
 type StaticCommand = {
   id: string;
   label: string;
   hint: string;
   keywords: string;
+  group: CommandGroup;
   action: () => void;
 };
 
@@ -30,6 +33,7 @@ const NAV_COMMANDS: StaticCommand[] = [
     label: "今天",
     hint: "继续阅读 / 本周",
     keywords: "today 今日 阅读 首页",
+    group: "导航",
     action: () => emit("navigate", "today"),
   },
   {
@@ -37,6 +41,7 @@ const NAV_COMMANDS: StaticCommand[] = [
     label: "文献库",
     hint: "全部论文",
     keywords: "library 文献 论文 列表",
+    group: "导航",
     action: () => emit("navigate", "library"),
   },
   {
@@ -44,6 +49,7 @@ const NAV_COMMANDS: StaticCommand[] = [
     label: "综合",
     hint: "问答 / 对比 / 矩阵",
     keywords: "synthesis 综合 对比 矩阵",
+    group: "导航",
     action: () => emit("navigate", "synthesis"),
   },
   {
@@ -51,6 +57,7 @@ const NAV_COMMANDS: StaticCommand[] = [
     label: "跟进",
     hint: "订阅与 Feed",
     keywords: "feed 跟进 订阅",
+    group: "导航",
     action: () => emit("navigate", "feed"),
   },
   {
@@ -58,6 +65,7 @@ const NAV_COMMANDS: StaticCommand[] = [
     label: "设置",
     hint: "模型 / 提醒 / 数据",
     keywords: "settings 设置 配置",
+    group: "导航",
     action: () => emit("navigate", "settings"),
   },
 ];
@@ -68,6 +76,7 @@ const ACTION_COMMANDS: StaticCommand[] = [
     label: "导入论文",
     hint: "上传 PDF / 按标识导入",
     keywords: "import 导入 上传 pdf arxiv doi",
+    group: "操作",
     action: () => emit("import"),
   },
 ];
@@ -93,7 +102,7 @@ type Option = {
   id: string;
   label: string;
   hint: string;
-  group: "命令" | "论文";
+  group: CommandGroup | "论文";
   run: () => void;
 };
 
@@ -102,7 +111,7 @@ const options = computed<Option[]>(() => [
     id: item.id,
     label: item.label,
     hint: item.hint,
-    group: "命令" as const,
+    group: item.group,
     run: item.action,
   })),
   ...papers.value.map((paper) => ({
@@ -244,7 +253,7 @@ function handleKeydown(event: KeyboardEvent): void {
 .palette__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(25, 23, 19, 0.36);
+  background: rgba(25, 23, 19, 0.3);
 }
 
 .palette__panel {
@@ -322,7 +331,7 @@ function handleKeydown(event: KeyboardEvent): void {
 
 .palette__item.is-active {
   border-left-color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--color-surface-alt);
 }
 
 .palette__label {

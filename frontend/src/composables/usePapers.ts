@@ -90,7 +90,7 @@ async function loadBrief(paperId: string, force = false): Promise<void> {
 async function saveReadingState(
   paperId: string,
   payload: PaperUpdatePayload,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const updated = await updatePaper(paperId, payload);
     currentPaper.value = updated;
@@ -104,8 +104,10 @@ async function saveReadingState(
         updated_at: updated.updated_at,
       };
     }
+    return true;
   } catch (error) {
     errorMessage.value = toErrorMessage(error, "保存阅读进度失败");
+    return false;
   }
 }
 

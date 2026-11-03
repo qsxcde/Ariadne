@@ -1,21 +1,35 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PaperSummary } from "../../../api";
 import { formatUpdatedAt } from "../../../utils/format";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     papers: PaperSummary[];
     selectedId?: string;
+    checkedIds?: string[];
   }>(),
   {
     selectedId: "",
+    checkedIds: () => [],
   },
 );
 
 const emit = defineEmits<{
   open: [paperId: string];
   markRead: [paperId: string];
+  check: [paperId: string];
+  checkAll: [];
 }>();
+
+const allChecked = computed(
+  () =>
+    props.papers.length > 0 &&
+    props.papers.every((paper) => props.checkedIds.includes(paper.id)),
+);
+const someChecked = computed(() =>
+  props.papers.some((paper) => props.checkedIds.includes(paper.id)),
+);
 
 const STATUS_LABELS: Record<string, string> = {
   inbox: "待读",
@@ -59,6 +73,16 @@ function visibleTags(paper: PaperSummary): string[] {
     <table class="library-table">
       <thead>
         <tr>
+          <th class="library-table__check-col">
+            <input
+              type="checkbox"
+              class="library-table__check"
+              aria-label="选择当前列表全部论文"
+              :checked="allChecked"
+              :indeterminate.prop="someChecked && !allChecked"
+              @change="emit('checkAll')"
+            />
+          </th>
           <th class="library-table__status-col">状态</th>
           <th>标题</th>
           <th class="library-table__author-col">作者 / 年份</th>
@@ -77,6 +101,16 @@ function visibleTags(paper: PaperSummary): string[] {
           :class="{ 'is-selected': paper.id === selectedId }"
           @click="emit('open', paper.id)"
         >
+          <td class="library-table__check-col">
+            <input
+              type="checkbox"
+              class="library-table__check"
+              :aria-label="`选择《${paper.title}》`"
+              :checked="checkedIds.includes(paper.id)"
+              @click.stop
+              @change="emit('check', paper.id)"
+            />
+          </td>
           <td>
             <span class="library-table__status" :class="'is-' + paper.reading_status">
               <span class="library-table__dot" aria-hidden="true" />
@@ -88,8 +122,8 @@ function visibleTags(paper: PaperSummary): string[] {
               {{ paper.title }}
             </button>
           </td>
-          <td class="library-table__meta">{{ authorLine(paper) }}</td>
-          <td class="library-table__meta">{{ paper.venue || "—" }}</td>
+          <td class="library-table__meta library-table__author-col">{{ authorLine(paper) }}</td>
+          <td class="library-table__meta library-table__venue-col">{{ paper.venue || "—" }}</td>
           <td>
             <div class="library-table__progress">
               <span class="library-table__track" aria-hidden="true">
@@ -101,8 +135,8 @@ function visibleTags(paper: PaperSummary): string[] {
               <span class="library-table__pct">{{ progressPercent(paper.progress) }}%</span>
             </div>
           </td>
-          <td class="library-table__meta">{{ lastRead(paper) }}</td>
-          <td>
+          <td class="library-table__meta library-table__read-col">{{ lastRead(paper) }}</td>
+          <td class="library-table__tags-col">
             <span v-if="!(paper.tags ?? []).length" class="library-table__meta">—</span>
             <span v-else class="library-table__tags">
               <span v-for="tag in visibleTags(paper)" :key="tag" class="library-table__tag">
@@ -119,9 +153,10 @@ function visibleTags(paper: PaperSummary): string[] {
               <button
                 v-if="paper.reading_status !== 'read'"
                 type="button"
+                title="标记已读"
                 @click.stop="emit('markRead', paper.id)"
               >
-                标记已读
+                已读
               </button>
             </div>
           </td>
@@ -162,32 +197,73 @@ function visibleTags(paper: PaperSummary): string[] {
   text-transform: uppercase;
 }
 
+.library-table th.library-table__check-col,
+.library-table td.library-table__check-col {
+  width: 34px;
+  padding-right: 4px;
+  padding-left: 10px;
+}
+
+.library-table__check {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
 .library-table__status-col {
-  width: 76px;
+  width: 68px;
 }
 
 .library-table__author-col {
-  width: 20%;
+  width: 16%;
 }
 
 .library-table__venue-col {
-  width: 11%;
+  width: 9%;
 }
 
 .library-table__progress-col {
-  width: 110px;
+  width: 96px;
 }
 
 .library-table__read-col {
-  width: 92px;
+  width: 84px;
 }
 
 .library-table__tags-col {
-  width: 12%;
+  width: 10%;
 }
 
 .library-table__actions-col {
-  width: 108px;
+  width: 92px;
+}
+
+/* 1024 断点：先让出标题宽度，再逐级隐藏低优先级列。 */
+@media (max-width: 1320px) {
+  .library-table__venue-col,
+  .library-table__tags-col {
+    display: none;
+  }
+
+  .library-table__author-col {
+    width: 22%;
+  }
+}
+
+@media (max-width: 1120px) {
+  .library-table__read-col {
+    display: none;
+  }
+
+  .library-table__author-col {
+    width: 26%;
+  }
+
+  .library-table__actions-col {
+    width: 84px;
+  }
 }
 
 .library-table__row {
@@ -202,7 +278,7 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__row.is-selected {
-  box-shadow: inset 2px 0 var(--color-accent);
+  box-shadow: inset 2px 0 var(--color-text);
 }
 
 .library-table td {
@@ -228,11 +304,11 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__status.is-reading {
-  color: var(--color-accent);
+  color: var(--color-aqua);
 }
 
 .library-table__status.is-reading .library-table__dot {
-  background: var(--color-accent);
+  background: var(--color-aqua);
 }
 
 .library-table__status.is-read {
@@ -244,11 +320,11 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__status.is-skimming {
-  color: var(--color-aqua);
+  color: var(--color-text-soft);
 }
 
 .library-table__status.is-skimming .library-table__dot {
-  background: var(--color-aqua);
+  background: var(--color-text-soft);
 }
 
 .library-table__title {
@@ -268,7 +344,9 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__row:hover .library-table__title {
-  color: var(--color-accent-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-underline-offset: 3px;
 }
 
 .library-table__meta {
@@ -295,7 +373,7 @@ function visibleTags(paper: PaperSummary): string[] {
 .library-table__fill {
   display: block;
   height: 100%;
-  background: var(--color-accent);
+  background: var(--color-aqua);
 }
 
 .library-table__pct {
@@ -324,6 +402,7 @@ function visibleTags(paper: PaperSummary): string[] {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  white-space: nowrap;
   opacity: 0;
   transition: opacity var(--motion-fast) var(--ease-out);
 }
@@ -338,7 +417,12 @@ function visibleTags(paper: PaperSummary): string[] {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: 11px;
+  white-space: nowrap;
+}
+
+.library-table__actions button:hover {
+  color: var(--color-accent-strong);
 }
 </style>

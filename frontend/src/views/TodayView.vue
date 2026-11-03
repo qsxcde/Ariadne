@@ -92,14 +92,6 @@ onMounted(async () => {
         <h1 class="today__title">今天读什么</h1>
         <p class="today__subtitle">继续上次的阅读，或从队列里挑一篇。</p>
       </div>
-      <button
-        v-if="reading.length"
-        type="button"
-        class="today__primary"
-        @click="openPaper(reading[0])"
-      >
-        继续上次阅读
-      </button>
     </header>
 
     <StateBlock
@@ -119,7 +111,17 @@ onMounted(async () => {
       <section class="today__reading">
         <header class="today__section-head">
           <h2>继续阅读</h2>
-          <span>{{ reading.length }} 篇在读</span>
+          <div class="today__head-actions">
+            <span>{{ reading.length }} 篇在读</span>
+            <button
+              v-if="reading.length"
+              type="button"
+              class="today__primary today__primary--small"
+              @click="openPaper(reading[0])"
+            >
+              继续上次阅读
+            </button>
+          </div>
         </header>
 
         <StateBlock
@@ -243,7 +245,7 @@ onMounted(async () => {
   flex: 1;
   flex-direction: column;
   gap: 26px;
-  padding: 26px 30px 40px;
+  padding: 26px max(30px, calc((100% - 1320px) / 2)) 40px;
   overflow-y: auto;
   background: var(--color-page);
 }
@@ -291,6 +293,17 @@ onMounted(async () => {
 
 .today__primary:hover {
   background: var(--color-accent-strong);
+}
+
+.today__primary--small {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.today__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .today__columns {
@@ -341,7 +354,9 @@ onMounted(async () => {
 }
 
 .reading-item:hover .reading-item__title {
-  color: var(--color-accent-strong);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-underline-offset: 3px;
 }
 
 .reading-item__index {
@@ -385,7 +400,7 @@ onMounted(async () => {
 .reading-item__track span {
   display: block;
   height: 100%;
-  background: var(--color-accent);
+  background: var(--color-aqua);
 }
 
 .reading-item__pct {
@@ -410,9 +425,9 @@ onMounted(async () => {
 
 .today__metric {
   margin: 4px 0 14px;
-  color: var(--color-accent);
+  color: var(--color-text);
   font-family: var(--font-serif);
-  font-size: 40px;
+  font-size: 38px;
   font-weight: 650;
   line-height: 1;
 }
@@ -493,28 +508,22 @@ onMounted(async () => {
 }
 
 .today__queue-track {
-  display: flex;
-  gap: 0;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   border-top: 1px solid var(--color-border);
 }
 
 .queue-item {
   display: flex;
-  min-width: 230px;
-  max-width: 260px;
-  flex: 0 0 230px;
+  min-width: 0;
   flex-direction: column;
   gap: 5px;
   border: 0;
   border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   background: transparent;
   padding: 12px 16px;
   text-align: left;
-}
-
-.queue-item:first-child {
-  padding-left: 2px;
 }
 
 .queue-item:hover {

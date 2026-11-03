@@ -1,4 +1,102 @@
 /* Element Plus 主题覆盖：统一收敛在此，组件内不要再穿透覆盖。 */
+.el-button {
+  --el-button-border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  box-shadow: none;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--color-accent);
+  --el-button-border-color: var(--color-accent);
+  --el-button-text-color: var(--color-white);
+  --el-button-hover-bg-color: var(--color-accent-strong);
+  --el-button-hover-border-color: var(--color-accent-strong);
+  --el-button-hover-text-color: var(--color-white);
+  --el-button-active-bg-color: var(--color-accent-strong);
+  --el-button-active-border-color: var(--color-accent-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.el-input__wrapper {
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--color-border-strong) inset;
+}
+
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.el-input__inner {
+  color: var(--color-text);
+}
+
+.el-input__inner::placeholder {
+  color: var(--color-text-muted);
+}
+
+.el-form-item {
+  margin-bottom: 14px;
+}
+
+.el-dropdown-menu {
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+}
+
+.el-dropdown-menu__item {
+  min-width: 132px;
+  border-radius: var(--radius-xs);
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.el-dropdown-menu__item:not(.is-disabled):hover {
+  color: var(--color-text);
+  background: var(--color-surface-alt);
+}
+
+.el-dropdown-menu__item--divided {
+  margin-top: 4px;
+  border-top-color: var(--color-border);
+}
+
+.el-dialog,
+.el-message-box {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-shell);
+}
+
+.el-overlay {
+  background-color: rgba(25, 23, 19, 0.38);
+}
+
+.el-overlay-dialog {
+  backdrop-filter: none;
+}
+
+.el-message {
+  border-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.el-message__content {
+  color: var(--color-text);
+}
+
+/* 旧对话路由仍引用这些类名：保留选择器，但改为平面朱砂与低圆角。 */
 .composer-tools__button.el-button,
 .sidebar-header__actions .el-button,
 .session-item__menu.el-button,
@@ -6,6 +104,7 @@
   color: var(--color-text-soft);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   box-shadow: none;
 }
 
@@ -31,55 +130,22 @@
 .chat-composer__send.el-button,
 .scroll-bottom-button.el-button {
   color: var(--color-white);
-  background: var(--gradient-accent);
-  border-color: transparent;
-  box-shadow: var(--shadow-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: none;
 }
 
 .chat-composer__send.el-button:hover,
 .scroll-bottom-button.el-button:hover {
   color: var(--color-white);
-  background: var(--gradient-accent-hover);
-  border-color: transparent;
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
 }
 
 .chat-composer__send.el-button.is-disabled,
 .chat-composer__send.el-button.is-disabled:hover {
   color: rgba(255, 255, 255, 0.82);
-  background: var(--gradient-accent-disabled);
-  border-color: transparent;
+  background: var(--paper-300);
+  border-color: var(--paper-300);
   box-shadow: none;
-}
-
-.el-dropdown-menu {
-  padding: 8px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: var(--shadow-card);
-}
-
-.el-dropdown-menu__item {
-  min-width: 132px;
-  color: var(--color-text);
-  border-radius: 10px;
-}
-
-.el-dropdown-menu__item:not(.is-disabled):hover {
-  color: var(--color-text);
-  background: var(--color-surface-alt);
-}
-
-.el-dropdown-menu__item--divided {
-  border-top-color: rgba(217, 226, 238, 0.84);
-}
-
-.el-dialog {
-  border: 1px solid rgba(217, 226, 238, 0.88);
-  border-radius: 24px;
-  box-shadow: var(--shadow-shell);
-}
-
-.el-overlay-dialog {
-  backdrop-filter: blur(6px);
 }

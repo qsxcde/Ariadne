@@ -360,16 +360,18 @@ onMounted(() => {
         </aside>
 
         <section class="synthesis__result">
-          <StateBlock
-            v-if="!comparison.length"
-            kind="empty"
-            compact
-            :description="
-              '选择 2–5 篇论文并生成' +
-              (activeTab === 'matrix' ? '综述矩阵' : '对比表') +
-              '。'
-            "
-          />
+          <div v-if="!comparison.length" class="synthesis__empty-wrap">
+            <StateBlock
+              kind="empty"
+              compact
+              :title="activeTab === 'matrix' ? '还没有生成综述矩阵' : '还没有生成对比表'"
+              :description="
+                '在左侧选择 2–5 篇论文，再生成' +
+                (activeTab === 'matrix' ? '综述矩阵' : '对比表') +
+                '；结果会按方法、数据集、指标与局限对齐。'
+              "
+            />
+          </div>
 
           <div v-else class="synthesis__table-wrap">
             <table class="synthesis__table">
@@ -410,7 +412,7 @@ onMounted(() => {
   flex: 1;
   flex-direction: column;
   gap: 16px;
-  padding: 26px 30px 40px;
+  padding: 26px max(30px, calc((100% - 1320px) / 2)) 40px;
   overflow-y: auto;
   background: var(--color-page);
 }
@@ -503,7 +505,7 @@ onMounted(() => {
 }
 
 .synthesis__tab.is-active {
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-text);
   color: var(--color-text);
   font-weight: 600;
 }
@@ -516,8 +518,12 @@ onMounted(() => {
 .synthesis__exports button {
   border: 0;
   background: transparent;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: 11px;
+}
+
+.synthesis__exports button:hover {
+  color: var(--color-text);
 }
 
 .synthesis__body {
@@ -576,9 +582,13 @@ onMounted(() => {
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--color-accent);
+  color: var(--color-text-muted);
   font-size: 10px;
   opacity: 0;
+}
+
+.synthesis__paper-list li:hover .synthesis__open:hover {
+  color: var(--color-text);
 }
 
 .synthesis__paper-list li:hover .synthesis__open {
@@ -627,7 +637,8 @@ onMounted(() => {
 }
 
 .synthesis__paper.is-selected .synthesis__paper-title {
-  color: var(--color-accent-strong);
+  color: var(--color-text);
+  font-weight: 700;
 }
 
 .synthesis__primary {
@@ -650,6 +661,16 @@ onMounted(() => {
 
 .synthesis__result {
   min-width: 0;
+  min-height: 320px;
+  border-left: 1px solid var(--color-border);
+  padding-left: 28px;
+}
+
+.synthesis__empty-wrap {
+  display: flex;
+  min-height: 300px;
+  align-items: center;
+  justify-content: center;
 }
 
 .synthesis__empty {
@@ -717,7 +738,7 @@ onMounted(() => {
 }
 
 .synthesis__ask-pane {
-  max-width: 900px;
+  max-width: 820px;
 }
 
 .synthesis__textarea {
@@ -777,6 +798,11 @@ onMounted(() => {
 @media (max-width: 1100px) {
   .synthesis__body {
     grid-template-columns: 1fr;
+  }
+
+  .synthesis__result {
+    border-left: 0;
+    padding-left: 0;
   }
 }
 </style>

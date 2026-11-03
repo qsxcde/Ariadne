@@ -28,9 +28,7 @@ body {
 body {
   margin: 0;
   color: var(--color-text);
-  background:
-    radial-gradient(1200px 620px at 8% -12%, rgba(178, 58, 42, 0.06), transparent 62%),
-    linear-gradient(180deg, #f8f5ee 0%, var(--color-page) 58%, #f2ede2 100%);
+  background: var(--color-page);
 }
 
 button,

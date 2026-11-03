@@ -72,21 +72,21 @@ const emit = defineEmits<{
   text-align: left;
   background: none;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition:
     color 0.16s ease,
     background 0.16s ease;
 }
 
 .paper-outline__item:hover {
-  color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  color: var(--color-text);
+  background: var(--color-surface-alt);
 }
 
 .paper-outline__item.is-active {
-  color: var(--color-accent-strong);
+  color: var(--color-text);
   font-weight: 600;
-  background: var(--color-accent-soft);
+  background: var(--color-surface-alt);
 }
 
 .paper-outline__dot {

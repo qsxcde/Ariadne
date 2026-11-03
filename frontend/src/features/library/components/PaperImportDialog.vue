@@ -136,7 +136,7 @@ async function submit(): Promise<void> {
 .paper-import__input {
   min-height: 38px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--color-surface);
   padding: 0 10px;
   color: var(--color-text);

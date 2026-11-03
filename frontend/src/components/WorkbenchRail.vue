@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   Bell,
   Calendar,
@@ -25,7 +25,11 @@ const emit = defineEmits<{
 }>();
 
 const STORAGE_KEY = "scipal.rail.collapsed";
-const collapsed = ref(window.localStorage.getItem(STORAGE_KEY) === "1");
+const NARROW_QUERY = "(max-width: 1180px)";
+const isNarrow = ref(window.matchMedia(NARROW_QUERY).matches);
+const collapsed = ref(
+  window.localStorage.getItem(STORAGE_KEY) === "1" || isNarrow.value,
+);
 
 const NAV_ITEMS = [
   { name: "today", label: "今天", icon: Calendar },
@@ -41,6 +45,20 @@ function toggle(): void {
   collapsed.value = !collapsed.value;
   window.localStorage.setItem(STORAGE_KEY, collapsed.value ? "1" : "0");
 }
+
+/** 进入窄屏时自动收起；回到宽屏时恢复用户上次手动选择。 */
+function syncViewport(): void {
+  const narrow = window.matchMedia(NARROW_QUERY).matches;
+  if (narrow && !isNarrow.value) {
+    collapsed.value = true;
+  } else if (!narrow && isNarrow.value) {
+    collapsed.value = window.localStorage.getItem(STORAGE_KEY) === "1";
+  }
+  isNarrow.value = narrow;
+}
+
+onMounted(() => window.addEventListener("resize", syncViewport));
+onBeforeUnmount(() => window.removeEventListener("resize", syncViewport));
 </script>
 
 <template>
@@ -171,7 +189,7 @@ function toggle(): void {
 }
 
 .rail__collapse:hover {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .rail__collapse svg {
@@ -208,9 +226,9 @@ function toggle(): void {
 }
 
 .rail__item.is-active {
-  border-left-color: var(--color-accent);
+  border-left-color: var(--color-text);
   background: var(--color-surface);
-  color: var(--color-accent-strong);
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -228,7 +246,7 @@ function toggle(): void {
 }
 
 .rail--collapsed .rail__item.is-active {
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-text);
   background: var(--color-surface);
 }
 
@@ -329,7 +347,7 @@ function toggle(): void {
 }
 
 .rail__logout:hover {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 .rail--collapsed .rail__logout {

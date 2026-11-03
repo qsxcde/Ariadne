@@ -63,24 +63,30 @@
   --color-white: #ffffff;
 
   /* ---------- 阴影：暖灰、低对比 ---------- */
-  --shadow-shell: 0 18px 50px rgba(60, 50, 35, 0.1);
-  --shadow-card: 0 6px 18px rgba(60, 50, 35, 0.06);
-  --shadow-input: 0 10px 26px rgba(60, 50, 35, 0.08);
-  --shadow-accent: 0 8px 18px rgba(178, 58, 42, 0.18);
+  --shadow-shell: 0 18px 44px rgba(60, 50, 35, 0.08);
+  --shadow-card: 0 4px 14px rgba(60, 50, 35, 0.05);
+  --shadow-input: 0 8px 22px rgba(60, 50, 35, 0.06);
+  --shadow-accent: none;
 
-  /* ---------- 朱砂按钮渐变 ---------- */
-  --gradient-brand: linear-gradient(145deg, #8f2c20 0%, #191713 100%);
-  --gradient-accent: linear-gradient(145deg, #c04a37 0%, #a33426 100%);
-  --gradient-accent-hover: linear-gradient(145deg, #cf5540 0%, #b23a2a 100%);
-  --gradient-accent-disabled: linear-gradient(180deg, #d9c3bd 0%, #cdb2ab 100%);
+  /* 旧组件仍引用这些名字；统一为平面色，不再使用渐变。 */
+  --gradient-brand: var(--ink-900);
+  --gradient-accent: var(--vermilion-600);
+  --gradient-accent-hover: var(--vermilion-700);
+  --gradient-accent-disabled: var(--paper-300);
 
-  /* ---------- 字体：衬线标题 / 无衬线界面 / 等宽元数据 ---------- */
-  --font-sans: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
-    system-ui, sans-serif;
-  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun",
-    Georgia, serif;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Consolas,
-    monospace;
+  /* ---------- 字体：衬线标题 / 无衬线界面 / 等宽元数据 ----------
+   * 不依赖外部字体服务；优先使用系统已装的思源/Noto，再回退到
+   * Windows 的微软雅黑与宋体，保证离线与跨平台一致。 */
+  --font-sans: "IBM Plex Sans", "Noto Sans SC", "Source Han Sans SC",
+    "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong",
+    "SimSun", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", "Cascadia Mono",
+    "SFMono-Regular", Consolas, monospace;
+
+  /* 内容最大宽度：宽屏下不再无限拉伸 */
+  --content-max: 1400px;
+  --reading-max: 700px;
 
   /* ---------- 尺度与动效（P1 起逐步使用） ---------- */
   --radius-xs: 2px;

@@ -94,22 +94,22 @@ function toggleMode(): void {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background:
-    radial-gradient(circle at 18% 22%, rgba(71, 110, 230, 0.12), transparent 42%),
-    radial-gradient(circle at 82% 78%, rgba(18, 166, 154, 0.1), transparent 46%), var(--color-page);
+  background: var(--color-page);
 }
 
 .login-view__card {
-  width: 380px;
-  padding: 40px;
-  background: var(--color-panel);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  box-shadow: var(--shadow-card);
+  width: min(380px, calc(100vw - 48px));
+  padding: 38px 36px 34px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
 }
 
 .login-view__header {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--color-border);
   text-align: center;
 }
 
@@ -117,22 +117,25 @@ function toggleMode(): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   margin-bottom: 14px;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  color: var(--color-white);
-  background: var(--gradient-accent);
-  border-radius: 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-xs);
+  color: var(--color-accent);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .login-view__title {
   margin: 0 0 6px;
-  font-size: 26px;
-  letter-spacing: -0.01em;
   color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .login-view__subtitle {

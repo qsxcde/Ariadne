@@ -54,6 +54,7 @@ const bodyRef = ref<HTMLElement | null>(null);
 const outlineVisible = ref(true);
 const viewMode = ref<"text" | "pdf">("text");
 const pdfPage = ref(1);
+const progressRatio = ref(props.initialProgress ?? 0);
 const selectionMenu = ref<{ text: string; x: number; y: number } | null>(null);
 
 // 引用命中时自动切到原页并定位
@@ -125,7 +126,9 @@ function handleScroll(): void {
       return;
     }
     const max = container.scrollHeight - container.clientHeight;
-    emit("progress", max > 0 ? container.scrollTop / max : 0);
+    const ratio = max > 0 ? container.scrollTop / max : 0;
+    progressRatio.value = ratio;
+    emit("progress", ratio);
   });
 }
 
@@ -137,6 +140,7 @@ function restoreScroll(): void {
   }
   const max = container.scrollHeight - container.clientHeight;
   container.scrollTop = Math.max(0, Math.min(1, ratio)) * max;
+  progressRatio.value = Math.max(0, Math.min(1, ratio));
 }
 
 function scrollToBlock(blockId: string): void {
@@ -167,7 +171,27 @@ function revealSection(title: string): void {
   }
 }
 
-defineExpose({ revealSection });
+/** 笔记跳转：优先匹配正文块 id，其次按页码落到最近的块。 */
+function jumpToLocation(chunkId?: string | null, page?: number | null): void {
+  viewMode.value = "text";
+  void nextTick(() => {
+    if (chunkId && window.document.getElementById(`paper-block-${chunkId}`)) {
+      scrollToBlock(chunkId);
+      revealBlock([chunkId]);
+      return;
+    }
+    const blocks = content.value?.blocks ?? [];
+    const block =
+      (page ? blocks.find((item) => item.page_number >= page) : undefined) ??
+      blocks[0];
+    if (block) {
+      scrollToBlock(block.id);
+      revealBlock([block.id]);
+    }
+  });
+}
+
+defineExpose({ revealSection, jumpToLocation });
 
 /** 选区浮条：只处理落在正文区域内的选区。 */
 function handleMouseUp(): void {
@@ -303,6 +327,15 @@ onBeforeUnmount(() => {
     </header>
 
     <div class="paper-reader__main">
+      <div v-if="viewMode === 'text'" class="paper-reader__spine" aria-hidden="true">
+        <span
+          class="paper-reader__spine-fill"
+          :style="{ height: `${Math.round(progressRatio * 100)}%` }"
+        >
+          <span class="paper-reader__spine-marker" />
+        </span>
+      </div>
+
       <PaperOutline
         v-if="viewMode === 'text' && outlineVisible && outline.length"
         :items="outline"
@@ -413,7 +446,7 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: 12px;
   justify-content: space-between;
-  padding: 18px 26px 14px;
+  padding: 14px 24px 12px;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -434,7 +467,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   color: var(--color-text);
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -448,8 +481,8 @@ onBeforeUnmount(() => {
 }
 
 .paper-reader__toggle.is-active {
-  color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  color: var(--color-text);
+  background: var(--color-surface-alt);
 }
 
 .paper-reader__modes {
@@ -457,7 +490,7 @@ onBeforeUnmount(() => {
   padding: 2px;
   background: var(--color-surface-alt);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .paper-reader__mode {
@@ -466,19 +499,51 @@ onBeforeUnmount(() => {
   font-size: 11px;
   background: none;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 .paper-reader__mode.is-active {
   color: var(--color-text);
-  background: var(--color-panel);
-  box-shadow: 0 1px 3px rgba(48, 68, 101, 0.12);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(60, 50, 35, 0.08);
 }
 
 .paper-reader__main {
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
+}
+
+/* 阅读脊线：沿正文右缘显示进度，是阅读页唯一常驻的朱砂标记。 */
+.paper-reader__spine {
+  position: absolute;
+  top: 24px;
+  right: 10px;
+  bottom: 24px;
+  z-index: 2;
+  width: 1px;
+  background: var(--color-border);
+  pointer-events: none;
+}
+
+.paper-reader__spine-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  background: var(--color-accent);
+  transition: height 160ms linear;
+}
+
+.paper-reader__spine-marker {
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
 }
 
 .paper-reader__scroll {
@@ -489,7 +554,7 @@ onBeforeUnmount(() => {
 }
 
 .paper-reader__body {
-  max-width: 720px;
+  max-width: var(--reading-max);
   margin: 0 auto;
 }
 
@@ -532,7 +597,7 @@ onBeforeUnmount(() => {
   position: relative;
   margin: 0 -12px;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   scroll-margin-top: 96px;
   transition:
     background 0.24s ease,
@@ -548,7 +613,7 @@ onBeforeUnmount(() => {
   top: 8px;
   right: 10px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: var(--color-surface);
   padding: 2px 6px;
   color: var(--color-accent);
@@ -599,14 +664,14 @@ onBeforeUnmount(() => {
   font-size: 12px;
   line-height: 1.6;
   background: var(--color-surface-alt);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .paper-reader__block :deep(.markdown-content) {
   color: var(--color-text-body);
   font-family: var(--font-serif);
-  font-size: 15px;
-  line-height: 1.85;
+  font-size: 16px;
+  line-height: 1.9;
 }
 
 .paper-reader__block :deep(.markdown-content p + p) {
@@ -629,8 +694,8 @@ onBeforeUnmount(() => {
   gap: 2px;
   padding: 4px;
   background: var(--color-text);
-  border-radius: 10px;
-  box-shadow: 0 10px 24px rgba(23, 32, 51, 0.24);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 20px rgba(25, 23, 19, 0.22);
   transform: translate(-50%, calc(-100% - 10px));
 }
 
@@ -640,7 +705,7 @@ onBeforeUnmount(() => {
   font-size: 12px;
   background: none;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
 }
 
 .paper-selection__action:hover {
@@ -655,6 +720,27 @@ onBeforeUnmount(() => {
 
   .paper-reader__anchor {
     display: none;
+  }
+
+  .paper-reader__spine {
+    top: 16px;
+    right: 7px;
+    bottom: 16px;
+  }
+}
+
+@media (max-width: 1180px) {
+  .paper-reader__bar {
+    align-items: center;
+    padding: 8px 16px;
+  }
+
+  .paper-reader__meta {
+    display: none;
+  }
+
+  .paper-reader__actions {
+    margin-left: auto;
   }
 }
 </style>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowLeft, Refresh } from "@element-plus/icons-vue";
+import { ArrowLeft, EditPen, Expand, Fold, Refresh } from "@element-plus/icons-vue";
+import { shortcutLabel } from "../../../utils/platform";
 import StateBlock from "../../../components/StateBlock.vue";
 import PaperAskPanel from "./PaperAskPanel.vue";
 import PaperMetadataDialog from "./PaperMetadataDialog.vue";
@@ -46,8 +47,10 @@ const {
 const noteDraft = ref("");
 const activeTab = ref<"brief" | "ask" | "notes" | "terms" | "citations">("brief");
 const INSPECTOR_STORAGE_KEY = "scipal.inspector.collapsed";
+const NARROW_QUERY = "(max-width: 1180px)";
+const isNarrow = ref(window.matchMedia(NARROW_QUERY).matches);
 const isInspectorCollapsed = ref(
-  window.localStorage.getItem(INSPECTOR_STORAGE_KEY) === "1",
+  window.localStorage.getItem(INSPECTOR_STORAGE_KEY) === "1" || isNarrow.value,
 );
 
 const INSPECTOR_TABS = [
@@ -63,7 +66,12 @@ const isMetadataDialogOpen = ref(false);
 const isGlossaryLoading = ref(false);
 const isCitationsLoading = ref(false);
 const statusSaving = ref(false);
+const statusFeedback = ref("");
+const inspectorShortcutHint = computed(
+  () => `显示或隐藏论文面板（${shortcutLabel("\\")}）`,
+);
 const readerRef = ref<InstanceType<typeof PaperReader> | null>(null);
+let statusFeedbackTimer: number | null = null;
 let progressTimer: number | null = null;
 let pendingProgress: number | null = null;
 
@@ -124,7 +132,29 @@ function handleInspectorShortcut(event: KeyboardEvent): void {
   if ((event.metaKey || event.ctrlKey) && event.key === "\\") {
     event.preventDefault();
     toggleInspector();
+    return;
   }
+  if (
+    event.key === "Escape" &&
+    isNarrow.value &&
+    !isInspectorCollapsed.value &&
+    !window.document.querySelector(".palette, .el-overlay")
+  ) {
+    event.preventDefault();
+    toggleInspector();
+  }
+}
+
+/** 窄屏把 Inspector 变成抽屉：进入窄屏自动收起，回到宽屏恢复手动偏好。 */
+function syncViewport(): void {
+  const narrow = window.matchMedia(NARROW_QUERY).matches;
+  if (narrow && !isNarrow.value) {
+    isInspectorCollapsed.value = true;
+  } else if (!narrow && isNarrow.value) {
+    isInspectorCollapsed.value =
+      window.localStorage.getItem(INSPECTOR_STORAGE_KEY) === "1";
+  }
+  isNarrow.value = narrow;
 }
 
 const documentItem = computed<PaperDocumentSummary | null>(
@@ -144,10 +174,6 @@ const STATUS_OPTIONS = [
   { value: "read", label: "已读" },
   { value: "archived", label: "已归档" },
 ];
-
-const STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  STATUS_OPTIONS.map((option) => [option.value, option.label]),
-);
 
 function progressPercent(value: number): number {
   return Math.round(Math.max(0, Math.min(1, value)) * 100);
@@ -193,6 +219,10 @@ function jumpToSection(title: string): void {
   readerRef.value?.revealSection(title);
 }
 
+function locateAnnotation(annotation: AnnotationSummary): void {
+  readerRef.value?.jumpToLocation(annotation.chunk_id, annotation.page_start);
+}
+
 async function generateBrief(): Promise<void> {
   await loadBrief(props.paperId, Boolean(currentBrief.value));
   if (brief.value) {
@@ -203,13 +233,19 @@ async function generateBrief(): Promise<void> {
 async function changeStatus(): Promise<void> {
   if (!currentPaper.value) return;
   statusSaving.value = true;
-  try {
-    await saveReadingState(props.paperId, {
-      reading_status: currentPaper.value.reading_status,
-    });
-  } finally {
-    statusSaving.value = false;
+  const saved = await saveReadingState(props.paperId, {
+    reading_status: currentPaper.value.reading_status,
+  });
+  statusSaving.value = false;
+  if (!saved) return;
+  statusFeedback.value = "已保存";
+  if (statusFeedbackTimer !== null) {
+    window.clearTimeout(statusFeedbackTimer);
   }
+  statusFeedbackTimer = window.setTimeout(() => {
+    statusFeedback.value = "";
+    statusFeedbackTimer = null;
+  }, 1800);
 }
 
 function handleProgress(ratio: number): void {
@@ -307,6 +343,7 @@ onMounted(async () => {
   startReadingClock();
   window.document.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("keydown", handleInspectorShortcut);
+  window.addEventListener("resize", syncViewport);
 });
 
 watch(
@@ -322,6 +359,10 @@ onBeforeUnmount(() => {
   stopReadingClock();
   window.document.removeEventListener("visibilitychange", handleVisibilityChange);
   window.removeEventListener("keydown", handleInspectorShortcut);
+  window.removeEventListener("resize", syncViewport);
+  if (statusFeedbackTimer !== null) {
+    window.clearTimeout(statusFeedbackTimer);
+  }
   if (progressTimer !== null) {
     window.clearTimeout(progressTimer);
   }
@@ -331,8 +372,14 @@ onBeforeUnmount(() => {
 <template>
   <section class="paper-workspace" aria-label="论文阅读工作台">
     <header class="paper-workspace__bar">
-      <button type="button" class="paper-workspace__back" @click="emit('back')">
-        <ArrowLeft class="paper-workspace__icon" /> 返回
+      <button
+        type="button"
+        class="paper-workspace__back"
+        title="返回文献库"
+        @click="emit('back')"
+      >
+        <ArrowLeft class="paper-workspace__icon" />
+        <span class="paper-workspace__action-label">返回</span>
       </button>
       <div class="paper-workspace__meta">
         <h1 class="paper-workspace__title">{{ currentPaper?.title || "正在载入论文…" }}</h1>
@@ -340,40 +387,74 @@ onBeforeUnmount(() => {
           <span v-if="(currentPaper?.authors ?? []).length">{{ (currentPaper?.authors ?? []).join("、") }}</span>
           <span v-if="currentPaper?.year"> · {{ currentPaper.year }}</span>
           <span v-if="currentPaper?.venue"> · {{ currentPaper.venue }}</span>
-          <span v-if="documentItem"> · 解析 {{ documentItem.status }}<template v-if="documentItem.parse_quality_status">（{{ documentItem.parse_quality_status }}）</template></span>
+          <span v-if="(currentPaper?.collections ?? []).length">
+            · {{ currentPaper?.collections?.[0]?.name }}
+          </span>
         </p>
       </div>
       <div class="paper-workspace__actions">
-        <select
+        <label v-if="currentPaper" class="paper-workspace__status-field">
+          <span>状态</span>
+          <select
+            v-model="currentPaper.reading_status"
+            class="paper-workspace__status"
+            :disabled="statusSaving"
+            aria-label="阅读状态"
+            @change="changeStatus"
+          >
+            <option v-for="option in STATUS_OPTIONS" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </label>
+        <span
           v-if="currentPaper"
-          v-model="currentPaper.reading_status"
-          class="paper-workspace__status"
-          :disabled="statusSaving"
-          @change="changeStatus"
+          class="paper-workspace__progress-inline"
+          :title="`阅读进度 ${progressPercent(currentPaper.progress)}%`"
         >
-          <option v-for="option in STATUS_OPTIONS" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+          <span class="paper-workspace__progress-track" aria-hidden="true">
+            <span
+              class="paper-workspace__progress-fill"
+              :style="{ width: `${progressPercent(currentPaper.progress)}%` }"
+            />
+          </span>
+          <span class="paper-workspace__progress-pct">
+            {{ progressPercent(currentPaper.progress) }}%
+          </span>
+        </span>
+        <span v-if="statusFeedback" class="paper-workspace__saved">{{ statusFeedback }}</span>
         <button
           type="button"
-          class="paper-workspace__refresh"
+          class="paper-workspace__icon-button"
           :aria-pressed="!isInspectorCollapsed"
-          title="快捷键：⌘ + 反斜杠"
+          :title="inspectorShortcutHint"
           @click="toggleInspector"
         >
-          {{ isInspectorCollapsed ? "显示面板" : "隐藏面板" }}
+          <Expand v-if="isInspectorCollapsed" />
+          <Fold v-else />
+          <span class="paper-workspace__action-label">
+            {{ isInspectorCollapsed ? "显示面板" : "隐藏面板" }}
+          </span>
         </button>
         <button
           type="button"
-          class="paper-workspace__refresh"
+          class="paper-workspace__icon-button"
           :disabled="!currentPaper"
+          title="编辑论文信息"
           @click="isMetadataDialogOpen = true"
         >
-          编辑信息
+          <EditPen />
+          <span class="paper-workspace__action-label">编辑信息</span>
         </button>
-        <button type="button" class="paper-workspace__refresh" :disabled="isLoading" @click="refresh">
-          <Refresh class="paper-workspace__icon" /> 刷新
+        <button
+          type="button"
+          class="paper-workspace__icon-button"
+          :disabled="isLoading"
+          title="刷新论文数据"
+          @click="refresh"
+        >
+          <Refresh />
+          <span class="paper-workspace__action-label">刷新</span>
         </button>
       </div>
     </header>
@@ -394,17 +475,6 @@ onBeforeUnmount(() => {
       @action="refresh"
     />
 
-    <div v-if="currentPaper" class="paper-workspace__progress">
-      <span>{{ STATUS_LABELS[currentPaper.reading_status] || currentPaper.reading_status }}</span>
-      <span class="paper-workspace__progress-track" aria-hidden="true">
-        <span
-          class="paper-workspace__progress-fill"
-          :style="{ width: `${progressPercent(currentPaper.progress)}%` }"
-        />
-      </span>
-      <span>{{ progressPercent(currentPaper.progress) }}%</span>
-    </div>
-
     <div
       v-if="currentPaper && documentItem && primarySessionId"
       class="paper-workspace__body"
@@ -422,6 +492,13 @@ onBeforeUnmount(() => {
         @close="emit('back')"
       />
 
+      <button
+        v-show="!isInspectorCollapsed"
+        type="button"
+        class="paper-workspace__scrim"
+        aria-label="关闭论文面板"
+        @click="toggleInspector"
+      />
       <aside
         v-show="!isInspectorCollapsed"
         class="paper-workspace__inspector"
@@ -462,6 +539,7 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="paper-workspace__secondary"
+              :class="{ 'paper-workspace__secondary--primary': !currentBrief }"
               :disabled="isBriefLoading"
               @click="generateBrief"
             >
@@ -499,6 +577,19 @@ onBeforeUnmount(() => {
                   >
                     <span class="paper-workspace__section-title">{{ section.title }}</span>
                     <span class="paper-workspace__section-summary">{{ section.summary }}</span>
+                    <span
+                      v-if="(section.chunk_indexes ?? []).length"
+                      class="paper-workspace__chunks"
+                    >
+                      <span class="paper-workspace__chunks-label">引用</span>
+                      <span
+                        v-for="index in section.chunk_indexes"
+                        :key="index"
+                        class="paper-workspace__chunk"
+                      >
+                        #{{ index + 1 }}
+                      </span>
+                    </span>
                   </button>
                 </li>
               </ul>
@@ -582,14 +673,29 @@ onBeforeUnmount(() => {
               class="paper-note"
             >
               <header class="paper-note__head">
-                <span class="paper-note__type">{{ annotationLabel(annotation) }}</span>
-                <button
-                  type="button"
-                  class="paper-note__delete"
-                  @click="deleteNote(annotation)"
-                >
-                  删除
-                </button>
+                <div class="paper-note__meta">
+                  <span class="paper-note__type">{{ annotationLabel(annotation) }}</span>
+                  <span v-if="annotation.page_start" class="paper-note__page">
+                    p.{{ annotation.page_start }}
+                  </span>
+                </div>
+                <div class="paper-note__tools">
+                  <button
+                    v-if="annotation.chunk_id || annotation.page_start"
+                    type="button"
+                    class="paper-note__delete"
+                    @click="locateAnnotation(annotation)"
+                  >
+                    定位
+                  </button>
+                  <button
+                    type="button"
+                    class="paper-note__delete"
+                    @click="deleteNote(annotation)"
+                  >
+                    删除
+                  </button>
+                </div>
               </header>
               <blockquote v-if="annotation.quote" class="paper-note__quote">
                 {{ annotation.quote }}
@@ -629,37 +735,55 @@ onBeforeUnmount(() => {
 .paper-workspace__bar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 22px;
+  gap: 10px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-panel);
 }
 
 .paper-workspace__back,
-.paper-workspace__refresh,
+.paper-workspace__icon-button,
 .paper-workspace__primary {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
-  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-soft);
   cursor: pointer;
-  font-size: 12px;
-  padding: 7px 10px;
+  font-size: 11px;
+  padding: 0 8px;
+  height: 30px;
+}
+
+.paper-workspace__back {
+  flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+  padding: 0 6px;
 }
 
 .paper-workspace__primary {
   border-color: var(--color-accent);
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-white);
 }
 
 .paper-workspace__back:hover,
-.paper-workspace__refresh:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+.paper-workspace__icon-button:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.paper-workspace__icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.paper-workspace__icon-button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .paper-workspace__icon {
@@ -685,66 +809,92 @@ onBeforeUnmount(() => {
   overflow: hidden;
   color: var(--color-text);
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 650;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .paper-workspace__sub {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .paper-workspace__actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.paper-workspace__status-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .paper-workspace__status {
   border: 1px solid var(--color-border);
-  border-radius: 7px;
-  background: var(--color-bg);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
   color: var(--color-text);
-  font-size: 12px;
-  padding: 7px 9px;
+  font-size: 11px;
+  padding: 5px 7px;
 }
 
-.paper-workspace__progress {
-  display: flex;
+.paper-workspace__progress-inline {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 22px;
+  gap: 6px;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 9px;
 }
 
 .paper-workspace__progress-track {
-  height: 4px;
-  flex: 1;
+  display: block;
+  width: 54px;
+  height: 3px;
   overflow: hidden;
-  border-radius: 999px;
   background: var(--color-border);
 }
 
 .paper-workspace__progress-fill {
   display: block;
   height: 100%;
-  border-radius: inherit;
-  background: var(--color-accent);
+  background: var(--color-aqua);
+}
+
+.paper-workspace__progress-pct {
+  width: 30px;
+  text-align: right;
+}
+
+.paper-workspace__saved {
+  color: var(--color-success);
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .paper-workspace__body {
   display: grid;
+  width: 100%;
+  max-width: 1680px;
   min-height: 0;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 340px;
   grid-template-rows: minmax(0, 1fr);
+  margin: 0 auto;
   overflow: hidden;
 }
 
@@ -760,6 +910,10 @@ onBeforeUnmount(() => {
   overflow: hidden;
   border-left: 1px solid var(--color-border);
   background: var(--color-panel);
+}
+
+.paper-workspace__scrim {
+  display: none;
 }
 
 .paper-workspace__tabs {
@@ -782,7 +936,7 @@ onBeforeUnmount(() => {
 }
 
 .paper-workspace__tab.is-active {
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-text);
   color: var(--color-text);
   font-weight: 600;
 }
@@ -822,8 +976,8 @@ onBeforeUnmount(() => {
 
 .paper-workspace__secondary {
   border: 1px solid var(--color-border);
-  border-radius: 7px;
-  background: var(--color-bg);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
   color: var(--color-text-muted);
   cursor: pointer;
   font-size: 11px;
@@ -831,8 +985,20 @@ onBeforeUnmount(() => {
 }
 
 .paper-workspace__secondary:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.paper-workspace__secondary--primary {
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-white);
+}
+
+.paper-workspace__secondary--primary:hover {
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+  color: var(--color-white);
 }
 
 .paper-workspace__brief {
@@ -892,7 +1058,7 @@ onBeforeUnmount(() => {
   gap: 2px;
   width: 100%;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   padding: 6px 8px;
   text-align: left;
@@ -915,6 +1081,30 @@ onBeforeUnmount(() => {
   line-height: 1.45;
 }
 
+.paper-workspace__chunks {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 1px;
+}
+
+.paper-workspace__chunks-label {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.paper-workspace__chunk {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  padding: 0 4px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
 .paper-workspace__note-compose {
   display: flex;
   flex-direction: column;
@@ -926,8 +1116,8 @@ onBeforeUnmount(() => {
 .paper-workspace__textarea {
   resize: vertical;
   border: 1px solid var(--color-border);
-  border-radius: 7px;
-  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
   font-size: 12px;
@@ -958,12 +1148,26 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.paper-note__meta,
+.paper-note__tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paper-note__page {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
 .paper-note__type {
-  border-radius: 999px;
-  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: transparent;
   color: var(--color-text-muted);
   font-size: 10px;
-  padding: 2px 7px;
+  padding: 1px 6px;
 }
 
 .paper-note__delete {
@@ -1012,14 +1216,41 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 
-@media (max-width: 980px) {
-  .paper-workspace__body {
-    grid-template-columns: 1fr;
+@media (max-width: 1280px) {
+  .paper-workspace__action-label {
+    display: none;
   }
 
-  .paper-workspace__notes {
-    border-top: 1px solid var(--color-border);
-    border-left: 0;
+  .paper-workspace__bar {
+    padding: 10px 16px;
+  }
+
+  .paper-workspace__status-field > span {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .paper-workspace__body {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .paper-workspace__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    display: block;
+    border: 0;
+    background: rgba(25, 23, 19, 0.28);
+  }
+
+  .paper-workspace__inspector {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: 20;
+    width: min(360px, 88vw);
+    box-shadow: -18px 0 40px rgba(60, 50, 35, 0.14);
   }
 }
 </style>
