@@ -188,7 +188,7 @@ handleUpload(file)
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·问答·笔记·术语·引用） |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
-| `/` | redirect | 默认进入 `/today` |
+| `/` | redirect | 默认进入 `/today`；任意页面 `⌘K` 打开命令面板 |
 | `/chat` | `ChatWorkspace` | 旧对话入口（兼容保留） |
 
 状态与 API：

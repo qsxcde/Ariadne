@@ -198,7 +198,8 @@ Settings           偏好：模型、提醒、数据
 - [x] P2 · Today：编辑式两栏（继续阅读 / 本周）+ 底部队列条
 - [x] P2 · Synthesis：矩阵优先，左侧论文选择器 + 右侧 sticky 首列矩阵
 - [x] P2 · Feed：收件箱列表 + 来源徽标 + J/K/S/X/Enter 键盘操作
-- [ ] P3 · `⌘K` 与键盘操作
+- [x] P3 · `⌘K` 命令面板：导航 / 导入 / 论文搜索
+- [ ] P3 · Inspector 收起、全局键盘导航与三态统一
 
 > 令牌对比度校验：ink/page 16.0:1、muted/page 5.2:1、white/accent 6.0:1，均满足 WCAG AA。
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import CommandPalette from "../components/CommandPalette.vue";
 import TopBar from "../components/TopBar.vue";
 import WorkbenchRail from "../components/WorkbenchRail.vue";
 import PaperLibrary from "../features/library/components/PaperLibrary.vue";
@@ -20,6 +21,7 @@ const router = useRouter();
 const { logout, user } = useAuth();
 
 const collections = ref<CollectionSummary[]>([]);
+const isPaletteOpen = ref(false);
 
 const SECTION_LABELS: Record<string, string> = {
   today: "今天",
@@ -59,12 +61,43 @@ function openCollection(collectionId: string): void {
   void router.push({ name: "library", query: { collection: collectionId } });
 }
 
-function search(query: string): void {
-  void router.push({ name: "library", query: { q: query } });
-}
-
 function importPaper(): void {
   void router.push({ name: "library", query: { import: "1" } });
+}
+
+function openPalette(): void {
+  isPaletteOpen.value = true;
+}
+
+function paletteNavigate(name: string): void {
+  isPaletteOpen.value = false;
+  void router.push({ name });
+}
+
+function paletteSearch(query: string): void {
+  isPaletteOpen.value = false;
+  void router.push({ name: "library", query: query ? { q: query } : {} });
+}
+
+function paletteImport(): void {
+  isPaletteOpen.value = false;
+  void router.push({ name: "library", query: { import: "1" } });
+}
+
+function paletteOpenPaper(paperId: string): void {
+  isPaletteOpen.value = false;
+  void router.push({ name: "paper", params: { paperId } });
+}
+
+function handleGlobalKeydown(event: KeyboardEvent): void {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+    event.preventDefault();
+    isPaletteOpen.value = !isPaletteOpen.value;
+    return;
+  }
+  if (event.key === "Escape" && isPaletteOpen.value) {
+    isPaletteOpen.value = false;
+  }
 }
 
 function handleLogout(): void {
@@ -75,6 +108,11 @@ function handleLogout(): void {
 
 onMounted(() => {
   void loadCollections();
+  window.addEventListener("keydown", handleGlobalKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleGlobalKeydown);
 });
 
 watch(
@@ -99,7 +137,7 @@ watch(
     />
 
     <div class="workbench__main">
-      <TopBar :section="section" @search="search" @import="importPaper" />
+      <TopBar :section="section" @command="openPalette" @import="importPaper" />
 
       <div class="workbench__body">
         <PaperLibrary
@@ -139,6 +177,14 @@ watch(
     </div>
 
     <SourceDrawer />
+    <CommandPalette
+      :visible="isPaletteOpen"
+      @close="isPaletteOpen = false"
+      @navigate="paletteNavigate"
+      @search="paletteSearch"
+      @import="paletteImport"
+      @open-paper="paletteOpenPaper"
+    />
   </main>
 </template>
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
 
 defineProps<{
@@ -7,34 +6,9 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  search: [query: string];
+  command: [];
   import: [];
 }>();
-
-const query = ref("");
-const searchRef = ref<HTMLInputElement | null>(null);
-
-function submit(): void {
-  const value = query.value.trim();
-  if (value) {
-    emit("search", value);
-  }
-}
-
-function handleKeydown(event: KeyboardEvent): void {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-    event.preventDefault();
-    searchRef.value?.focus();
-  }
-}
-
-onMounted(() => {
-  window.addEventListener("keydown", handleKeydown);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("keydown", handleKeydown);
-});
 </script>
 
 <template>
@@ -46,18 +20,11 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="topbar__actions">
-      <label class="topbar__search">
+      <button type="button" class="topbar__search" @click="emit('command')">
         <Search class="topbar__search-icon" />
-        <input
-          ref="searchRef"
-          v-model="query"
-          type="search"
-          placeholder="搜索论文、集合或命令"
-          aria-label="搜索"
-          @keyup.enter="submit"
-        />
+        <span class="topbar__placeholder">搜索论文、集合或命令</span>
         <kbd class="topbar__kbd">⌘K</kbd>
-      </label>
+      </button>
       <button type="button" class="topbar__action" @click="emit('import')">
         导入
       </button>
@@ -123,26 +90,21 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   padding: 6px 9px;
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.topbar__search:hover {
+  border-color: var(--color-accent);
 }
 
 .topbar__search-icon {
   width: 14px;
-  color: var(--color-text-muted);
 }
 
-.topbar__search input {
-  min-width: 0;
+.topbar__placeholder {
   flex: 1;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 13px;
-}
-
-.topbar__search input::placeholder {
-  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .topbar__kbd {
