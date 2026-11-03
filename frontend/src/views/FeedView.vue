@@ -142,7 +142,6 @@ onMounted(() => {
         <p class="feed-view__subtitle">订阅关键词/作者/venue，抓取新论文并存入阅读队列。</p>
       </div>
       <div class="feed-view__actions">
-        <button type="button" class="feed-view__button" @click="emit('library')">文献库</button>
         <button
           type="button"
           class="feed-view__button feed-view__button--primary"

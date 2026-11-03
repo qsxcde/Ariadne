@@ -25,7 +25,7 @@ async function submit(): Promise<void> {
     } else {
       await loginUser(username.value.trim(), password.value);
     }
-    await router.push({ name: "chat" });
+    await router.push({ name: "today" });
   } catch (error: unknown) {
     ElMessage.error(toErrorMessage(error, "操作失败"));
   } finally {

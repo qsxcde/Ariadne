@@ -1,38 +1,53 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 
+const WorkbenchShell = () => import("../layouts/WorkbenchShell.vue");
 const AppShell = () => import("../layouts/AppShell.vue");
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
+    { path: "/", redirect: { name: "today" } },
     {
-      path: "/",
-      name: "chat",
-      component: AppShell,
+      path: "/today",
+      name: "today",
+      component: WorkbenchShell,
       meta: { requiresAuth: true },
     },
     {
-      path: "/feed",
-      name: "feed",
-      component: AppShell,
+      path: "/library",
+      name: "library",
+      component: WorkbenchShell,
       meta: { requiresAuth: true },
     },
     {
       path: "/synthesis",
       name: "synthesis",
-      component: AppShell,
+      component: WorkbenchShell,
       meta: { requiresAuth: true },
     },
     {
-      path: "/today",
-      name: "today",
-      component: AppShell,
+      path: "/feed",
+      name: "feed",
+      component: WorkbenchShell,
       meta: { requiresAuth: true },
     },
     {
       path: "/papers/:paperId",
       name: "paper",
+      component: WorkbenchShell,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/settings",
+      name: "settings",
+      component: WorkbenchShell,
+      meta: { requiresAuth: true },
+    },
+    /* 旧对话与旧阅读器保留，避免书签失效；新入口是论文 Inspector。 */
+    {
+      path: "/chat",
+      name: "chat",
       component: AppShell,
       meta: { requiresAuth: true },
     },
@@ -43,24 +58,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/library",
-      name: "library",
-      component: AppShell,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: "/settings",
-      name: "settings",
-      component: AppShell,
-      meta: { requiresAuth: true },
-    },
-    {
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
       meta: { requiresAuth: false },
     },
-    { path: "/:pathMatch(.*)*", redirect: { name: "chat" } },
+    { path: "/:pathMatch(.*)*", redirect: { name: "today" } },
   ],
 });
 
@@ -74,7 +77,7 @@ router.beforeEach(async (to) => {
     return { name: "login" };
   }
   if (!requiresAuth && isAuthenticated.value) {
-    return { name: "chat" };
+    return { name: "today" };
   }
   return true;
 });

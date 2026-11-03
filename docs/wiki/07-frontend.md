@@ -188,7 +188,8 @@ handleUpload(file)
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏、元数据编辑 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
-| `/` | `ChatWorkspace` | 对话（legacy 主入口） |
+| `/` | redirect | 默认进入 `/today` |
+| `/chat` | `ChatWorkspace` | 旧对话入口（兼容保留） |
 
 状态与 API：
 

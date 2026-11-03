@@ -196,9 +196,6 @@ onMounted(() => {
         <h1 class="synthesis__title">跨论文综合</h1>
         <p class="synthesis__subtitle">在一个集合内问答、对比方法与结果。</p>
       </div>
-      <div class="synthesis__actions">
-        <button type="button" class="synthesis__button" @click="emit('library')">文献库</button>
-      </div>
     </header>
 
     <div class="synthesis__toolbar">

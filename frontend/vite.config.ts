@@ -16,6 +16,13 @@ export default defineConfig({
         "/papers": BACKEND_ORIGIN,
         "/annotations": BACKEND_ORIGIN,
         "/collections": BACKEND_ORIGIN,
+        "/feed": BACKEND_ORIGIN,
+        "/subscriptions": BACKEND_ORIGIN,
+        "/notifications": BACKEND_ORIGIN,
+        "/review": BACKEND_ORIGIN,
+        "/settings": BACKEND_ORIGIN,
+        "/digest": BACKEND_ORIGIN,
+        "/integrations": BACKEND_ORIGIN,
       },
   },
   build: {

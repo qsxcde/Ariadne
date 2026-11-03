@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
 import PaperImportDialog from "./PaperImportDialog.vue";
@@ -29,6 +30,8 @@ const {
   upload,
 } = usePapers();
 
+const route = useRoute();
+const router = useRouter();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isImportDialogOpen = ref(false);
 
@@ -102,9 +105,33 @@ async function downloadBibtex(): Promise<void> {
   }
 }
 
+/** Rail/TopBar 通过 query 传入搜索、集合与导入意图。 */
+function applyRouteQuery(reload: boolean): void {
+  filters.value.query = typeof route.query.q === "string" ? route.query.q : "";
+  filters.value.collectionId =
+    typeof route.query.collection === "string" ? route.query.collection : "";
+
+  if (route.query.import === "1") {
+    isImportDialogOpen.value = true;
+    const next = { ...route.query };
+    delete next.import;
+    void router.replace({ name: "library", query: next });
+  }
+
+  if (reload && (filters.value.query || filters.value.collectionId)) {
+    void loadLibrary();
+  }
+}
+
 onMounted(() => {
+  applyRouteQuery(false);
   void loadLibrary();
 });
+
+watch(
+  () => route.query,
+  () => applyRouteQuery(true),
+);
 </script>
 
 <template>
@@ -116,20 +143,8 @@ onMounted(() => {
         <p class="paper-library__subtitle">在读 {{ readingCount }} 篇 · 按状态、集合和标签整理阅读进度</p>
       </div>
       <div class="paper-library__actions">
-        <button type="button" class="paper-library__text-button" @click="emit('today')">
-          Today
-        </button>
-        <button type="button" class="paper-library__text-button" @click="emit('synthesis')">
-          综合
-        </button>
-        <button type="button" class="paper-library__text-button" @click="emit('feed')">
-          跟进
-        </button>
         <button type="button" class="paper-library__text-button" @click="downloadBibtex">
           导出 BibTeX
-        </button>
-        <button type="button" class="paper-library__text-button" @click="emit('settings')">
-          设置
         </button>
         <button
           type="button"

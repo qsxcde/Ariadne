@@ -76,10 +76,6 @@ onMounted(async () => {
         <h1 class="today__title">今天读什么</h1>
         <p class="today__subtitle">继续上次的阅读，或从队列里挑一篇。</p>
       </div>
-      <div class="today__actions">
-        <button type="button" class="today__button" @click="emit('library')">文献库</button>
-        <button type="button" class="today__button" @click="emit('settings')">设置</button>
-      </div>
     </header>
 
     <p v-if="errorMessage" class="today__error">{{ errorMessage }}</p>
