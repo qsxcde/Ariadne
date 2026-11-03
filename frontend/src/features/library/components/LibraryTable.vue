@@ -2,9 +2,15 @@
 import type { PaperSummary } from "../../../api";
 import { formatUpdatedAt } from "../../../utils/format";
 
-defineProps<{
-  papers: PaperSummary[];
-}>();
+withDefaults(
+  defineProps<{
+    papers: PaperSummary[];
+    selectedId?: string;
+  }>(),
+  {
+    selectedId: "",
+  },
+);
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -68,6 +74,7 @@ function visibleTags(paper: PaperSummary): string[] {
           v-for="paper in papers"
           :key="paper.id"
           class="library-table__row"
+          :class="{ 'is-selected': paper.id === selectedId }"
           @click="emit('open', paper.id)"
         >
           <td>
@@ -189,8 +196,13 @@ function visibleTags(paper: PaperSummary): string[] {
   cursor: pointer;
 }
 
-.library-table__row:hover {
+.library-table__row:hover,
+.library-table__row.is-selected {
   background: var(--color-surface);
+}
+
+.library-table__row.is-selected {
+  box-shadow: inset 2px 0 var(--color-accent);
 }
 
 .library-table td {
@@ -317,6 +329,7 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__row:hover .library-table__actions,
+.library-table__row.is-selected .library-table__actions,
 .library-table__row:focus-within .library-table__actions {
   opacity: 1;
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { UploadFilled } from "@element-plus/icons-vue";
@@ -35,6 +35,8 @@ const route = useRoute();
 const router = useRouter();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isImportDialogOpen = ref(false);
+const selectedIndex = ref(0);
+const selectedPaperId = computed(() => papers.value[selectedIndex.value]?.id ?? "");
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部" },
@@ -90,6 +92,51 @@ function markRead(paperId: string): void {
   void saveReadingState(paperId, { reading_status: "read" });
 }
 
+function scrollToSelection(): void {
+  void nextTick(() => {
+    window.document
+      .querySelector(".library-table__row.is-selected")
+      ?.scrollIntoView({ block: "nearest" });
+  });
+}
+
+function moveSelection(delta: number): void {
+  if (!papers.value.length) {
+    return;
+  }
+  selectedIndex.value = Math.max(
+    0,
+    Math.min(papers.value.length - 1, selectedIndex.value + delta),
+  );
+  scrollToSelection();
+}
+
+function handleKeydown(event: KeyboardEvent): void {
+  const target = event.target as HTMLElement | null;
+  if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+    return;
+  }
+  if (event.metaKey || event.ctrlKey || event.altKey || !papers.value.length) {
+    return;
+  }
+  const key = event.key.toLowerCase();
+  const paper = papers.value[selectedIndex.value];
+  if (key === "j" || key === "k") {
+    event.preventDefault();
+    moveSelection(key === "j" ? 1 : -1);
+    return;
+  }
+  if (event.key === "Enter" && paper) {
+    event.preventDefault();
+    emit("open", paper.id);
+    return;
+  }
+  if (key === "s" && paper && paper.reading_status !== "read") {
+    event.preventDefault();
+    markRead(paper.id);
+  }
+}
+
 /** Rail/TopBar 通过 query 传入搜索、集合与导入意图。 */
 function applyRouteQuery(reload: boolean): void {
   filters.value.query = typeof route.query.q === "string" ? route.query.q : "";
@@ -111,11 +158,26 @@ function applyRouteQuery(reload: boolean): void {
 onMounted(() => {
   applyRouteQuery(false);
   void loadLibrary();
+  window.addEventListener("keydown", handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeydown);
 });
 
 watch(
   () => route.query,
   () => applyRouteQuery(true),
+);
+
+watch(
+  () => papers.value.length,
+  () => {
+    selectedIndex.value = Math.min(
+      selectedIndex.value,
+      Math.max(0, papers.value.length - 1),
+    );
+  },
 );
 </script>
 
@@ -205,6 +267,7 @@ watch(
         <button type="button" class="paper-library__text-button" @click="loadLibrary">
           刷新
         </button>
+        <span class="paper-library__hint">J/K 移动 · Enter 打开 · S 已读</span>
       </div>
     </div>
 
@@ -245,6 +308,7 @@ watch(
       <LibraryTable
         v-else
         :papers="papers"
+        :selected-id="selectedPaperId"
         @open="emit('open', $event)"
         @mark-read="markRead"
       />
@@ -390,6 +454,14 @@ watch(
 
 .paper-library__tag-input {
   width: 100px;
+}
+
+.paper-library__hint {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .paper-library__error {

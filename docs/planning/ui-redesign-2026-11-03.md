@@ -201,7 +201,7 @@ Settings           偏好：模型、提醒、数据
 - [x] P3 · `⌘K` 命令面板：导航 / 导入 / 论文搜索
 - [x] P3 · Inspector 收起（`⌘ + \`），状态写入 localStorage
 - [x] P3 · 空/错/加载三态统一（StateBlock，覆盖 Today/Library/Synthesis/Feed/Paper/Settings/Inspector）
-- [ ] P3 · 全局 j/k 列表导航（Feed 已支持）
+- [x] P3 · 全局 j/k 列表导航（文献库 + Feed）
 
 > 令牌对比度校验：ink/page 16.0:1、muted/page 5.2:1、white/accent 6.0:1，均满足 WCAG AA。
 
