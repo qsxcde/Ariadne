@@ -181,7 +181,7 @@ handleUpload(file)
 
 | 路由 | 组件 | 用途 |
 |---|---|---|
-| `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
+| `/today` | `views/TodayView.vue` | 编辑式两栏：继续阅读 / 本周复盘；底部横向队列 |
 | `/synthesis` | `views/SynthesisView.vue` | 集合选择、问答 / 对比表 / 综述矩阵三 Tab |
 | `/feed` | `views/FeedView.vue` | 订阅（arXiv/OpenAlex/PubMed/RSS）、Feed 刷新、保存到队列/忽略 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 表格化论文列表（状态/进度/标签）、状态分段筛选、集合/标签筛选、批量上传、按标识导入 |

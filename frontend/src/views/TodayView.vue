@@ -23,17 +23,32 @@ const reading = computed(() =>
     .filter((paper) => paper.reading_status === "reading")
     .sort((a, b) => (b.last_read_at ?? "").localeCompare(a.last_read_at ?? "")),
 );
+const readingPreview = computed(() => reading.value.slice(0, 5));
 const queue = computed(() =>
   papers.value
     .filter((paper) => paper.reading_status === "queued" || paper.reading_status === "inbox")
-    .slice(0, 8),
+    .slice(0, 12),
 );
 const readThisWeek = computed(() => review.value?.read_papers ?? 0);
 const notesThisWeek = computed(() => review.value?.notes ?? 0);
 const openQuestions = computed(() => review.value?.open_questions ?? 0);
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString("zh-CN", {
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  }),
+);
 
 function progressPercent(paper: PaperSummary): number {
   return Math.round(Math.max(0, Math.min(1, paper.progress)) * 100);
+}
+
+function authorLine(paper: PaperSummary): string {
+  const names = (paper.authors ?? []).slice(0, 3).join("、");
+  const year = paper.year ? " · " + paper.year : "";
+  const venue = paper.venue ? " · " + paper.venue : "";
+  return (names || "未知作者") + year + venue;
 }
 
 function openPaper(paper: PaperSummary): void {
@@ -72,97 +87,130 @@ onMounted(async () => {
   <section class="today" aria-label="Today">
     <header class="today__bar">
       <div>
-        <p class="today__eyebrow">Today</p>
+        <p class="today__eyebrow">{{ todayLabel }} · 文献库 {{ papers.length }} 篇</p>
         <h1 class="today__title">今天读什么</h1>
         <p class="today__subtitle">继续上次的阅读，或从队列里挑一篇。</p>
       </div>
+      <button
+        v-if="reading.length"
+        type="button"
+        class="today__primary"
+        @click="openPaper(reading[0])"
+      >
+        继续上次阅读
+      </button>
     </header>
 
     <p v-if="errorMessage" class="today__error">{{ errorMessage }}</p>
-
-    <div v-if="stats" class="today__stats">
-      <div><strong>{{ stats.total }}</strong><span>论文</span></div>
-      <div><strong>{{ stats.by_status?.read ?? 0 }}</strong><span>已读</span></div>
-      <div><strong>{{ stats.by_status?.reading ?? 0 }}</strong><span>在读</span></div>
-      <div><strong>{{ (stats.by_status?.queued ?? 0) + (stats.by_status?.inbox ?? 0) }}</strong><span>队列</span></div>
-      <div><strong>{{ stats.notes }}</strong><span>笔记</span></div>
-      <div><strong>{{ stats.questions }}</strong><span>开放问题</span></div>
-      <div><strong>{{ formatDuration(stats.reading_seconds_today ?? 0) }}</strong><span>今日阅读</span></div>
-    </div>
     <p v-if="isLoading && !papers.length" class="today__state">正在读取阅读进度…</p>
 
-    <div class="today__grid">
-      <section class="today__panel today__panel--wide">
-        <header class="today__panel-head">
+    <div class="today__columns">
+      <section class="today__reading">
+        <header class="today__section-head">
           <h2>继续阅读</h2>
           <span>{{ reading.length }} 篇在读</span>
         </header>
-        <p v-if="!reading.length" class="today__empty">还没有在读的论文。去文献库打开一篇吧。</p>
+
+        <p v-if="!reading.length" class="today__empty">
+          还没有在读的论文。去文献库打开一篇吧。
+        </p>
+
         <article
-          v-for="paper in reading"
+          v-for="(paper, index) in readingPreview"
           :key="paper.id"
-          class="today-paper"
+          class="reading-item"
           tabindex="0"
           role="button"
           @click="openPaper(paper)"
           @keyup.enter="openPaper(paper)"
         >
-          <div class="today-paper__main">
-            <h3>{{ paper.title }}</h3>
-            <p>
-              <span v-if="(paper.authors ?? []).length">{{ (paper.authors ?? []).slice(0, 2).join("、") }}</span>
-              <span v-if="paper.year"> · {{ paper.year }}</span>
-            </p>
-            <div class="today-paper__track" aria-hidden="true">
-              <span :style="{ width: `${progressPercent(paper)}%` }" />
+          <span class="reading-item__index">{{ String(index + 1).padStart(2, "0") }}</span>
+          <div class="reading-item__main">
+            <h3 class="reading-item__title">{{ paper.title }}</h3>
+            <p class="reading-item__meta">{{ authorLine(paper) }}</p>
+            <div class="reading-item__track" aria-hidden="true">
+              <span :style="{ width: progressPercent(paper) + '%' }" />
             </div>
           </div>
-          <span class="today-paper__progress">{{ progressPercent(paper) }}%</span>
+          <span class="reading-item__pct">{{ progressPercent(paper) }}%</span>
         </article>
+
+        <p v-if="reading.length > 5" class="today__more">
+          还有 {{ reading.length - 5 }} 篇在读，去文献库查看全部。
+        </p>
       </section>
 
-      <section class="today__panel">
-        <header class="today__panel-head">
+      <aside class="today__week">
+        <header class="today__section-head">
           <h2>本周</h2>
           <span>目标 3 篇</span>
         </header>
-        <p class="today__metric">{{ readThisWeek }}<small> / 3 篇读完</small></p>
-        <p class="today__hint">本周笔记 {{ notesThisWeek }} 条 · 开放问题 {{ openQuestions }} 个</p>
-        <p class="today__hint">本周阅读 {{ formatDuration(stats?.reading_seconds_week ?? 0) }}</p>
+
+        <p class="today__metric">
+          {{ readThisWeek }}<small> / 3 篇读完</small>
+        </p>
+
+        <dl class="today__stats">
+          <div>
+            <dt>笔记</dt>
+            <dd>{{ notesThisWeek }}</dd>
+          </div>
+          <div>
+            <dt>开放问题</dt>
+            <dd>{{ openQuestions }}</dd>
+          </div>
+          <div>
+            <dt>本周阅读</dt>
+            <dd>{{ formatDuration(stats?.reading_seconds_week ?? 0) }}</dd>
+          </div>
+          <div>
+            <dt>今日阅读</dt>
+            <dd>{{ formatDuration(stats?.reading_seconds_today ?? 0) }}</dd>
+          </div>
+        </dl>
+
         <label class="today__note">
           <span>本周复盘</span>
           <textarea
             v-model="weeklyNote"
-            rows="4"
+            rows="5"
             maxlength="5000"
             placeholder="这周读完什么、卡在哪里、下周读什么…"
           />
         </label>
         <button
           type="button"
-          class="today__button"
+          class="today__save"
           :disabled="isSavingNote"
           @click="saveNote"
         >
           {{ isSavingNote ? "保存中…" : "保存复盘" }}
         </button>
-        <p class="today__hint">读完的论文会进入文献库「已读」，笔记仍可回看。</p>
-      </section>
-
-      <section class="today__panel">
-        <header class="today__panel-head">
-          <h2>阅读队列</h2>
-          <span>{{ queue.length }} 篇</span>
-        </header>
-        <p v-if="!queue.length" class="today__empty">队列是空的。</p>
-        <ul v-else class="today__queue">
-          <li v-for="paper in queue" :key="paper.id">
-            <button type="button" @click="openPaper(paper)">{{ paper.title }}</button>
-            <span>{{ paper.reading_status === "queued" ? "队列中" : "待读" }}</span>
-          </li>
-        </ul>
-      </section>
+      </aside>
     </div>
+
+    <section class="today__queue">
+      <header class="today__section-head">
+        <h2>阅读队列</h2>
+        <span>{{ queue.length }} 篇</span>
+      </header>
+      <p v-if="!queue.length" class="today__empty">队列是空的。</p>
+      <div v-else class="today__queue-track">
+        <button
+          v-for="paper in queue"
+          :key="paper.id"
+          type="button"
+          class="queue-item"
+          @click="openPaper(paper)"
+        >
+          <span class="queue-item__status">
+            {{ paper.reading_status === "queued" ? "队列" : "待读" }}
+          </span>
+          <span class="queue-item__title">{{ paper.title }}</span>
+          <span class="queue-item__meta">{{ authorLine(paper) }}</span>
+        </button>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -172,15 +220,15 @@ onMounted(async () => {
   min-width: 0;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
-  padding: 28px 34px;
+  gap: 26px;
+  padding: 26px 30px 40px;
   overflow-y: auto;
-  background: var(--color-bg);
+  background: var(--color-page);
 }
 
 .today__bar {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 18px;
 }
@@ -188,140 +236,301 @@ onMounted(async () => {
 .today__eyebrow {
   margin: 0 0 6px;
   color: var(--color-text-muted);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .today__title {
   margin: 0;
-  font-size: 28px;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 30px;
   font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .today__subtitle {
-  margin: 8px 0 0;
+  margin: 7px 0 0;
   color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.today__actions {
-  display: flex;
-  gap: 8px;
-}
-
-.today__button {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
-  color: var(--color-text);
-  cursor: pointer;
   font-size: 12px;
-  padding: 7px 11px;
 }
 
-.today__button:hover {
-  border-color: var(--color-accent);
+.today__primary {
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  padding: 8px 16px;
+  color: var(--color-white);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+.today__primary:hover {
+  background: var(--color-accent-strong);
+}
+
+.today__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+  gap: 34px;
+}
+
+.today__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.today__section-head h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.today__section-head span {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.today__reading {
+  min-width: 0;
+}
+
+.reading-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 2px;
+  cursor: pointer;
+}
+
+.reading-item:last-of-type {
+  border-bottom: 0;
+}
+
+.reading-item:hover .reading-item__title {
+  color: var(--color-accent-strong);
+}
+
+.reading-item__index {
+  color: var(--color-border-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.reading-item__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.reading-item__title {
+  margin: 0 0 5px;
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reading-item__meta {
+  margin: 0 0 9px;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reading-item__track {
+  height: 3px;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+
+.reading-item__track span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.reading-item__pct {
+  width: 38px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: right;
+}
+
+.today__more {
+  margin: 10px 0 0;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.today__week {
+  min-width: 0;
+  border-left: 1px solid var(--color-border);
+  padding-left: 28px;
+}
+
+.today__metric {
+  margin: 4px 0 14px;
   color: var(--color-accent);
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.today__metric small {
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .today__stats {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+  margin: 0 0 18px;
 }
 
 .today__stats div {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-panel);
+  gap: 2px;
 }
 
-.today__stats strong {
-  font-size: 22px;
-}
-
-.today__stats span {
+.today__stats dt {
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 10px;
 }
 
-.today__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
-  gap: 14px;
-}
-
-.today__panel {
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-panel);
-}
-
-.today__panel--wide {
-  grid-row: span 2;
-}
-
-.today__panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.today__panel-head h2 {
+.today__stats dd {
   margin: 0;
   color: var(--color-text);
-  font-size: 15px;
-}
-
-.today__metric {
-  margin: 10px 0 8px;
-  color: var(--color-accent);
-  font-size: 34px;
-  font-weight: 650;
-}
-
-.today__metric small {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.today__hint,
-.today__empty {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  line-height: 1.5;
+  font-family: var(--font-mono);
+  font-size: 13px;
 }
 
 .today__note {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
+  gap: 5px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .today__note textarea {
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg);
-  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: 8px 9px;
   color: var(--color-text);
   font: inherit;
   font-size: 12px;
+  line-height: 1.6;
   resize: vertical;
+}
+
+.today__save {
+  margin-top: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: 6px 12px;
+  color: var(--color-text-soft);
+  font-size: 11px;
+}
+
+.today__save:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.today__save:disabled {
+  opacity: 0.6;
+}
+
+.today__queue {
+  min-width: 0;
+}
+
+.today__queue-track {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.queue-item {
+  display: flex;
+  min-width: 230px;
+  max-width: 260px;
+  flex: 0 0 230px;
+  flex-direction: column;
+  gap: 5px;
+  border: 0;
+  border-right: 1px solid var(--color-border);
+  background: transparent;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.queue-item:first-child {
+  padding-left: 2px;
+}
+
+.queue-item:hover {
+  background: var(--color-surface);
+}
+
+.queue-item__status {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.queue-item__title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.queue-item__meta {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today__empty,
+.today__state {
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .today__error {
@@ -330,110 +539,15 @@ onMounted(async () => {
   font-size: 12px;
 }
 
-.today__state {
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-
-.today-paper {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.today-paper + .today-paper {
-  margin-top: 8px;
-}
-
-.today-paper:hover {
-  border-color: var(--color-accent);
-}
-
-.today-paper__main {
-  min-width: 0;
-  flex: 1;
-}
-
-.today-paper__main h3 {
-  margin: 0 0 5px;
-  overflow: hidden;
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.today-paper__main p {
-  margin: 0 0 8px;
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.today-paper__track {
-  height: 4px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--color-bg);
-}
-
-.today-paper__track span {
-  display: block;
-  height: 100%;
-  background: var(--color-accent);
-}
-
-.today-paper__progress {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-.today__queue {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.today__queue li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 12px;
-}
-
-.today__queue li:last-child {
-  border-bottom: 0;
-}
-
-.today__queue button {
-  overflow: hidden;
-  border: 0;
-  background: transparent;
-  color: var(--color-text);
-  cursor: pointer;
-  padding: 0;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.today__queue span {
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
-@media (max-width: 900px) {
-  .today__grid {
+@media (max-width: 1100px) {
+  .today__columns {
     grid-template-columns: 1fr;
   }
 
-  .today__panel--wide {
-    grid-row: auto;
+  .today__week {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+    padding: 18px 0 0;
   }
 }
 </style>

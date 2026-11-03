@@ -195,7 +195,8 @@ Settings           偏好：模型、提醒、数据
 - [x] P1 · LibraryTable：46px 行高、状态点/进度/标签列、状态分段筛选、悬停操作、集合筛选
 - [x] P1 · Paper 三栏：大纲 | 正文/PDF | Inspector 340px
 - [x] P1 · Inspector 标签：速读 / 问答 / 笔记 / 术语 / 引用；问答绑定当前论文会话
-- [ ] P2 · Today / Synthesis / Feed 重排
+- [x] P2 · Today：编辑式两栏（继续阅读 / 本周）+ 底部队列条
+- [ ] P2 · Synthesis / Feed 重排
 - [ ] P3 · `⌘K` 与键盘操作
 
 > 令牌对比度校验：ink/page 16.0:1、muted/page 5.2:1、white/accent 6.0:1，均满足 WCAG AA。
