@@ -184,7 +184,7 @@ handleUpload(file)
 | `/today` | `views/TodayView.vue` | 继续阅读、阅读队列、本周完成 |
 | `/synthesis` | `views/SynthesisView.vue` | 集合选择、问答 / 对比表 / 综述矩阵三 Tab |
 | `/feed` | `views/FeedView.vue` | 订阅（arXiv/OpenAlex/PubMed/RSS）、Feed 刷新、保存到队列/忽略 |
-| `/library` | `features/library/components/PaperLibrary.vue` | 论文列表、状态/集合/标签筛选、批量上传、按 arXiv/DOI/链接导入 |
+| `/library` | `features/library/components/PaperLibrary.vue` | 表格化论文列表（状态/进度/标签）、状态分段筛选、集合/标签筛选、批量上传、按标识导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 论文详情、阅读器、进度、笔记侧栏、元数据编辑 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
 | `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |

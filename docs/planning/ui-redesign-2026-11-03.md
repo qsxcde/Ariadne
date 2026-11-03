@@ -192,7 +192,8 @@ Settings           偏好：模型、提醒、数据
 
 - [x] P0 · 设计令牌：纸面/墨色/朱砂色板、衬线+无衬线+等宽字体栈、暖灰阴影、低圆角与动效变量；清理侧栏/输入框/消息气泡/Element Plus 的冷色硬编码
 - [x] P0 · WorkbenchShell / WorkbenchRail / TopBar，`/` 重定向 `/today`；搜索/导入/集合通过 query 传入文献库
-- [ ] P1 · LibraryTable + Paper 三栏 + Inspector 四 Tab
+- [x] P1 · LibraryTable：46px 行高、状态点/进度/标签列、状态分段筛选、悬停操作、集合筛选
+- [ ] P1 · Paper 三栏 + Inspector 四 Tab
 - [ ] P2 · Today / Synthesis / Feed 重排
 - [ ] P3 · `⌘K` 与键盘操作
 
