@@ -183,7 +183,7 @@ handleUpload(file)
 |---|---|---|
 | `/today` | `views/TodayView.vue` | 编辑式两栏：继续阅读 / 本周复盘；底部横向队列 |
 | `/synthesis` | `views/SynthesisView.vue` | 矩阵优先：集合选择、论文选择器、问答/对比表/综述矩阵三 Tab |
-| `/feed` | `views/FeedView.vue` | 订阅（arXiv/OpenAlex/PubMed/RSS）、Feed 刷新、保存到队列/忽略 |
+| `/feed` | `views/FeedView.vue` | 收件箱列表：订阅管理、来源徽标、J/K/S/X/Enter 键盘操作 |
 | `/library` | `features/library/components/PaperLibrary.vue` | 表格化论文列表（状态/进度/标签）、状态分段筛选、集合/标签筛选、批量上传、按标识导入 |
 | `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·问答·笔记·术语·引用） |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |

@@ -125,7 +125,6 @@ watch(
 
         <FeedView
           v-else-if="route.name === 'feed'"
-          @library="openLibrary"
           @open="openPaper"
         />
 
