@@ -44,6 +44,10 @@ const {
 
 const noteDraft = ref("");
 const activeTab = ref<"brief" | "ask" | "notes" | "terms" | "citations">("brief");
+const INSPECTOR_STORAGE_KEY = "scipal.inspector.collapsed";
+const isInspectorCollapsed = ref(
+  window.localStorage.getItem(INSPECTOR_STORAGE_KEY) === "1",
+);
 
 const INSPECTOR_TABS = [
   { value: "brief", label: "速读" },
@@ -104,6 +108,21 @@ function stopReadingClock(): void {
 function handleVisibilityChange(): void {
   if (window.document.visibilityState !== "visible") {
     flushReadingTime();
+  }
+}
+
+function toggleInspector(): void {
+  isInspectorCollapsed.value = !isInspectorCollapsed.value;
+  window.localStorage.setItem(
+    INSPECTOR_STORAGE_KEY,
+    isInspectorCollapsed.value ? "1" : "0",
+  );
+}
+
+function handleInspectorShortcut(event: KeyboardEvent): void {
+  if ((event.metaKey || event.ctrlKey) && event.key === "\\") {
+    event.preventDefault();
+    toggleInspector();
   }
 }
 
@@ -286,6 +305,7 @@ onMounted(async () => {
   await refresh();
   startReadingClock();
   window.document.addEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("keydown", handleInspectorShortcut);
 });
 
 watch(
@@ -300,6 +320,7 @@ watch(
 onBeforeUnmount(() => {
   stopReadingClock();
   window.document.removeEventListener("visibilitychange", handleVisibilityChange);
+  window.removeEventListener("keydown", handleInspectorShortcut);
   if (progressTimer !== null) {
     window.clearTimeout(progressTimer);
   }
@@ -336,6 +357,15 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="paper-workspace__refresh"
+          :aria-pressed="!isInspectorCollapsed"
+          title="快捷键：⌘ + 反斜杠"
+          @click="toggleInspector"
+        >
+          {{ isInspectorCollapsed ? "显示面板" : "隐藏面板" }}
+        </button>
+        <button
+          type="button"
+          class="paper-workspace__refresh"
           :disabled="!currentPaper"
           @click="isMetadataDialogOpen = true"
         >
@@ -367,7 +397,11 @@ onBeforeUnmount(() => {
       <span>{{ progressPercent(currentPaper.progress) }}%</span>
     </div>
 
-    <div v-if="currentPaper && documentItem && primarySessionId" class="paper-workspace__body">
+    <div
+      v-if="currentPaper && documentItem && primarySessionId"
+      class="paper-workspace__body"
+      :class="{ 'paper-workspace__body--collapsed': isInspectorCollapsed }"
+    >
       <PaperReader
         ref="readerRef"
         :session-id="primarySessionId"
@@ -380,7 +414,11 @@ onBeforeUnmount(() => {
         @close="emit('back')"
       />
 
-      <aside class="paper-workspace__inspector" aria-label="论文检查器">
+      <aside
+        v-show="!isInspectorCollapsed"
+        class="paper-workspace__inspector"
+        aria-label="论文检查器"
+      >
         <div class="paper-workspace__tabs" role="tablist" aria-label="论文检查器">
           <button
             v-for="tab in INSPECTOR_TABS"
@@ -699,6 +737,10 @@ onBeforeUnmount(() => {
   grid-template-columns: minmax(0, 1fr) 340px;
   grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
+}
+
+.paper-workspace__body--collapsed {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .paper-workspace__inspector {
