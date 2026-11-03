@@ -298,6 +298,13 @@ def update_paper(
     )
 
 
+@router.delete("/papers/{paper_id}")
+def delete_paper(paper_id: str, user: dict = Depends(get_current_user)) -> dict:
+    """硬删除论文及其会话、文档、批注、集合关联与磁盘产物。"""
+    paper_service.delete_paper(paper_id, user.get("id") or None)
+    return {"status": "deleted"}
+
+
 @router.get("/papers/{paper_id}/annotations", response_model=list[AnnotationSummary])
 def list_annotations(
     paper_id: str,

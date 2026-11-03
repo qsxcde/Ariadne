@@ -1,17 +1,24 @@
-"""Paper library use cases: import, list, detail and reading state."""
+"""Paper library use cases: import, list, detail, reading state and delete."""
 
 import hashlib
 import json
 import logging
 from typing import Any
 
+from backend.adapters.vector import store_cache
 from backend.application.documents import intake_document_upload
 from backend.core.model.records import PaperRecord
 from backend.domain.access import paper_is_accessible
-from backend.domain.exceptions import DuplicatePaperError, PaperNotFoundError
+from backend.domain.exceptions import (
+    DuplicatePaperError,
+    JobInProgressError,
+    PaperNotFoundError,
+)
+from backend.storage.paths import remove_session_dir
 from backend.storage.sqlite import annotations as annotation_repo
 from backend.storage.sqlite import collections as collection_repo
 from backend.storage.sqlite import documents as document_repo
+from backend.storage.sqlite import jobs as job_repo
 from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite import sessions as session_repo
 
@@ -188,3 +195,27 @@ def update_paper(
         time_spent_seconds=time_spent_seconds,
     )
     return get_paper_detail(paper_id, user_id)
+
+
+def delete_paper(paper_id: str, user_id: str | None) -> None:
+    """硬删除论文：会话、文档、分块、批注、集合关联、阅读日志与磁盘产物。
+
+    索引快照与 FAISS 缓存随会话目录一并清理；摄取未结束时拒绝删除，
+    避免 worker 边写 chunk 边被删（FK 冲突）。
+    """
+    get_accessible_paper(paper_id, user_id)
+
+    active_sessions = session_repo.list_sessions_for_paper(paper_id)
+    for session in active_sessions:
+        if job_repo.has_running_job(session["id"]):
+            raise JobInProgressError(
+                "Paper is still being processed, try again later.",
+                session_id=session["id"],
+            )
+
+    session_ids = paper_repo.delete_paper(paper_id)
+
+    # 文档的 PDF/解析产物都在会话目录下，随 remove_session_dir 一并清理。
+    for session_id in session_ids:
+        store_cache.discard_store(session_id)
+        remove_session_dir(session_id)

@@ -333,6 +333,7 @@ uv run --project backend python -m scipal_eval.cli run \
 | POST | `/papers/import` | 按 arXiv / DOI / 链接导入：抓取元数据，有开放 PDF 时一并入库。 |
 | GET | `/papers/reading-stats` | 阅读时长统计：按天与按论文聚合，默认最近 7 天。 |
 | GET | `/papers/stats` | Get Library Stats |
+| DELETE | `/papers/{paper_id}` | 硬删除论文及其会话、文档、批注、集合关联与磁盘产物。 |
 | GET | `/papers/{paper_id}` | Get Paper |
 | PATCH | `/papers/{paper_id}` | Update Paper |
 | GET | `/papers/{paper_id}/annotations` | List Annotations |

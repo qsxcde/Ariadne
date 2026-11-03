@@ -18,6 +18,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   open: [paperId: string];
   markRead: [paperId: string];
+  remove: [paperId: string];
   check: [paperId: string];
   checkAll: [];
 }>();
@@ -158,6 +159,13 @@ function visibleTags(paper: PaperSummary): string[] {
               >
                 已读
               </button>
+              <button
+                type="button"
+                title="删除论文"
+                @click.stop="emit('remove', paper.id)"
+              >
+                删除
+              </button>
             </div>
           </td>
         </tr>
@@ -237,7 +245,7 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 .library-table__actions-col {
-  width: 92px;
+  width: 118px;
 }
 
 /* 1024 断点：先让出标题宽度，再逐级隐藏低优先级列。 */
@@ -262,7 +270,7 @@ function visibleTags(paper: PaperSummary): string[] {
   }
 
   .library-table__actions-col {
-    width: 84px;
+    width: 110px;
   }
 }
 

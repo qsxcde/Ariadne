@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 import { listCollections } from "../api/collections";
 import { createAnnotation, deleteAnnotation } from "../api/annotations";
-import { getPaper, getPaperBrief, listPapers, updatePaper, uploadPaper } from "../api/papers";
+import { deletePaper, getPaper, getPaperBrief, listPapers, updatePaper, uploadPaper } from "../api/papers";
 import type {
   AnnotationSummary,
   CollectionSummary,
@@ -163,6 +163,21 @@ async function upload(file: File): Promise<PaperSummary | null> {
   }
 }
 
+async function remove(paperId: string): Promise<boolean> {
+  try {
+    await deletePaper(paperId);
+    papers.value = papers.value.filter((paper) => paper.id !== paperId);
+    if (currentPaper.value?.id === paperId) {
+      currentPaper.value = null;
+      brief.value = null;
+    }
+    return true;
+  } catch (error) {
+    errorMessage.value = toErrorMessage(error, "删除论文失败");
+    return false;
+  }
+}
+
 function reset(): void {
   papers.value = [];
   currentPaper.value = null;
@@ -195,6 +210,7 @@ export function usePapers() {
     addNote,
     removeAnnotation,
     upload,
+    remove,
     reset,
   };
 }

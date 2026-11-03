@@ -30,6 +30,7 @@ const {
   loadLibrary,
   saveReadingState,
   upload,
+  remove,
 } = usePapers();
 
 const route = useRoute();
@@ -94,6 +95,53 @@ function selectStatus(value: string): void {
 
 function markRead(paperId: string): void {
   void saveReadingState(paperId, { reading_status: "read" });
+}
+
+async function removePaper(paperId: string): Promise<void> {
+  const paper = papers.value.find((item) => item.id === paperId);
+  if (!paper) return;
+  try {
+    await ElMessageBox.confirm(
+      `删除《${paper.title}》后不可恢复，笔记、分块与索引会一并清理。`,
+      "删除论文",
+      { type: "warning", confirmButtonText: "删除", cancelButtonText: "取消" },
+    );
+  } catch {
+    return;
+  }
+  const removed = await remove(paperId);
+  if (removed) {
+    checkedIds.value = checkedIds.value.filter((id) => id !== paperId);
+    ElMessage.success("已删除");
+  }
+}
+
+async function removeChecked(): Promise<void> {
+  if (!checkedIds.value.length) return;
+  const count = checkedIds.value.length;
+  try {
+    await ElMessageBox.confirm(
+      `删除所选 ${count} 篇论文后不可恢复，笔记、分块与索引会一并清理。`,
+      "批量删除",
+      { type: "warning", confirmButtonText: "删除", cancelButtonText: "取消" },
+    );
+  } catch {
+    return;
+  }
+  isBulkBusy.value = true;
+  const ids = [...checkedIds.value];
+  let failed = 0;
+  for (const paperId of ids) {
+    const removed = await remove(paperId);
+    if (!removed) failed += 1;
+  }
+  clearChecked();
+  isBulkBusy.value = false;
+  if (failed) {
+    ElMessage.error(`${failed} 篇删除失败`);
+  } else {
+    ElMessage.success(`已删除 ${ids.length} 篇`);
+  }
 }
 
 function toggleCheck(paperId: string): void {
@@ -372,6 +420,9 @@ watch(
         <button type="button" :disabled="isBulkBusy" @click="markCheckedRead">
           标记已读
         </button>
+        <button type="button" :disabled="isBulkBusy" class="paper-library__bulk-danger" @click="removeChecked">
+          删除
+        </button>
         <select v-model="bulkCollectionId" class="paper-library__select">
           <option value="">加入集合…</option>
           <option v-for="collection in collections" :key="collection.id" :value="collection.id">
@@ -432,6 +483,7 @@ watch(
         :checked-ids="checkedIds"
         @open="emit('open', $event)"
         @mark-read="markRead"
+        @remove="removePaper"
         @check="toggleCheck"
         @check-all="toggleAll"
       />
@@ -652,6 +704,11 @@ watch(
 .paper-library__bulk-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.paper-library__bulk-actions .paper-library__bulk-danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .paper-library__bulk-actions .paper-library__select {

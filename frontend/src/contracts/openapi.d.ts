@@ -562,7 +562,11 @@ export interface paths {
         get: operations["get_paper_papers__paper_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Paper
+         * @description 硬删除论文及其会话、文档、批注、集合关联与磁盘产物。
+         */
+        delete: operations["delete_paper_papers__paper_id__delete"];
         options?: never;
         head?: never;
         /** Update Paper */
@@ -3197,6 +3201,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaperDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_paper_papers__paper_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                paper_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

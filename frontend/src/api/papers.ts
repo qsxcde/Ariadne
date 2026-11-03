@@ -1,4 +1,4 @@
-import { jsonRequest, requestForm, requestJson, requestText } from "./client";
+import { jsonRequest, requestForm, requestJson, requestText, requestVoid } from "./client";
 import type {
   ExplainResponse,
   CitationGraph,
@@ -126,4 +126,8 @@ export function updatePaper(
     method: "PATCH",
     ...jsonRequest(payload),
   });
+}
+
+export function deletePaper(paperId: string): Promise<void> {
+  return requestVoid(`/papers/${paperId}`, "删除论文失败", { method: "DELETE" });
 }

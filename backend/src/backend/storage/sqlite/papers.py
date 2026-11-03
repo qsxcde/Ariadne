@@ -146,6 +146,26 @@ def update_paper_metadata(
     return get_paper(paper_id)
 
 
+def delete_paper(paper_id: str) -> list[str]:
+    """Hard-delete a paper and its sessions; returns the removed session ids.
+
+    FK cascades clear documents/chunks/jobs/annotations/collection rows.
+    ``reading_log`` has no FK and is cleared explicitly; ``sessions.paper_id``
+    is ON DELETE SET NULL, so sessions must go before the paper row.
+    """
+    with transaction() as conn:
+        session_ids = [
+            str(row["id"])
+            for row in conn.execute(
+                "SELECT id FROM sessions WHERE paper_id = ?", (paper_id,)
+            ).fetchall()
+        ]
+        conn.execute("DELETE FROM reading_log WHERE paper_id = ?", (paper_id,))
+        conn.execute("DELETE FROM sessions WHERE paper_id = ?", (paper_id,))
+        conn.execute("DELETE FROM papers WHERE id = ?", (paper_id,))
+    return session_ids
+
+
 def list_papers(
     user_id: str | None,
     *,
