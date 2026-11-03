@@ -196,7 +196,8 @@ Settings           偏好：模型、提醒、数据
 - [x] P1 · Paper 三栏：大纲 | 正文/PDF | Inspector 340px
 - [x] P1 · Inspector 标签：速读 / 问答 / 笔记 / 术语 / 引用；问答绑定当前论文会话
 - [x] P2 · Today：编辑式两栏（继续阅读 / 本周）+ 底部队列条
-- [ ] P2 · Synthesis / Feed 重排
+- [x] P2 · Synthesis：矩阵优先，左侧论文选择器 + 右侧 sticky 首列矩阵
+- [ ] P2 · Feed 收件箱重排
 - [ ] P3 · `⌘K` 与键盘操作
 
 > 令牌对比度校验：ink/page 16.0:1、muted/page 5.2:1、white/accent 6.0:1，均满足 WCAG AA。

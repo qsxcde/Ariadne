@@ -120,7 +120,6 @@ watch(
 
         <SynthesisView
           v-else-if="route.name === 'synthesis'"
-          @library="openLibrary"
           @open="openPaper"
         />
 
