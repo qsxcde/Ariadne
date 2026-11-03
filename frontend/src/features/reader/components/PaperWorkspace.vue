@@ -42,6 +42,14 @@ const {
 } = usePapers();
 
 const noteDraft = ref("");
+const activeTab = ref<"brief" | "notes" | "terms" | "citations">("brief");
+
+const INSPECTOR_TABS = [
+  { value: "brief", label: "速读" },
+  { value: "notes", label: "笔记" },
+  { value: "terms", label: "术语" },
+  { value: "citations", label: "引用" },
+] as const;
 const glossary = ref<GlossaryResponse | null>(null);
 const citations = ref<CitationGraph | null>(null);
 const isMetadataDialogOpen = ref(false);
@@ -303,7 +311,6 @@ onBeforeUnmount(() => {
         <ArrowLeft class="paper-workspace__icon" /> 返回
       </button>
       <div class="paper-workspace__meta">
-        <p class="paper-workspace__eyebrow">阅读工作台</p>
         <h1 class="paper-workspace__title">{{ currentPaper?.title || "正在载入论文…" }}</h1>
         <p class="paper-workspace__sub">
           <span v-if="(currentPaper?.authors ?? []).length">{{ (currentPaper?.authors ?? []).join("、") }}</span>
@@ -364,24 +371,37 @@ onBeforeUnmount(() => {
         :session-id="primarySessionId"
         :document-id="documentItem.id"
         :initial-progress="currentPaper.progress"
+        :show-close="false"
         @note="quickNote"
         @ask="handleAsk"
         @progress="handleProgress"
         @close="emit('back')"
       />
 
-      <aside class="paper-workspace__notes" aria-label="笔记">
-        <header class="paper-workspace__notes-header">
-          <div>
-            <p class="paper-workspace__eyebrow">速读卡 · 笔记</p>
-            <h2 class="paper-workspace__notes-title">{{ annotations.length }} 条笔记</h2>
-          </div>
-          <button type="button" class="paper-workspace__secondary" @click="exportNotes">
-            导出笔记
+      <aside class="paper-workspace__inspector" aria-label="论文检查器">
+        <div class="paper-workspace__tabs" role="tablist" aria-label="论文检查器">
+          <button
+            v-for="tab in INSPECTOR_TABS"
+            :key="tab.value"
+            type="button"
+            role="tab"
+            class="paper-workspace__tab"
+            :class="{ 'is-active': activeTab === tab.value }"
+            :aria-selected="activeTab === tab.value"
+            @click="activeTab = tab.value"
+          >
+            {{ tab.label }}
+            <span
+              v-if="tab.value === 'notes' && annotations.length"
+              class="paper-workspace__tab-count"
+            >
+              {{ annotations.length }}
+            </span>
           </button>
-        </header>
+        </div>
 
-        <section class="paper-workspace__brief">
+        <div class="paper-workspace__inspector-body">
+        <section v-show="activeTab === 'brief'" class="paper-workspace__brief">
           <header class="paper-workspace__brief-head">
             <span class="paper-workspace__eyebrow">5 分钟速读</span>
             <button
@@ -431,7 +451,7 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="paper-workspace__brief">
+        <section v-show="activeTab === 'terms'" class="paper-workspace__brief">
           <header class="paper-workspace__brief-head">
             <span class="paper-workspace__eyebrow">术语表</span>
             <button
@@ -453,7 +473,7 @@ onBeforeUnmount(() => {
           </ul>
         </section>
 
-        <section class="paper-workspace__brief">
+        <section v-show="activeTab === 'citations'" class="paper-workspace__brief">
           <header class="paper-workspace__brief-head">
             <span class="paper-workspace__eyebrow">引用关系</span>
             <button
@@ -478,26 +498,53 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <div class="paper-workspace__note-compose">
-          <textarea
-            v-model="noteDraft"
-            class="paper-workspace__textarea"
-            rows="3"
-            placeholder="写一条笔记…"
-          />
-          <button type="button" class="paper-workspace__primary" @click="saveNote">保存笔记</button>
-        </div>
+        <div v-show="activeTab === 'notes'" class="paper-workspace__notes-pane">
+          <header class="paper-workspace__notes-head">
+            <span>{{ annotations.length }} 条笔记</span>
+            <button type="button" class="paper-workspace__secondary" @click="exportNotes">
+              导出
+            </button>
+          </header>
+          <div class="paper-workspace__note-compose">
+            <textarea
+              v-model="noteDraft"
+              class="paper-workspace__textarea"
+              rows="3"
+              placeholder="写一条笔记…"
+            />
+            <button type="button" class="paper-workspace__primary" @click="saveNote">
+              保存笔记
+            </button>
+          </div>
 
-        <div class="paper-workspace__note-list">
-          <p v-if="!annotations.length" class="paper-workspace__empty">还没有笔记。选中正文可快速记笔记。</p>
-          <article v-for="annotation in annotations" :key="annotation.id" class="paper-note">
-            <header class="paper-note__head">
-              <span class="paper-note__type">{{ annotationLabel(annotation) }}</span>
-              <button type="button" class="paper-note__delete" @click="deleteNote(annotation)">删除</button>
-            </header>
-            <blockquote v-if="annotation.quote" class="paper-note__quote">{{ annotation.quote }}</blockquote>
-            <p v-if="annotation.content" class="paper-note__content">{{ annotation.content }}</p>
-          </article>
+          <div class="paper-workspace__note-list">
+            <p v-if="!annotations.length" class="paper-workspace__empty">
+              还没有笔记。选中正文可快速记笔记。
+            </p>
+            <article
+              v-for="annotation in annotations"
+              :key="annotation.id"
+              class="paper-note"
+            >
+              <header class="paper-note__head">
+                <span class="paper-note__type">{{ annotationLabel(annotation) }}</span>
+                <button
+                  type="button"
+                  class="paper-note__delete"
+                  @click="deleteNote(annotation)"
+                >
+                  删除
+                </button>
+              </header>
+              <blockquote v-if="annotation.quote" class="paper-note__quote">
+                {{ annotation.quote }}
+              </blockquote>
+              <p v-if="annotation.content" class="paper-note__content">
+                {{ annotation.content }}
+              </p>
+            </article>
+          </div>
+        </div>
         </div>
       </aside>
     </div>
@@ -523,9 +570,9 @@ onBeforeUnmount(() => {
 
 .paper-workspace__bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
-  padding: 18px 26px 14px;
+  padding: 12px 22px;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-panel);
 }
@@ -578,7 +625,9 @@ onBeforeUnmount(() => {
 .paper-workspace__title {
   margin: 0;
   overflow: hidden;
-  font-size: 18px;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 20px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -612,9 +661,9 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 26px;
+  padding: 8px 22px;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .paper-workspace__progress-track {
@@ -636,10 +685,10 @@ onBeforeUnmount(() => {
   display: grid;
   min-height: 0;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 340px;
 }
 
-.paper-workspace__notes {
+.paper-workspace__inspector {
   display: flex;
   min-height: 0;
   flex-direction: column;
@@ -647,14 +696,56 @@ onBeforeUnmount(() => {
   background: var(--color-panel);
 }
 
-.paper-workspace__notes-header {
-  padding: 16px;
+.paper-workspace__tabs {
+  display: flex;
+  gap: 2px;
   border-bottom: 1px solid var(--color-border);
+  padding: 0 10px;
 }
 
-.paper-workspace__notes-title {
-  margin: 0;
-  font-size: 15px;
+.paper-workspace__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  padding: 10px 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.paper-workspace__tab.is-active {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.paper-workspace__tab-count {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.paper-workspace__inspector-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.paper-workspace__notes-pane {
+  display: flex;
+  flex-direction: column;
+}
+
+.paper-workspace__notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  padding: 10px 16px;
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 
 .paper-workspace__secondary {

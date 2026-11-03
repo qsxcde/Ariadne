@@ -31,6 +31,7 @@
 
   /* ---------- 语义色：沿用现有组件变量名 ---------- */
   --color-page: var(--paper-100);
+  --color-bg: var(--paper-100);
   --color-shell: var(--paper-200);
   --color-sidebar: var(--paper-150);
   --color-sidebar-soft: var(--paper-200);

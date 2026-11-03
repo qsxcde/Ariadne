@@ -23,6 +23,7 @@ const props = defineProps<{
   sessionId: string;
   documentId: string;
   initialProgress?: number;
+  showClose?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -290,6 +291,7 @@ onBeforeUnmount(() => {
           @click="outlineVisible = !outlineVisible"
         />
         <el-button
+          v-if="showClose !== false"
           class="paper-reader__close"
           :icon="Close"
           circle
