@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 
 import PaperOutline from "@/features/reader/components/PaperOutline.vue";
 import PaperReaderBar from "@/features/reader/components/PaperReaderBar.vue";
@@ -11,18 +19,33 @@ import type { SelectionAskMode } from "@/shared/types";
 // pdf.js 体积较大，只在切到「原页」时才加载
 const PdfViewer = defineAsyncComponent(() => import("@/features/reader/components/PdfViewer.vue"));
 
-const props = defineProps<{
-  sessionId: string;
-  documentId: string;
-  initialProgress?: number;
-  showClose?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    sessionId: string;
+    documentId: string;
+    initialProgress?: number;
+    showClose?: boolean;
+    /** 是否渲染阅读器自带顶栏；工作台把控制项合并到页面工具栏后传 false。 */
+    chrome?: boolean;
+    viewMode?: "text" | "pdf";
+    outlineVisible?: boolean;
+  }>(),
+  {
+    chrome: true,
+    initialProgress: undefined,
+    showClose: undefined,
+    viewMode: undefined,
+    outlineVisible: undefined,
+  },
+);
 
 const emit = defineEmits<{
   ask: [text: string, mode: SelectionAskMode];
   note: [text: string];
   progress: [ratio: number];
   close: [];
+  "update:viewMode": [mode: "text" | "pdf"];
+  "update:outlineVisible": [visible: boolean];
 }>();
 
 const {
@@ -41,8 +64,25 @@ const {
 } = usePaperReader();
 
 const textViewRef = ref<InstanceType<typeof PaperTextView> | null>(null);
-const outlineVisible = ref(true);
-const viewMode = ref<"text" | "pdf">("text");
+const localOutlineVisible = ref(true);
+const localViewMode = ref<"text" | "pdf">("text");
+
+const viewMode = computed<"text" | "pdf">({
+  get: () => props.viewMode ?? localViewMode.value,
+  set: (mode) => {
+    localViewMode.value = mode;
+    emit("update:viewMode", mode);
+  },
+});
+
+const outlineVisible = computed<boolean>({
+  get: () => props.outlineVisible ?? localOutlineVisible.value,
+  set: (visible) => {
+    localOutlineVisible.value = visible;
+    emit("update:outlineVisible", visible);
+  },
+});
+
 const pdfPage = ref(1);
 const progressRatio = ref(props.initialProgress ?? 0);
 const selectionMenu = ref<{ text: string; x: number; y: number } | null>(null);
@@ -147,6 +187,7 @@ onBeforeUnmount(() => {
 <template>
   <section class="paper-reader" aria-label="论文原文">
     <PaperReaderBar
+      v-if="chrome"
       :content="content"
       :view-mode="viewMode"
       :outline-visible="outlineVisible"

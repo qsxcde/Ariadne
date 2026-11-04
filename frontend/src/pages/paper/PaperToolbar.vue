@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ArrowLeft, EditPen, Expand, Fold, Refresh } from "@element-plus/icons-vue";
+import { ArrowLeft, EditPen, Expand, Fold, Refresh, Tickets } from "@element-plus/icons-vue";
 import type { PaperDetail } from "@/api";
 import { PAPER_STATUS_OPTIONS } from "@/shared/constants/paper";
 import { formatAuthors, progressPercent } from "@/shared/utils/format";
@@ -12,6 +12,8 @@ const props = defineProps<{
   statusFeedback: string;
   inspectorCollapsed: boolean;
   shortcutHint: string;
+  viewMode: "text" | "pdf";
+  outlineVisible: boolean;
 }>();
 
 const authorsLine = computed(() =>
@@ -28,6 +30,8 @@ const emit = defineEmits<{
   editMetadata: [];
   refresh: [];
   changeStatus: [status: string];
+  setViewMode: [mode: "text" | "pdf"];
+  toggleOutline: [];
 }>();
 
 function handleStatusChange(event: Event): void {
@@ -53,6 +57,36 @@ function handleStatusChange(event: Event): void {
       </p>
     </div>
     <div class="paper-workspace__actions">
+      <div class="paper-workspace__modes" role="group" aria-label="原文视图">
+        <button
+          type="button"
+          class="paper-workspace__mode"
+          :class="{ 'is-active': viewMode === 'text' }"
+          @click="emit('setViewMode', 'text')"
+        >
+          正文
+        </button>
+        <button
+          type="button"
+          class="paper-workspace__mode"
+          :class="{ 'is-active': viewMode === 'pdf' }"
+          @click="emit('setViewMode', 'pdf')"
+        >
+          原页
+        </button>
+      </div>
+      <button
+        v-if="paper"
+        type="button"
+        class="paper-workspace__icon-button"
+        :class="{ 'is-active': outlineVisible }"
+        :aria-pressed="outlineVisible"
+        title="切换目录"
+        @click="emit('toggleOutline')"
+      >
+        <Tickets />
+        <span class="paper-workspace__action-label">目录</span>
+      </button>
       <label v-if="paper" class="paper-workspace__status-field">
         <span>状态</span>
         <select
@@ -256,6 +290,34 @@ function handleStatusChange(event: Event): void {
   color: var(--color-success);
   font-size: 10px;
   white-space: nowrap;
+}
+
+.paper-workspace__modes {
+  display: flex;
+  padding: 2px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.paper-workspace__mode {
+  padding: 3px 10px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-xs);
+}
+
+.paper-workspace__mode.is-active {
+  color: var(--color-text);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-hairline);
+}
+
+.paper-workspace__icon-button.is-active {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 @media (max-width: 1200px) {

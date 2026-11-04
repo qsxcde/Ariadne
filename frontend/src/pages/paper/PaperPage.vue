@@ -5,7 +5,7 @@ import StateBlock from "@/shared/components/StateBlock.vue";
 import PaperInspector from "@/features/reader/components/PaperInspector.vue";
 import PaperMetadataDialog from "@/features/reader/components/PaperMetadataDialog.vue";
 import PaperReader from "@/features/reader/components/PaperReader.vue";
-import PaperWorkspaceBar from "@/pages/paper/PaperToolbar.vue";
+import PaperToolbar from "@/pages/paper/PaperToolbar.vue";
 import { explainSelection } from "@/api/papers";
 import { usePapers } from "@/features/library/composables/usePapers";
 import { useReadingClock } from "@/features/reader/composables/useReadingClock";
@@ -44,6 +44,8 @@ const isInspectorCollapsed = ref(
 const isMetadataDialogOpen = ref(false);
 const statusSaving = ref(false);
 const statusFeedback = ref("");
+const viewMode = ref<"text" | "pdf">("text");
+const outlineVisible = ref(true);
 
 const readerRef = ref<InstanceType<typeof PaperReader> | null>(null);
 let statusFeedbackTimer: number | null = null;
@@ -207,18 +209,22 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="paper-workspace" aria-label="论文阅读工作台">
-    <PaperWorkspaceBar
+    <PaperToolbar
       :paper="currentPaper"
       :is-loading="isLoading"
       :status-saving="statusSaving"
       :status-feedback="statusFeedback"
       :inspector-collapsed="isInspectorCollapsed"
       :shortcut-hint="inspectorShortcutHint"
+      :view-mode="viewMode"
+      :outline-visible="outlineVisible"
       @back="emit('back')"
       @toggle-inspector="toggleInspector"
       @edit-metadata="isMetadataDialogOpen = true"
       @refresh="refresh"
       @change-status="changeStatus"
+      @set-view-mode="viewMode = $event"
+      @toggle-outline="outlineVisible = !outlineVisible"
     />
 
     <PaperMetadataDialog
@@ -248,6 +254,11 @@ onBeforeUnmount(() => {
         :document-id="documentItem.id"
         :initial-progress="currentPaper.progress"
         :show-close="false"
+        :chrome="false"
+        :view-mode="viewMode"
+        :outline-visible="outlineVisible"
+        @update:view-mode="viewMode = $event"
+        @update:outline-visible="outlineVisible = $event"
         @note="quickNote"
         @ask="handleAsk"
         @progress="handleProgress"
