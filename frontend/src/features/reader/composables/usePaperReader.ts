@@ -3,6 +3,7 @@ import { getPaperContent } from "@/api";
 import type { PaperContent, SourceBlockBox } from "@/api";
 import type { ReaderOutlineItem } from "@/shared/types";
 import { toErrorMessage } from "@/shared/utils/error";
+import { buildReaderOutline } from "@/shared/utils/readerOutline";
 
 const HIGHLIGHT_DURATION_MS = 2400;
 
@@ -26,26 +27,10 @@ let highlightTimer: number | null = null;
 
 const hasContent = computed(() => Boolean(content.value?.blocks.length));
 
-/** 大纲：按 section_path 变化取每节第一个块作为锚点。 */
-const outline = computed<ReaderOutlineItem[]>(() => {
-  const items: ReaderOutlineItem[] = [];
-  let lastPath = "";
-  for (const block of content.value?.blocks ?? []) {
-    const path = block.section_path.join(" > ");
-    if (!path || path === lastPath) {
-      continue;
-    }
-    lastPath = path;
-    items.push({
-      key: `section-${path}`,
-      title: block.section_path[block.section_path.length - 1] ?? path,
-      level: Math.min(block.section_path.length + 1, 4),
-      blockId: block.id,
-      pageNumber: block.page_number,
-    });
-  }
-  return items;
-});
+/** 大纲：按 section_path 变化取每节锚点，老数据退回标题块文本。 */
+const outline = computed<ReaderOutlineItem[]>(() =>
+  buildReaderOutline(content.value?.blocks ?? []),
+);
 
 function clearHighlight(): void {
   if (highlightTimer !== null) {

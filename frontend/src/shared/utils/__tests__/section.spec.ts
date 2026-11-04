@@ -3,7 +3,14 @@ import { findBlockBySection, normalizeSection } from "@/shared/utils/section";
 import type { PaperBlock } from "@/api";
 
 function block(id: string, path: string[], page = 1): PaperBlock {
-  return { id, type: "paragraph", text: "", section_path: path, page_number: page };
+  return {
+    id,
+    type: "paragraph",
+    text: "",
+    section_path: path,
+    page_number: page,
+    has_image: false,
+  };
 }
 
 const BLOCKS: PaperBlock[] = [

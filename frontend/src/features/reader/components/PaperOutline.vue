@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import type { ReaderOutlineItem } from "@/shared/types";
 
-defineProps<{
-  items: ReaderOutlineItem[];
-  activeKey: string | null;
-}>();
+withDefaults(
+  defineProps<{
+    items: ReaderOutlineItem[];
+    activeKey: string | null;
+    emptyHint?: string;
+  }>(),
+  { emptyHint: "未识别出章节标题，目录暂不可用。" },
+);
 
 const emit = defineEmits<{
   select: [blockId: string];
@@ -14,7 +18,10 @@ const emit = defineEmits<{
 <template>
   <nav class="paper-outline" aria-label="论文目录">
     <p class="paper-outline__title">目录</p>
-    <ol class="paper-outline__list">
+    <p v-if="!items.length" class="paper-outline__empty">
+      {{ emptyHint }}
+    </p>
+    <ol v-else class="paper-outline__list">
       <li v-for="item in items" :key="item.key">
         <button
           type="button"
@@ -50,6 +57,14 @@ const emit = defineEmits<{
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.paper-outline__empty {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1.7;
 }
 
 .paper-outline__list {

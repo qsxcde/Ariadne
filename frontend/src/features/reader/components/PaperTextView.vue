@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import MarkdownContent from "@/shared/components/MarkdownContent.vue";
+import MathContent from "@/shared/components/MathContent.vue";
+import BlockCropImage from "@/features/reader/components/BlockCropImage.vue";
 import { usePaperReader } from "@/features/reader/composables/usePaperReader";
+import { stripMathDelimiters } from "@/shared/utils/markdown";
+import { buildReaderOutline } from "@/shared/utils/readerOutline";
 import { findBlockBySection } from "@/shared/utils/section";
 import type { PaperBlock, PaperContent } from "@/api";
 import type { SelectionAskMode } from "@/shared/types";
 
 const props = defineProps<{
   content: PaperContent | null;
+  sessionId: string;
   isLoading: boolean;
   errorMessage: string;
   activeBlockId: string | null;
@@ -28,28 +33,81 @@ const scrollRef = ref<HTMLElement | null>(null);
 const bodyRef = ref<HTMLElement | null>(null);
 const progressRatio = ref(props.initialProgress ?? 0);
 
+/** 公式块的 text 可能仍带 MinerU 的 `$$`/`\[ \]` 包裹，交给 KaTeX 前去掉。 */
+function formulaSource(text: string): string {
+  return stripMathDelimiters(text);
+}
+
+/** 用户切到原图的公式块；默认仍显示可复制、可检索的 LaTeX。 */
+const originalFormulaBlocks = ref<Set<string>>(new Set());
+const failedCropBlocks = ref<Set<string>>(new Set());
+
+function isImageBlock(block: PaperBlock): boolean {
+  return block.type === "figure" || (block.type === "figure_caption" && block.has_image === true);
+}
+
+function toggleFormulaSource(blockId: string): void {
+  const next = new Set(originalFormulaBlocks.value);
+  if (next.has(blockId)) {
+    next.delete(blockId);
+  } else {
+    next.add(blockId);
+  }
+  originalFormulaBlocks.value = next;
+}
+
+function handleCropError(blockId: string): void {
+  const failed = new Set(failedCropBlocks.value);
+  failed.add(blockId);
+  failedCropBlocks.value = failed;
+  if (originalFormulaBlocks.value.has(blockId)) {
+    toggleFormulaSource(blockId);
+  }
+}
+
+// Block ids repeat across documents; stale preferences would leak between papers.
+watch(
+  () => props.content?.document_id,
+  () => {
+    originalFormulaBlocks.value = new Set();
+    failedCropBlocks.value = new Set();
+  },
+);
+
 type ReaderNode =
   | { kind: "section"; key: string; title: string; level: number }
-  | { kind: "block"; key: string; block: PaperBlock };
+  | { kind: "block"; key: string; block: PaperBlock; anchorKey?: string };
 
-/** 章节标题由 section_path 变化推导，避免正文里重复输出标题。 */
+const HEADING_TYPES = new Set(["title", "heading"]);
+const documentId = computed(() => props.content?.document_id ?? "");
+
+/**
+ * 正文小节与目录共用同一批锚点（buildReaderOutline），保证高亮能对上 DOM。
+ *
+ * 标题块本身就是小节标题，不再额外插一行 <h2>，否则同一个标题会渲染两次。
+ */
 const nodes = computed<ReaderNode[]>(() => {
   const blocks = props.content?.blocks ?? [];
+  const sections = new Map(buildReaderOutline(blocks).map((item) => [item.blockId, item]));
   const result: ReaderNode[] = [];
-  let lastPath = "";
 
   blocks.forEach((block, index) => {
-    const path = block.section_path.join(" > ");
-    if (path && path !== lastPath) {
-      lastPath = path;
+    const section = sections.get(block.id);
+    const isHeading = HEADING_TYPES.has(block.type);
+    if (section && !isHeading) {
       result.push({
         kind: "section",
-        key: `section-${path}`,
-        title: block.section_path[block.section_path.length - 1] ?? path,
-        level: Math.min(block.section_path.length + 1, 4),
+        key: section.key,
+        title: section.title,
+        level: section.level,
       });
     }
-    result.push({ kind: "block", key: block.id || `block-${index}`, block });
+    result.push({
+      kind: "block",
+      key: block.id || `block-${index}`,
+      block,
+      anchorKey: section && isHeading ? section.key : undefined,
+    });
   });
 
   return result;
@@ -201,6 +259,7 @@ defineExpose({
         <div
           v-else
           :id="node.block.id ? `paper-block-${node.block.id}` : undefined"
+          :data-section-key="node.anchorKey"
           class="paper-reader__block"
           :class="{
             'is-active': activeBlockId === node.block.id,
@@ -219,15 +278,52 @@ defineExpose({
           >
             {{ node.block.type === "table" ? "解释表格" : "解释公式" }}
           </button>
-          <p v-if="node.block.type === 'title'" class="paper-reader__title">
+          <figure v-if="isImageBlock(node.block)" class="paper-reader__figure">
+            <BlockCropImage
+              v-if="node.block.bbox && !failedCropBlocks.has(node.block.id)"
+              :session-id="sessionId"
+              :document-id="documentId"
+              :block-id="node.block.id"
+              @error="handleCropError(node.block.id)"
+            />
+            <figcaption v-if="node.block.text" class="paper-reader__figure-caption">
+              {{ node.block.text }}
+            </figcaption>
+            <p v-else-if="failedCropBlocks.has(node.block.id)" class="paper-reader__media-fallback">
+              [Figure on page {{ node.block.page_number }}]
+            </p>
+          </figure>
+          <p v-else-if="node.block.type === 'title'" class="paper-reader__title">
             {{ node.block.text }}
           </p>
           <pre v-else-if="node.block.type === 'table'" class="paper-reader__pre">{{
             node.block.text
           }}</pre>
-          <p v-else-if="node.block.type === 'formula'" class="paper-reader__formula">
-            {{ node.block.text }}
-          </p>
+          <div v-else-if="node.block.type === 'formula'" class="paper-reader__formula">
+            <MathContent
+              v-if="node.block.text && !originalFormulaBlocks.has(node.block.id)"
+              :display="true"
+              :text="formulaSource(node.block.text)"
+            />
+            <BlockCropImage
+              v-else-if="node.block.bbox && !failedCropBlocks.has(node.block.id)"
+              :session-id="sessionId"
+              :document-id="documentId"
+              :block-id="node.block.id"
+              @error="handleCropError(node.block.id)"
+            />
+            <p v-else class="paper-reader__media-fallback">
+              [Formula on page {{ node.block.page_number }}]
+            </p>
+            <button
+              v-if="node.block.bbox && node.block.text"
+              type="button"
+              class="paper-reader__media-toggle"
+              @click.stop="toggleFormulaSource(node.block.id)"
+            >
+              {{ originalFormulaBlocks.has(node.block.id) ? "显示 LaTeX" : "查看原图" }}
+            </button>
+          </div>
           <MarkdownContent v-else :text="node.block.text" />
         </div>
       </template>
@@ -338,11 +434,55 @@ defineExpose({
 
 .paper-reader__formula {
   margin: 0;
+  padding: 4px 0;
+  overflow-x: auto;
   color: var(--color-text-body);
-  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.paper-reader__figure {
+  margin: 12px 0;
+}
+
+.paper-reader__figure :deep(.block-crop) {
+  margin: 0 auto;
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.paper-reader__figure-caption {
+  margin-top: 6px;
+  color: var(--color-text-soft);
+  font-family: var(--font-serif);
   font-size: 13px;
   line-height: 1.7;
-  word-break: break-word;
+  text-align: center;
+}
+
+.paper-reader__formula :deep(.block-crop) {
+  margin: 4px auto;
+  border: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.paper-reader__media-toggle {
+  display: block;
+  margin: 6px 0 0 auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+  padding: 2px 6px;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.paper-reader__media-fallback {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 .paper-reader__pre {
@@ -362,6 +502,9 @@ defineExpose({
   font-family: var(--font-serif);
   font-size: 16px;
   line-height: 1.9;
+  text-align: justify;
+  text-justify: inter-ideograph;
+  hyphens: auto;
 }
 
 .paper-reader__block :deep(.markdown-content p + p) {

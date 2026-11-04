@@ -102,6 +102,13 @@ watch([citationPage, citationBoxes], () => {
   viewMode.value = "pdf";
 });
 
+/** 纯文本回退解析常常识别不出章节，直接说明而不是让目录凭空消失。 */
+const emptyOutlineHint = computed(() =>
+  content.value?.parse_quality_status === "poor"
+    ? "该 PDF 仅解析出纯文本，未识别出章节标题，目录不可用。"
+    : "未识别出章节标题，目录暂不可用。",
+);
+
 function handleOutlineSelect(blockId: string): void {
   if (!blockId) {
     return;
@@ -208,9 +215,10 @@ onBeforeUnmount(() => {
       </div>
 
       <PaperOutline
-        v-if="viewMode === 'text' && outlineVisible && outline.length"
+        v-if="viewMode === 'text' && outlineVisible && content && !isLoading"
         :items="outline"
         :active-key="activeSectionKey"
+        :empty-hint="emptyOutlineHint"
         @select="handleOutlineSelect"
       />
 
@@ -227,6 +235,7 @@ onBeforeUnmount(() => {
         v-else
         ref="textViewRef"
         :content="content"
+        :session-id="props.sessionId"
         :is-loading="isLoading"
         :error-message="errorMessage"
         :active-block-id="activeBlockId"
