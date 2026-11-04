@@ -2,8 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import CommandPalette from "../components/CommandPalette.vue";
-import TopBar from "../components/TopBar.vue";
-import WorkbenchRail from "../components/WorkbenchRail.vue";
+import TopBar from "./TopBar.vue";
+import WorkbenchRail from "./WorkbenchRail.vue";
 import PaperLibrary from "../features/library/components/PaperLibrary.vue";
 import PaperWorkspace from "../features/reader/components/PaperWorkspace.vue";
 import SettingsView from "../views/SettingsView.vue";

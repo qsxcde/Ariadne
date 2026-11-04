@@ -2,7 +2,7 @@ export * from "./client";
 export * from "./auth";
 export * from "./sessions";
 export * from "./sources";
-export * from "./paper";
+export * from "./paper-content";
 export * from "./papers";
 export * from "./annotations";
 export * from "./collections";
