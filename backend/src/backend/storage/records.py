@@ -41,6 +41,43 @@ class MessageRecord(TypedDict):
     prompt_tokens: int | None
     completion_tokens: int | None
     created_at: str
+    run_id: str | None
+
+
+class AgentRunRecord(TypedDict):
+    id: str
+    session_id: str
+    user_id: str | None
+    client_message_id: str | None
+    status: str
+    model: str | None
+    max_steps: int
+    step_count: int
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    error_message: str | None
+    created_at: str
+    finished_at: str | None
+
+
+class AgentStepRecord(TypedDict):
+    id: str
+    run_id: str
+    step_index: int
+    kind: str
+    tool_name: str | None
+    arguments: dict | None
+    result: dict | None
+    sources: list[dict]
+    summary: str | None
+    status: str
+    error_message: str | None
+    latency_ms: int | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    created_at: str
+
+
 class JobRecord(TypedDict):
     id: str
     paper_id: str | None

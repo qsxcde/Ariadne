@@ -18,5 +18,5 @@ def test_v18_migration_adds_snapshot_embedding_columns():
         columns = {
             row[1] for row in conn.execute("PRAGMA table_info(index_snapshots)")
         }
-    assert version == CURRENT_SCHEMA_VERSION == 18
+    assert version == CURRENT_SCHEMA_VERSION
     assert {"embedding_fingerprint", "embedding_model"} <= columns

@@ -42,6 +42,25 @@ class JobStatus(StrEnum):
     interrupted = "interrupted"
 
 
+class AgentRunStatus(StrEnum):
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+    stopped = "stopped"
+
+
+class AgentStepKind(StrEnum):
+    decision = "decision"
+    tool = "tool"
+
+
+class AgentStepStatus(StrEnum):
+    running = "running"
+    ok = "ok"
+    error = "error"
+    interrupted = "interrupted"
+
+
 TERMINAL_JOB_STATUSES: Final[frozenset[JobStatus]] = frozenset(
     {
         JobStatus.succeeded,

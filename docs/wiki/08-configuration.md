@@ -189,6 +189,18 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 | `MSG_NO_VALID_CITATIONS` | `模型生成的回答中未引用有效论文来源，请核实。` | 引用校验 warning |
 | `MSG_DEFAULT_SESSION_TITLE` | `新论文会话` | 默认标题，同时是"是否自动改名"的哨兵值 |
 
+### 2.14 Agent（P0）
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `AGENT_ENABLED` | `True` | Agent 模式总开关；关闭后前端只保留快速问答 |
+| `AGENT_MAX_STEPS` | `6` | 单个 run 的最大图步数，同时决定 recursion limit |
+| `AGENT_MAX_TOOL_CALLS` | `6` | 单个 run 允许的工具调用次数预算 |
+| `AGENT_TIMEOUT_SECONDS` | `120` | 单次模型调用与 run 预算的超时时间（秒） |
+| `AGENT_TOOL_PREVIEW_CHARS` | `300` | 工具结果返回给模型的单片段预览字符数 |
+| `AGENT_MAX_EVIDENCE_CHARS` | `12000` | 工具结果与最终回答可使用的证据总字符上限 |
+| `AGENT_MAX_HISTORY_TURNS` | `6` | Agent 带入的历史轮数，超出部分丢弃 |
+
 ## 3. 路径解析
 
 ```
@@ -202,6 +214,7 @@ mineru_modelscope_cache_dir()= model_dir()/mineru/modelscope
 embedding_model_dir()        = model_dir()/embeddings/<EMBEDDING_MODEL 末段名>
 
 DB: ARIADNE_DB_PATH → data_dir()/ariadne.db → backend/src/backend/storage/sqlite/ariadne.db
+Agent checkpoints: data_dir()/agent/checkpoints.sqlite（独立于应用库）
 ```
 
 三者都会 `mkdir(parents=True, exist_ok=True)`，目录不存在会自动创建。

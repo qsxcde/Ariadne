@@ -18,6 +18,6 @@ def test_v17_migration_creates_user_model_settings():
         columns = {
             row[1] for row in conn.execute("PRAGMA table_info(user_model_settings)")
         }
-    assert version == CURRENT_SCHEMA_VERSION == 18
+    assert version == CURRENT_SCHEMA_VERSION
     assert {"user_id", "llm_provider", "llm_model", "llm_api_key", "embedding_model",
             "rerank_model"} <= columns

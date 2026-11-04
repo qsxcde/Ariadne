@@ -33,3 +33,10 @@ def session_indexes_dir(session_id: str) -> Path:
     path = data_dir() / "index" / session_id
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def agent_checkpoint_path() -> Path:
+    """LangGraph checkpoints live beside, not inside, the application DB."""
+    path = data_dir() / "agent"
+    path.mkdir(parents=True, exist_ok=True)
+    return path / "checkpoints.sqlite"

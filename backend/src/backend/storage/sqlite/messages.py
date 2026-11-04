@@ -34,6 +34,7 @@ def create_message(
     model: str | None = None,
     prompt_tokens: int | None = None,
     completion_tokens: int | None = None,
+    run_id: str | None = None,
 ) -> MessageRecord:
 
     if client_message_id is not None:
@@ -49,13 +50,14 @@ def create_message(
             """
             INSERT INTO messages (
               id, session_id, role, content, sources_json, status, client_message_id,
-              model, prompt_tokens, completion_tokens, created_at
+              model, prompt_tokens, completion_tokens, created_at, run_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 message_id, session_id, role, content, sources_json, status,
                 client_message_id, model, prompt_tokens, completion_tokens, timestamp,
+                run_id,
             ),
         )
     message = get_message(message_id)

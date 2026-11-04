@@ -3,7 +3,7 @@ import threading
 from backend.storage.sqlite.migrations import migrate_schema
 from backend.storage.sqlite.uow import unit_of_work
 
-CURRENT_SCHEMA_VERSION = 18
+CURRENT_SCHEMA_VERSION = 19
 
 _init_lock = threading.RLock()
 
@@ -174,6 +174,41 @@ def _create_initial_schema(conn) -> None:
           model TEXT NULL,
           prompt_tokens INTEGER NULL,
           completion_tokens INTEGER NULL,
+          created_at TEXT NOT NULL,
+          run_id TEXT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS agent_runs (
+          id TEXT PRIMARY KEY,
+          session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+          user_id TEXT NULL,
+          client_message_id TEXT NULL,
+          status TEXT NOT NULL,
+          model TEXT NULL,
+          max_steps INTEGER NOT NULL DEFAULT 6,
+          step_count INTEGER NOT NULL DEFAULT 0,
+          prompt_tokens INTEGER NULL,
+          completion_tokens INTEGER NULL,
+          error_message TEXT NULL,
+          created_at TEXT NOT NULL,
+          finished_at TEXT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS agent_steps (
+          id TEXT PRIMARY KEY,
+          run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+          step_index INTEGER NOT NULL,
+          kind TEXT NOT NULL,
+          tool_name TEXT NULL,
+          arguments_json TEXT NULL,
+          result_json TEXT NULL,
+          sources_json TEXT NULL,
+          summary TEXT NULL,
+          status TEXT NOT NULL,
+          error_message TEXT NULL,
+          latency_ms INTEGER NULL,
+          prompt_tokens INTEGER NULL,
+          completion_tokens INTEGER NULL,
           created_at TEXT NOT NULL
         );
 
@@ -314,6 +349,18 @@ def _create_initial_schema(conn) -> None:
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_chunks_unique_document_chunk ON chunks(document_id, chunk_index)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_chunks_paper_id ON chunks(paper_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_messages_session_id ON messages(session_id)")
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_steps_run_step "
+        "ON agent_steps(run_id, step_index)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_agent_runs_session "
+        "ON agent_runs(session_id, created_at DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_agent_runs_client_message "
+        "ON agent_runs(client_message_id) WHERE client_message_id IS NOT NULL"
+    )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_session_status ON jobs(session_id, status)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_paper_id ON jobs(paper_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_index_snapshots_session_status ON index_snapshots(session_id, status)")

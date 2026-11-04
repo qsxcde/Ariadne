@@ -60,6 +60,8 @@ def migrate_schema(conn, from_version: int) -> None:
         _migrate_add_user_model_settings(conn)
     if from_version < 18:
         _migrate_add_snapshot_embedding(conn)
+    if from_version < 19:
+        _migrate_add_agent_tables(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -619,5 +621,57 @@ def _migrate_add_snapshot_embedding(conn) -> None:
         conn.execute(
             "ALTER TABLE index_snapshots ADD COLUMN embedding_model TEXT NULL"
         )
+
+
+def _migrate_add_agent_tables(conn) -> None:
+    """Persist agent runs, steps and the message-to-run link (v19)."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(messages)")}
+    if "run_id" not in columns:
+        conn.execute("ALTER TABLE messages ADD COLUMN run_id TEXT NULL")
+
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS agent_runs (
+          id TEXT PRIMARY KEY,
+          session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+          user_id TEXT NULL,
+          client_message_id TEXT NULL,
+          status TEXT NOT NULL,
+          model TEXT NULL,
+          max_steps INTEGER NOT NULL DEFAULT 6,
+          step_count INTEGER NOT NULL DEFAULT 0,
+          prompt_tokens INTEGER NULL,
+          completion_tokens INTEGER NULL,
+          error_message TEXT NULL,
+          created_at TEXT NOT NULL,
+          finished_at TEXT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS agent_steps (
+          id TEXT PRIMARY KEY,
+          run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+          step_index INTEGER NOT NULL,
+          kind TEXT NOT NULL,
+          tool_name TEXT NULL,
+          arguments_json TEXT NULL,
+          result_json TEXT NULL,
+          sources_json TEXT NULL,
+          summary TEXT NULL,
+          status TEXT NOT NULL,
+          error_message TEXT NULL,
+          latency_ms INTEGER NULL,
+          prompt_tokens INTEGER NULL,
+          completion_tokens INTEGER NULL,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_agent_steps_run_step
+          ON agent_steps(run_id, step_index);
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_session
+          ON agent_runs(session_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_agent_runs_client_message
+          ON agent_runs(client_message_id) WHERE client_message_id IS NOT NULL;
+        """
+    )
 
 

@@ -41,6 +41,14 @@ class RuntimeSettings(BaseSettings):
     # 推理模型会先消耗 completion 预算做 reasoning；512 常导致正文为空。
     llm_max_tokens: int = 3072
     llm_context_chars: int = 24000
+    # Agent (P0): single-session, read-only tools.
+    agent_enabled: bool = True
+    agent_max_steps: int = 6
+    agent_max_tool_calls: int = 6
+    agent_timeout_seconds: float = 120.0
+    agent_tool_preview_chars: int = 300
+    agent_max_evidence_chars: int = 12000
+    agent_max_history_turns: int = 6
     # At-rest encryption for user-supplied model API keys. Falls back to
     # JWT_SECRET_KEY when unset; production should set a dedicated value.
     model_settings_encryption_key: str | None = None
