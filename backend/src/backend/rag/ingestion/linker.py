@@ -5,7 +5,7 @@ def attach_caption_links(page_blocks: list[BlockIR]) -> None:
     tables = [block for block in page_blocks if block.type == "table"]
     figures = [
         block for block in page_blocks
-        if block.type == "figure_caption" or str(block.type).strip().lower() in {"figure", "image"}
+        if block.type == "figure" or (block.type == "figure_caption" and block.has_image)
     ]
     for block in page_blocks:
         if block.type == "table_caption":
@@ -13,7 +13,8 @@ def attach_caption_links(page_blocks: list[BlockIR]) -> None:
             if linked is not None:
                 block.links.append(BlockLink(target_block_id=linked.id, relation="caption_for"))
         elif block.type == "figure_caption":
-            linked = _nearest(block, figures)
+            candidates = [figure for figure in figures if figure.id != block.id]
+            linked = _nearest(block, candidates)
             if linked is not None:
                 block.links.append(BlockLink(target_block_id=linked.id, relation="caption_for"))
 

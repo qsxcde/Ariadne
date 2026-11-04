@@ -23,11 +23,11 @@ def sorted_blocks_for_reading_order(
     page_width: float,
     bbox_model,
 ) -> list[dict]:
-    # Keep formula blocks even when they have no text
+    # Keep visual/formula blocks even when they have no text
     filtered = [
         block for block in blocks
         if str(block.get("text", "")).strip()
-        or str(block.get("type", "")).strip().lower() in {"formula"}
+        or str(block.get("type", "")).strip().lower() in {"formula", "figure"}
     ]
     if looks_like_two_column_layout(filtered, page_width, bbox_model):
         gap = _column_gap(filtered, page_width, bbox_model)

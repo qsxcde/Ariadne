@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
+from tenacity import RetryCallState, Retrying, retry_if_exception_type, stop_after_attempt
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,14 @@ class MinerUPermanentError(MinerUError):
 
 class MinerUBatchNotFoundError(MinerUPermanentError):
     pass
+
+
+class _TransportFailure(Exception):
+    """Internal marker so tenacity can retry raw httpx transport failures."""
+
+    def __init__(self, cause: Exception) -> None:
+        super().__init__(str(cause))
+        self.cause = cause
 
 
 @dataclass(frozen=True)
@@ -228,43 +237,9 @@ class MinerUClient:
         retries: int | None = None,
         **kwargs: Any,
     ) -> httpx.Response:
-        attempts = self.config.max_retries if retries is None else max(0, retries)
-        last_error: Exception | None = None
-        for attempt in range(attempts + 1):
-            try:
-                response = self._api.request(method, url, **kwargs)
-            except (httpx.TimeoutException, httpx.TransportError) as exc:
-                last_error = exc
-                if attempt >= attempts:
-                    break
-                self._sleep_before_retry(exc, attempt, method, url)
-                continue
-
-            if response.status_code in _RETRYABLE_STATUS:
-                error = MinerURetryableError(
-                    f"MinerU HTTP {response.status_code} for {method} {url}: "
-                    f"{response.text[:200]}",
-                    retry_after=_retry_after_seconds(response),
-                )
-                last_error = error
-                if attempt >= attempts:
-                    break
-                self._sleep_before_retry(error, attempt, method, url)
-                continue
-            if response.status_code in {401, 403}:
-                raise MinerUPermanentError(
-                    f"MinerU authentication failed (HTTP {response.status_code})"
-                )
-            if response.is_success:
-                return response
-            raise MinerUPermanentError(
-                f"MinerU HTTP {response.status_code} for {method} {url}: "
-                f"{response.text[:200]}"
-            )
-
-        raise MinerUError(
-            f"MinerU request failed after {attempts + 1} attempt(s): {method} {url}"
-        ) from last_error
+        return self._request(
+            self._api, method, url, retries=retries, authenticated=True, **kwargs
+        )
 
     def _plain_request(
         self,
@@ -274,64 +249,89 @@ class MinerUClient:
         retries: int | None = None,
         **kwargs: Any,
     ) -> httpx.Response:
+        return self._request(
+            self._plain, method, url, retries=retries, authenticated=False, **kwargs
+        )
+
+    def _request(
+        self,
+        client: httpx.Client,
+        method: str,
+        url: str,
+        *,
+        retries: int | None = None,
+        authenticated: bool,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """One retry loop; the two transports differ only in client and prefix."""
         attempts = self.config.max_retries if retries is None else max(0, retries)
-        last_error: Exception | None = None
-        for attempt in range(attempts + 1):
+        prefix = "MinerU" if authenticated else "MinerU signed URL"
+
+        def send() -> httpx.Response:
             try:
-                response = self._plain.request(method, url, **kwargs)
+                response = client.request(method, url, **kwargs)
             except (httpx.TimeoutException, httpx.TransportError) as exc:
-                last_error = exc
-                if attempt >= attempts:
-                    break
-                self._sleep_before_retry(exc, attempt, method, url)
-                continue
+                raise _TransportFailure(exc) from exc
 
             if response.status_code in _RETRYABLE_STATUS:
-                error = MinerURetryableError(
-                    f"MinerU signed URL HTTP {response.status_code}: {response.text[:200]}",
+                raise MinerURetryableError(
+                    f"{prefix} HTTP {response.status_code} for {method} {url}: "
+                    f"{response.text[:200]}",
                     retry_after=_retry_after_seconds(response),
                 )
-                last_error = error
-                if attempt >= attempts:
-                    break
-                self._sleep_before_retry(error, attempt, method, url)
-                continue
+            if authenticated and response.status_code in {401, 403}:
+                raise MinerUPermanentError(
+                    f"MinerU authentication failed (HTTP {response.status_code})"
+                )
             if response.is_success:
                 return response
             raise MinerUPermanentError(
-                f"MinerU signed URL HTTP {response.status_code}: {response.text[:200]}"
+                f"{prefix} HTTP {response.status_code} for {method} {url}: "
+                f"{response.text[:200]}"
             )
 
-        raise MinerUError(
-            f"MinerU signed URL request failed after {attempts + 1} attempt(s): "
-            f"{method} {url}"
-        ) from last_error
+        retrying = Retrying(
+            stop=stop_after_attempt(attempts + 1),
+            retry=retry_if_exception_type((_TransportFailure, MinerURetryableError)),
+            wait=self._retry_delay,
+            before_sleep=lambda state: self._log_retry(state, method, url),
+            reraise=True,
+        )
+        try:
+            return retrying(send)
+        except _TransportFailure as exc:
+            raise MinerUError(
+                f"{prefix} request failed after {attempts + 1} attempt(s): {method} {url}"
+            ) from exc.cause
+        except MinerURetryableError as exc:
+            raise MinerUError(
+                f"{prefix} request failed after {attempts + 1} attempt(s): {method} {url}"
+            ) from exc
 
-    def _sleep_before_retry(
-        self,
-        error: Exception,
-        attempt: int,
-        method: str,
-        url: str,
-    ) -> None:
+    def _retry_delay(self, retry_state: RetryCallState) -> float:
+        """Honour ``Retry-After`` when present, else exponential backoff plus jitter."""
+        error = retry_state.outcome.exception() if retry_state.outcome else None
         retry_after = float(getattr(error, "retry_after", 0.0) or 0.0)
         if retry_after > 0:
-            delay = min(retry_after, self.config.retry_max_delay)
-        else:
-            delay = min(
-                self.config.retry_base_delay * (2**attempt),
-                self.config.retry_max_delay,
-            )
-            delay += random.uniform(0.0, 0.25)
+            return min(retry_after, self.config.retry_max_delay)
+        exponent = max(0, retry_state.attempt_number - 1)
+        delay = min(
+            self.config.retry_base_delay * (2**exponent),
+            self.config.retry_max_delay,
+        )
+        return delay + random.uniform(0.0, 0.25)
+
+    def _log_retry(self, retry_state: RetryCallState, method: str, url: str) -> None:
+        error = retry_state.outcome.exception() if retry_state.outcome else None
+        action = retry_state.next_action
         logger.warning(
             "MinerU %s %s failed (attempt %d), retrying in %.2fs: %s",
             method,
             url,
-            attempt + 1,
-            delay,
+            retry_state.attempt_number,
+            action.sleep if action else 0.0,
             error,
         )
-        time.sleep(delay)
 
 
 def _decode_json(response: httpx.Response) -> dict[str, Any]:

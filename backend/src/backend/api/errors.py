@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from backend.domain.exceptions import (
     AnnotationNotFoundError,
+    BlockCropError,
     ChunkNotFoundError,
     CollectionNotFoundError,
     DocumentNotFoundError,
@@ -87,6 +88,13 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": str(exc) or "Document not found"},
+        )
+
+    @app.exception_handler(BlockCropError)
+    async def _block_crop_failed(_request: Request, exc: BlockCropError) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc) or "Block crop is not available"},
         )
 
     @app.exception_handler(JobInProgressError)

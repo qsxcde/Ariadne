@@ -10,6 +10,7 @@ from backend.rag.ingestion.document_ir import QualityReport
 from backend.rag.ingestion.exporters import export_markdown
 from backend.domain.models import Chunk, ChunkMetadata
 from backend.rag.ingestion.normalizer import normalize_parser_output
+from backend.rag.ingestion.typography import apply_pdf_typography
 from backend.domain.parsing import ParserBackend
 from backend.domain.parsing import RawParserResult
 
@@ -81,8 +82,8 @@ def _process_parsed_result(
         document_ir=document_ir,
         markdown=normalized_markdown,
         paper_id=paper_id,
-        chunk_size=settings.max_chunk_tokens,
-        chunk_overlap=settings.chunk_overlap_tokens,
+        max_tokens=settings.max_chunk_tokens,
+        overlap_tokens=settings.chunk_overlap_tokens,
     )
     if not chunks and raw.markdown.strip():
         normalized_markdown = raw.markdown.strip() + "\n"
@@ -90,8 +91,8 @@ def _process_parsed_result(
             document_ir=document_ir,
             markdown=normalized_markdown,
             paper_id=paper_id,
-            chunk_size=settings.max_chunk_tokens,
-            chunk_overlap=settings.chunk_overlap_tokens,
+            max_tokens=settings.max_chunk_tokens,
+            overlap_tokens=settings.chunk_overlap_tokens,
         )
     if not chunks:
         headings = [b.text.strip() for b in document_ir.blocks if b.type in {"heading", "title"}]
@@ -139,4 +140,5 @@ def process_pdf_document(
         raise ValueError("parser_chain or parser_backend is required")
 
     raw, backend = _try_parsers(backends, pdf_bytes, filename)
+    raw = apply_pdf_typography(raw, pdf_bytes)
     return _process_parsed_result(raw, backend, paper_id, filename)

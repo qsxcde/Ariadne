@@ -1,14 +1,18 @@
 import json
 import logging
+import re
 import shutil
 import uuid
 from contextlib import suppress
 from pathlib import Path
 
+from backend.adapters.pdf.cropper import CropRenderError, render_block_crop
 from backend.application.ingestion import index_maintenance
 from backend.config import data_dir, settings
+from backend.rag.ingestion.text_sanitizer import wrap_bare_latex
 from backend.storage.records import DocumentRecord
 from backend.domain.exceptions import (
+    BlockCropError,
     ChunkNotFoundError,
     JobInProgressError,
     DocumentNotFoundError,
@@ -17,6 +21,7 @@ from backend.domain.exceptions import (
     UploadTooLargeError,
 )
 from backend.domain.states import DocumentStage
+from backend.domain.ports import EmbeddingRuntime
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import jobs as job_repo
@@ -24,6 +29,10 @@ from backend.storage.sqlite import sessions as session_repo
 from backend.storage.paths import session_document_file_path
 
 logger = logging.getLogger(__name__)
+
+_BLOCK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_CROP_SCALE_MIN = 1
+_CROP_SCALE_MAX = 3
 
 
 def _validate_upload(file_size: int | None, pdf_bytes: bytes) -> None:
@@ -140,6 +149,102 @@ def get_document_file(session_id: str, document_id: str) -> Path:
     return path
 
 
+def get_block_crop(
+    session_id: str,
+    document_id: str,
+    block_id: str,
+    scale: int = 2,
+) -> bytes:
+    """Render one reader block from the stored PDF, cached beside the IR."""
+    if not _BLOCK_ID_PATTERN.fullmatch(block_id):
+        raise BlockCropError(
+            "Invalid block id",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+
+    document = _get_owned_document(session_id, document_id)
+    ir_path = document.get("parsed_ir_path")
+    if not ir_path:
+        raise BlockCropError(
+            "Parsed content is not available",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+    payload = _load_ir_payload(ir_path)
+    if payload is None:
+        raise BlockCropError(
+            "Parsed content is not available",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+
+    block = next(
+        (item for item in _iter_ir_blocks(payload) if item.get("id") == block_id),
+        None,
+    )
+    if block is None:
+        raise BlockCropError(
+            f"Block not found: {block_id}",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+
+    page_number = int(block.get("page_number") or 0)
+    pages = {page.get("page_number"): page for page in payload.get("pages") or []}
+    bbox = _normalize_bbox(
+        block.get("bbox"),
+        pages.get(page_number),
+        str(payload.get("bbox_unit") or "points"),
+    )
+    if bbox is None:
+        raise BlockCropError(
+            "Block has no usable bounding box",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+
+    artifact_dir = Path(ir_path).resolve().parent
+    root = data_dir().resolve()
+    if not artifact_dir.is_relative_to(root):
+        raise BlockCropError(
+            "Parsed artifacts are outside the data directory",
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        )
+
+    scale = max(_CROP_SCALE_MIN, min(_CROP_SCALE_MAX, int(scale)))
+    cache_path = artifact_dir / "crops" / f"{block_id}-{scale}x.png"
+    if cache_path.is_file():
+        return cache_path.read_bytes()
+
+    pdf_path = get_document_file(session_id, document_id)
+    try:
+        image = render_block_crop(
+            pdf_path,
+            page_number,
+            bbox,
+            scale=float(scale),
+        )
+    except CropRenderError as exc:
+        raise BlockCropError(
+            str(exc),
+            session_id=session_id,
+            document_id=document_id,
+            block_id=block_id,
+        ) from exc
+
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_bytes(image)
+    return image
+
+
 def _get_owned_document(
     session_id: str, document_id: str
 ) -> DocumentRecord:
@@ -233,7 +338,12 @@ def _load_ir_payload(ir_path: str) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
-def delete_document(session_id: str, document_id: str) -> None:
+def delete_document(
+    session_id: str,
+    document_id: str,
+    *,
+    embedding: EmbeddingRuntime | None = None,
+) -> None:
     """硬删除文档：数据库行 → 分块 → 磁盘产物 → 重建会话索引。
 
     索引重建失败时把当前快照置为 failed，宁可让用户重新索引，也不能让检索
@@ -254,7 +364,12 @@ def delete_document(session_id: str, document_id: str) -> None:
     _remove_document_files(document)
 
     try:
-        index_maintenance.refresh_after_document_change(session_id)
+        if embedding is None:
+            index_maintenance.refresh_after_document_change(session_id)
+        else:
+            index_maintenance.refresh_after_document_change(
+                session_id, embedding=embedding
+            )
     except Exception:
         logger.exception("Index rebuild failed after deleting document=%s", document_id)
         index_maintenance.invalidate_session_index(session_id, "索引重建失败")
@@ -356,19 +471,30 @@ def _load_ir_blocks(ir_path: str | None) -> list[dict]:
             block.get("block_index") or 0,
         ),
     )
+    pages = {page.get("page_number"): page for page in payload.get("pages") or []}
+    bbox_unit = str(payload.get("bbox_unit") or "points")
 
     blocks: list[dict] = []
     for block in ordered:
         text = (block.get("text") or "").strip()
-        if not text or block.get("type") == "header_footer":
+        block_type = block.get("type") or "unknown"
+        if block_type == "header_footer":
             continue
+        if not text and block_type not in {"formula", "figure"}:
+            continue
+        if block_type != "formula":
+            # 旧解析产物里的行内公式可能没有 $ 分隔符，读取时补上
+            text = wrap_bare_latex(text)
+        page_number = block.get("page_number") or 0
         blocks.append(
             {
                 "id": block.get("id") or "",
-                "type": block.get("type") or "unknown",
+                "type": block_type,
                 "text": text,
                 "section_path": block.get("section_path") or [],
-                "page_number": block.get("page_number") or 0,
+                "page_number": page_number,
+                "bbox": _normalize_bbox(block.get("bbox"), pages.get(page_number), bbox_unit),
+                "has_image": bool(block.get("has_image")),
             }
         )
     return blocks

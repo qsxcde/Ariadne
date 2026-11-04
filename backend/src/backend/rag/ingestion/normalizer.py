@@ -9,9 +9,14 @@ from backend.rag.ingestion.linker import attach_caption_links
 from backend.domain.parsing import ParserBackend, RawParserResult
 from backend.rag.ingestion.quality_reporter import build_quality_report, find_repeated_header_footer_texts
 from backend.rag.ingestion.reading_order import bbox_tuple, sorted_blocks_for_reading_order
+from backend.rag.ingestion.text_sanitizer import sanitize_extracted_text, wrap_bare_latex
 
 logger = logging.getLogger(__name__)
-from backend.rag.ingestion.section_builder import next_section_path, outline_from_blocks
+from backend.rag.ingestion.section_builder import (
+    HEADING_BLOCK_TYPES,
+    next_section_path,
+    outline_from_blocks,
+)
 
 
 def normalize_parser_output(
@@ -41,8 +46,8 @@ def normalize_parser_output(
             block_data["_original_index"] = index
         sorted_blocks = sorted_blocks_for_reading_order(raw_blocks, page_width, _bbox_model)
         for block_data in sorted_blocks:
-            text = str(block_data.get("text", "")).strip()
-            if not text and str(block_data.get("type", "")).strip().lower() not in {"formula"}:
+            text = sanitize_extracted_text(str(block_data.get("text", "")).strip())
+            if not text and str(block_data.get("type", "")).strip().lower() not in {"formula", "figure"}:
                 continue
             bbox = _bbox_model(block_data.get("bbox"))
             if not text and bbox.x0 == 0.0 and bbox.x1 == 0.0 and bbox.y0 == 0.0 and bbox.y1 == 0.0:
@@ -63,8 +68,15 @@ def normalize_parser_output(
                 continue
             if _is_visual_only_block(block_data, block_type):
                 continue
-            if block_type == "heading":
-                current_section = next_section_path(current_section, text)
+            if block_type != "formula":
+                # 行内公式丢了 $ 分隔符时补回来，否则前端只能显示反斜杠
+                text = wrap_bare_latex(text)
+            heading_level: int | None = None
+            if block_type in HEADING_BLOCK_TYPES:
+                heading_level = _resolve_heading_level(block_data)
+                current_section = next_section_path(
+                    current_section, text, level=heading_level
+                )
                 cleaned_text = clean_heading(text)
                 heading_lower = cleaned_text.lower()
                 if heading_lower == "references":
@@ -88,7 +100,9 @@ def normalize_parser_output(
                 bbox=bbox,
                 reading_order=reading_order,
                 section_path=current_section.copy() if block_type != "header_footer" else [],
+                heading_level=heading_level,
                 confidence=_resolve_confidence(block_data, block_type, cleaned_text),
+                has_image=bool(block_data.get("has_image")),
                 links=_resolve_links(block_data),
             )
             reading_order += 1
@@ -190,6 +204,7 @@ def _resolve_block_type(
         "heading",
         "paragraph",
         "table",
+        "figure",
         "figure_caption",
         "table_caption",
         "formula",
@@ -206,6 +221,21 @@ def _resolve_block_type(
         repeated_header_footer_texts=repeated_header_footer_texts,
         in_references=in_references,
     )
+
+
+def _resolve_heading_level(block_data: dict) -> int | None:
+    """Read the parser-reported heading depth; ``None`` falls back to numbering."""
+    for key in ("heading_level", "level", "text_level"):
+        raw = block_data.get(key)
+        if raw is None:
+            continue
+        try:
+            level = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if level >= 1:
+            return level
+    return None
 
 
 def _resolve_confidence(block_data: dict, block_type: BlockType, text: str) -> float:
@@ -233,7 +263,11 @@ def _resolve_links(block_data: dict) -> list[BlockLink]:
 
 def _is_visual_only_block(block_data: dict, block_type: str) -> bool:
     raw_type = str(block_data.get("type", "")).strip().lower()
-    return raw_type in {"image", "figure", "picture"} and block_type not in {"figure_caption", "table_caption"}
+    return raw_type in {"image", "figure", "picture"} and block_type not in {
+        "figure",
+        "figure_caption",
+        "table_caption",
+    }
 
 
 def _is_post_reference_heading(heading_lower: str) -> bool:

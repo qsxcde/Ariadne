@@ -12,6 +12,7 @@ from backend.adapters.parsers.mineru_client import (
     MinerUBatchFile,
     MinerUClient,
     MinerUClientConfig,
+    MinerUError,
     MinerUPermanentError,
 )
 from backend.rag.ingestion.normalizer import normalize_parser_output
@@ -289,6 +290,7 @@ def test_v1_table_body_and_figure_caption_are_kept():
         "type": "figure_caption",
         "text": "Figure 1",
         "bbox": [0, 200, 1000, 400],
+        "has_image": True,
     }
 
 
@@ -327,6 +329,115 @@ def test_normalizer_canonicalizes_cloud_bbox_to_zero_one():
     }
 
 
+class _VersionedFakeClient:
+    """Records requested ``model_version`` values and can fail specific ones."""
+
+    def __init__(self, failing: set[str] | None = None) -> None:
+        self.versions: list[str] = []
+        self._failing = failing or set()
+
+    def submit(self, files, *, model_version=None, **_kwargs):
+        self.versions.append(model_version or "default")
+        if model_version in self._failing:
+            raise MinerUError(f"model_version={model_version} unavailable")
+        return "batch-1", ["https://upload.test/file-1"]
+
+    def upload(self, url, content):
+        return None
+
+    def wait(self, batch_id, timeout=None):
+        return [
+            {
+                "state": "done",
+                "data_id": "document-1",
+                "full_zip_url": "https://cdn.test/result.zip",
+            }
+        ]
+
+    def download(self, url):
+        return _result_zip()
+
+
+@pytest.mark.unit
+def test_falls_back_to_secondary_model_version():
+    fake = _VersionedFakeClient(failing={"vlm"})
+    backend = MinerUApiBackend(
+        client=fake,
+        document_id="document-1",
+        model_version="vlm",
+        fallback_model_version="pipeline",
+    )
+
+    result = backend.parse(b"%PDF-1.7", "paper.pdf")
+
+    assert fake.versions == ["vlm", "pipeline"]
+    assert result.page_count == 1
+
+
+@pytest.mark.unit
+def test_failed_task_falls_back_to_secondary_model_version():
+    class FailedThenDoneClient(_VersionedFakeClient):
+        def wait(self, batch_id, timeout=None):
+            if self.versions[-1] == "vlm":
+                return [
+                    {
+                        "state": "failed",
+                        "data_id": "document-1",
+                        "err_msg": "vlm backend unavailable",
+                    }
+                ]
+            return super().wait(batch_id, timeout)
+
+    fake = FailedThenDoneClient()
+    backend = MinerUApiBackend(
+        client=fake,
+        document_id="document-1",
+        model_version="vlm",
+        fallback_model_version="pipeline",
+    )
+
+    backend.parse(b"%PDF-1.7", "paper.pdf")
+
+    assert fake.versions == ["vlm", "pipeline"]
+
+
+@pytest.mark.unit
+def test_fallback_can_be_disabled():
+    fake = _VersionedFakeClient(failing={"vlm"})
+    backend = MinerUApiBackend(
+        client=fake,
+        document_id="document-1",
+        model_version="vlm",
+        fallback_model_version="",
+    )
+
+    with pytest.raises(MinerUError):
+        backend.parse(b"%PDF-1.7", "paper.pdf")
+
+    assert fake.versions == ["vlm"]
+
+
+@pytest.mark.unit
+def test_authentication_failure_does_not_switch_models():
+    class AuthFailingClient(_VersionedFakeClient):
+        def submit(self, files, *, model_version=None, **_kwargs):
+            self.versions.append(model_version or "default")
+            raise MinerUPermanentError("MinerU authentication failed (HTTP 401)")
+
+    fake = AuthFailingClient()
+    backend = MinerUApiBackend(
+        client=fake,
+        document_id="document-1",
+        model_version="vlm",
+        fallback_model_version="pipeline",
+    )
+
+    with pytest.raises(MinerUPermanentError):
+        backend.parse(b"%PDF-1.7", "paper.pdf")
+
+    assert fake.versions == ["vlm"]
+
+
 @pytest.mark.unit
 def test_resuming_an_existing_batch_does_not_submit_again():
     class FakeClient:
@@ -343,7 +454,7 @@ def test_resuming_an_existing_batch_does_not_submit_again():
                 }
             ]
 
-        def submit(self, files):
+        def submit(self, files, *, model_version=None, **_kwargs):
             self.submitted = True
             raise AssertionError("resume must not submit a new batch")
 
@@ -381,7 +492,7 @@ def test_submitting_a_batch_reports_the_batch_id_for_recovery():
                 }
             ]
 
-        def submit(self, files):
+        def submit(self, files, *, model_version=None, **_kwargs):
             return "new-batch", ["https://upload.test/file-1"]
 
         def upload(self, url, content):

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 
-from backend.api.deps import get_accessible_session
+from backend.api.deps import get_accessible_session, get_user_embedding
 from backend.api.uploads import read_upload_with_limit, reject_by_content_length
 from backend.api.schemas import (
     DocumentContentResponse,
@@ -10,8 +10,10 @@ from backend.api.schemas import (
     SourceChunkResponse,
 )
 from backend.api.security import get_current_user
+from backend.domain.ports import EmbeddingRuntime
 from backend.application.ingestion.documents import (
     delete_document as delete_document_use_case,
+    get_block_crop,
     get_document_content,
     get_document_file,
     get_source_chunk,
@@ -66,9 +68,12 @@ def delete_document(
     session_id: str,
     document_id: str,
     session: dict = Depends(get_accessible_session),
+    embedding: EmbeddingRuntime = Depends(get_user_embedding),
 ) -> dict:
     """删除单篇文档（行 + 分块 + 磁盘产物）并重建会话索引。"""
-    delete_document_use_case(session["id"], document_id)
+    delete_document_use_case(
+        session["id"], document_id, embedding=embedding
+    )
     return {"status": "deleted"}
 
 
@@ -81,6 +86,32 @@ def read_document_file(
     """下载/内联渲染原始 PDF（前端阅读器用）。"""
     path = get_document_file(session["id"], document_id)
     return FileResponse(path, media_type="application/pdf", filename=path.name)
+
+
+@router.get(
+    "/sessions/{session_id}/documents/{document_id}/blocks/{block_id}/crop",
+    response_class=Response,
+    responses={200: {"content": {"image/png": {}}}},
+)
+def read_block_crop(
+    session_id: str,
+    document_id: str,
+    block_id: str,
+    scale: int = Query(default=2, ge=1, le=3),
+    session: dict = Depends(get_accessible_session),
+) -> Response:
+    """返回正文块在原始 PDF 中的裁切图（公式/图片/复杂表格展示用）。"""
+    image = get_block_crop(
+        session_id=session["id"],
+        document_id=document_id,
+        block_id=block_id,
+        scale=scale,
+    )
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={"Cache-Control": "private, max-age=86400"},
+    )
 
 
 @router.get(

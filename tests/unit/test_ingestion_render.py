@@ -49,6 +49,7 @@ def test_render_block_handles_structure_types():
     assert render_block(_block("table", "| a |")) == "[Table on page 1]\n| a |"
     assert render_block(_block("table", "")) == "[Table on page 1]"
     assert render_block(_block("figure_caption", "Fig 1")) == "**Figure:** Fig 1"
+    assert render_block(_block("figure", "")) == ""
     assert render_block(_block("table_caption", "Tab 1")) == "**Table:** Tab 1"
     assert render_block(_block("paragraph", "body")) == "body"
 
@@ -58,6 +59,13 @@ def test_render_block_falls_back_for_empty_formula():
     block = _block("formula", "", section_path=["3", "Method"])
 
     assert render_block(block) == "[Formula on page 1 near 3 > Method]"
+
+
+@pytest.mark.unit
+def test_render_block_strips_formula_delimiters():
+    assert render_block(_block("formula", "$$\nH^2 = 2\\phi\n$$")) == "H^2 = 2\\phi"
+    assert render_block(_block("formula", "\\[a + b\\]")) == "a + b"
+    assert render_block(_block("formula", "a + b")) == "a + b"
 
 
 @pytest.mark.unit

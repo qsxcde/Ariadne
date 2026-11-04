@@ -6,6 +6,24 @@ indexed content and the preview can never drift apart.
 
 from backend.rag.ingestion.document_ir import BlockIR, DocumentIR
 
+# MinerU 行间公式可能自带 `$$`、`\[ \]`、`\( \)` 包裹；索引与渲染只保留 LaTeX 本体。
+_FORMULA_DELIMITER_PAIRS: tuple[tuple[str, str], ...] = (
+    ("$$", "$$"),
+    ("\\[", "\\]"),
+    ("\\(", "\\)"),
+)
+
+
+def clean_formula(text: str) -> str:
+    """Strip formula delimiters so callers get bare LaTeX."""
+    cleaned = text.strip()
+    for left, right in _FORMULA_DELIMITER_PAIRS:
+        if cleaned.startswith(left) and cleaned.endswith(right):
+            body = cleaned[len(left) : len(cleaned) - len(right)].strip()
+            if body:
+                return body
+    return cleaned
+
 
 def ordered_blocks(document: DocumentIR) -> list[BlockIR]:
     """Return blocks in deterministic reading order."""
@@ -22,6 +40,8 @@ def render_block(block: BlockIR) -> str:
         return f"## {text}" if text else ""
     if block.type == "table":
         return f"[Table on page {block.page_number}]\n{text}" if text else f"[Table on page {block.page_number}]"
+    if block.type == "figure":
+        return ""
     if block.type == "figure_caption":
         return f"**Figure:** {text}" if text else ""
     if block.type == "table_caption":
@@ -30,7 +50,7 @@ def render_block(block: BlockIR) -> str:
         return text
     if block.type == "formula":
         if text:
-            return text
+            return clean_formula(text)
         section = " > ".join(block.section_path) if block.section_path else "Document"
         return f"[Formula on page {block.page_number} near {section}]"
     return text

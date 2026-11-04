@@ -27,6 +27,7 @@ dependencies = [
     "pybtex>=0.26.1",
     "langchain-text-splitters>=0.3.11",
     "pdfminer-six>=20250506",
+    "pypdfium2>=5.10",
 ]
 
 [project.optional-dependencies]

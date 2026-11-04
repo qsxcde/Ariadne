@@ -57,6 +57,8 @@ class PaperBlock(BaseModel):
     text: str
     section_path: list[str]
     page_number: int
+    bbox: dict[str, float] | None = None
+    has_image: bool = False
 
 
 class DocumentContentResponse(BaseModel):

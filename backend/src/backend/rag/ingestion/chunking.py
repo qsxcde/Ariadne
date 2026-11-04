@@ -3,22 +3,45 @@ from __future__ import annotations
 from collections.abc import Iterable
 import re
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from backend.rag.ingestion.document_ir import BBox, BlockIR, DocumentIR
 from backend.rag.ingestion.render import ordered_blocks, render_block
 from backend.domain.models import Chunk, ChunkMetadata, ChunkType
 
 
-DEFAULT_CHUNK_SIZE = 2000
-DEFAULT_CHUNK_OVERLAP = 120
+# Every budget in this module is measured in *estimated tokens* (see
+# ``estimate_tokens``); nothing here is a character count.
+DEFAULT_MAX_TOKENS = 2000
+DEFAULT_OVERLAP_TOKENS = 120
 SEPARATORS = ["\n\n", "\n", ". ", "。", "！", "？", " ", ""]
 MERGEABLE_TYPES = {"paragraph", "figure_caption", "table_caption", "reference"}
 
 
-def estimate_tokens(text: str) -> int:
-    """Rough token count: English ~1/4 char, CJK ~1/1.5 char."""
+# One token is 12 units: ASCII costs 3 units/char (~4 chars per token) and CJK
+# costs 8 units/char (~1.5 chars per token). Everything stays integer so the
+# splitter's overlap subtraction is exact while per-character granularity
+# survives; float lengths leave dust behind and walk off the list.
+UNITS_PER_TOKEN = 12
+
+
+def token_units(text: str) -> int:
+    """Token count scaled by :data:`UNITS_PER_TOKEN` (the splitter's unit)."""
     cjk = sum(1 for c in text if "一" <= c <= "鿿" or 0x3400 <= ord(c) <= 0x4DBF)
     other = len(text) - cjk
-    return max(1, int(cjk / 1.5 + other / 4))
+    return other * 3 + cjk * 8
+
+
+def token_length(text: str) -> float:
+    """Continuous token estimate: English ~1/4 char, CJK ~1/1.5 char."""
+    return token_units(text) / UNITS_PER_TOKEN
+
+
+def estimate_tokens(text: str) -> int:
+    """Integer token count for budgets and reporting (0 for empty text)."""
+    if not text:
+        return 0
+    return max(1, token_units(text) // UNITS_PER_TOKEN)
 
 
 def build_chunks(
@@ -26,11 +49,16 @@ def build_chunks(
     markdown: str,
     paper_id: str,
     *,
-    chunk_size: int = DEFAULT_CHUNK_SIZE,
-    chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    overlap_tokens: int = DEFAULT_OVERLAP_TOKENS,
 ) -> list[Chunk]:
     if not ordered_blocks(document_ir):
-        return _build_markdown_only_chunks(markdown, paper_id, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        return _build_markdown_only_chunks(
+            markdown,
+            paper_id,
+            max_tokens=max_tokens,
+            overlap_tokens=overlap_tokens,
+        )
 
     chunks: list[Chunk] = []
     text_buffer: list[BlockIR] = []
@@ -50,7 +78,9 @@ def build_chunks(
         page_end = max(block.page_number for block in text_buffer)
         is_reference = _is_reference_section(section_path)
         chunk_type: ChunkType = "reference" if is_reference else _chunk_type(text_buffer[0])
-        for part in _recursive_split(body, chunk_size=chunk_size, chunk_overlap=chunk_overlap):
+        for part in _recursive_split(
+            body, max_tokens=max_tokens, overlap_tokens=overlap_tokens
+        ):
             _append_chunk(
                 chunks,
                 paper_id=paper_id,
@@ -69,7 +99,7 @@ def build_chunks(
         text_buffer = []
 
     for block in ordered_blocks(document_ir):
-        if block.type in {"title", "heading", "header_footer"}:
+        if block.type in {"title", "heading", "header_footer", "figure"}:
             continue
         if _is_code_block(block):
             flush_text_buffer()
@@ -94,8 +124,8 @@ def _build_markdown_only_chunks(
     markdown: str,
     paper_id: str,
     *,
-    chunk_size: int,
-    chunk_overlap: int,
+    max_tokens: int,
+    overlap_tokens: int,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
     section_path = ["Document"]
@@ -113,7 +143,9 @@ def _build_markdown_only_chunks(
             if is_reference
             else ("abstract" if section_path[-1].lower() == "abstract" else "paragraph")
         )
-        for part in _recursive_split(body, chunk_size=chunk_size, chunk_overlap=chunk_overlap):
+        for part in _recursive_split(
+            body, max_tokens=max_tokens, overlap_tokens=overlap_tokens
+        ):
             _append_chunk(
                 chunks,
                 paper_id=paper_id,
@@ -257,39 +289,32 @@ def _append_chunk(
     )
 
 
-def _recursive_split(text: str, *, chunk_size: int, chunk_overlap: int) -> list[str]:
+def _splitter(
+    max_tokens: int, overlap_tokens: int
+) -> RecursiveCharacterTextSplitter:
+    """Tokenizer-aware recursive splitter; every length here is in token units."""
+    size = max(1, max_tokens) * UNITS_PER_TOKEN
+    # langchain requires chunk_overlap <= chunk_size.
+    overlap = max(0, min(overlap_tokens, max_tokens - 1)) * UNITS_PER_TOKEN
+    return RecursiveCharacterTextSplitter(
+        separators=SEPARATORS,
+        chunk_size=size,
+        chunk_overlap=overlap,
+        length_function=token_units,
+        keep_separator=False,
+        strip_whitespace=True,
+    )
+
+
+def _recursive_split(
+    text: str, *, max_tokens: int, overlap_tokens: int
+) -> list[str]:
     text = text.strip()
-    if estimate_tokens(text) <= chunk_size:
-        return [text] if text else []
-    pieces = _split_by_separator(text, chunk_size)
-    chunks: list[str] = []
-    current = ""
-    for piece in pieces:
-        candidate = f"{current}{piece}" if not current else f"{current} {piece}"
-        if estimate_tokens(candidate) <= chunk_size or not current:
-            current = candidate
-            continue
-        chunks.append(current.strip())
-        overlap = current[-chunk_overlap:].strip() if chunk_overlap > 0 else ""
-        current = f"{overlap} {piece}".strip() if overlap else piece
-    if current.strip():
-        chunks.append(current.strip())
-    return chunks
-
-
-def _split_by_separator(text: str, chunk_size: int) -> list[str]:
-    if estimate_tokens(text) <= chunk_size:
+    if not text:
+        return []
+    if token_length(text) <= max_tokens:
         return [text]
-    for separator in SEPARATORS:
-        if separator and separator in text:
-            result: list[str] = []
-            for part in text.split(separator):
-                part = part.strip()
-                if not part:
-                    continue
-                result.extend(_split_by_separator(part, chunk_size))
-            return result
-    return [text[index : index + chunk_size] for index in range(0, len(text), chunk_size)]
+    return _splitter(max_tokens, overlap_tokens).split_text(text)
 
 
 def _merge_bboxes(bboxes: list[BBox]) -> BBox:

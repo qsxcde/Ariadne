@@ -10,6 +10,7 @@ BlockType = Literal[
     "heading",
     "paragraph",
     "table",
+    "figure",
     "figure_caption",
     "table_caption",
     "formula",
@@ -42,7 +43,11 @@ class BlockIR(BaseModel):
     bbox: BBox
     reading_order: int
     section_path: list[str] = Field(default_factory=list)
+    # Parser-reported heading depth (1-based); None means "infer from numbering".
+    heading_level: int | None = None
     confidence: float = 1.0
+    # Parser saw a real image/figure here; ``text`` may still hold a caption.
+    has_image: bool = False
     links: list[BlockLink] = Field(default_factory=list)
 
 

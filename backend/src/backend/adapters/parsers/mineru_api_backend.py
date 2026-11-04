@@ -10,7 +10,6 @@ import hashlib
 import io
 import json
 import logging
-import threading
 import zipfile
 from collections.abc import Callable
 from typing import Any
@@ -23,16 +22,15 @@ from backend.adapters.parsers.mineru_client import (
     MinerUClient,
     MinerUClientConfig,
     MinerUError,
+    MinerUPermanentError,
 )
+from backend.adapters.resources import LazyResource
 from backend.domain.parsing import RawParserResult
 
 logger = logging.getLogger(__name__)
 
 # MinerU Cloud API limits
 API_MAX_FILE_BYTES = 200 * 1024 * 1024  # 200 MB
-
-_shared_client: MinerUClient | None = None
-_shared_client_lock = threading.Lock()
 
 
 def _build_shared_client() -> MinerUClient:
@@ -56,19 +54,16 @@ def _build_shared_client() -> MinerUClient:
     )
 
 
+_shared_client: LazyResource[MinerUClient] = LazyResource(_build_shared_client)
+
+
 def _get_shared_client() -> MinerUClient:
-    global _shared_client
-    if _shared_client is not None:
-        return _shared_client
-    with _shared_client_lock:
-        if _shared_client is None:
-            _shared_client = _build_shared_client()
-    return _shared_client
+    return _shared_client.get()
 
 
 class MinerUApiBackend:
     name = "mineru_api"
-    version = "1.1"
+    version = "1.2"
 
     def __init__(
         self,
@@ -77,11 +72,19 @@ class MinerUApiBackend:
         document_id: str | None = None,
         resume_batch_id: str | None = None,
         on_batch_created: Callable[[str], None] | None = None,
+        model_version: str | None = None,
+        fallback_model_version: str | None = None,
     ) -> None:
         self._client = client
         self._document_id = document_id
         self._resume_batch_id = resume_batch_id
         self._on_batch_created = on_batch_created
+        self._model_version = model_version or settings.mineru_model_version
+        self._fallback_model_version = (
+            settings.mineru_model_version_fallback
+            if fallback_model_version is None
+            else fallback_model_version
+        )
 
     def __repr__(self) -> str:
         return f"MinerUApiBackend(base_url={settings.mineru_api_base_url})"
@@ -112,14 +115,68 @@ class MinerUApiBackend:
             self._resume_batch_id or "-",
         )
         result = self._resume(client, data_id, safe_filename)
-        if result is None:
-            result = self._submit(client, batch_file)
+        if result is not None:
+            return self._finish(client, result, safe_filename, model_version="resumed")
+        return self._submit_with_fallback(client, batch_file, safe_filename)
 
+    def _model_versions(self) -> list[str]:
+        """Ordered model versions: primary first, optional fallback second."""
+        versions = [self._model_version]
+        fallback = (self._fallback_model_version or "").strip()
+        if fallback and fallback not in versions:
+            versions.append(fallback)
+        return versions
+
+    def _submit_with_fallback(
+        self,
+        client: MinerUClient,
+        batch_file: MinerUBatchFile,
+        filename: str,
+    ) -> RawParserResult:
+        """VLM 解析失败（模型不可用 / 任务失败）时按配置回退到 pipeline。"""
+        versions = self._model_versions()
+        last_error: Exception | None = None
+
+        for index, version in enumerate(versions):
+            try:
+                result = self._submit(client, batch_file, model_version=version)
+                return self._finish(client, result, filename, model_version=version)
+            except Exception as exc:
+                last_error = exc
+                if not self._should_fallback(exc, index, versions):
+                    raise
+                logger.warning(
+                    "MinerU model_version=%s failed, falling back to %s: %s",
+                    version,
+                    versions[index + 1],
+                    exc,
+                )
+
+        assert last_error is not None
+        raise last_error
+
+    @staticmethod
+    def _should_fallback(exc: Exception, index: int, versions: list[str]) -> bool:
+        if index + 1 >= len(versions):
+            return False
+        # 鉴权失败换模型版本也没用，直接上抛
+        if isinstance(exc, MinerUPermanentError) and "authentication" in str(exc).lower():
+            return False
+        return True
+
+    def _finish(
+        self,
+        client: MinerUClient,
+        result: dict[str, Any],
+        filename: str,
+        *,
+        model_version: str,
+    ) -> RawParserResult:
         state = str(result.get("state") or "")
         if state != "done":
             raise MinerUError(
-                f"MinerU API task failed: state={state or 'unknown'}, "
-                f"err_msg={result.get('err_msg', 'unknown')}"
+                f"MinerU API task failed (model_version={model_version}): "
+                f"state={state or 'unknown'}, err_msg={result.get('err_msg', 'unknown')}"
             )
         result_url = result.get("full_zip_url")
         if not result_url:
@@ -128,10 +185,11 @@ class MinerUApiBackend:
         zip_bytes = client.download(str(result_url))
         parsed = parse_result_zip(zip_bytes)
         logger.info(
-            "MinerU API parse succeeded filename=%s pages=%d bbox_unit=%s",
-            safe_filename,
+            "MinerU API parse succeeded filename=%s pages=%d bbox_unit=%s model_version=%s",
+            filename,
             parsed.page_count,
             parsed.bbox_unit,
+            model_version,
         )
         return parsed
 
@@ -180,8 +238,10 @@ class MinerUApiBackend:
         self,
         client: MinerUClient,
         batch_file: MinerUBatchFile,
+        *,
+        model_version: str | None = None,
     ) -> dict[str, Any]:
-        batch_id, urls = client.submit([batch_file])
+        batch_id, urls = client.submit([batch_file], model_version=model_version)
         client.upload(urls[0], batch_file.content)
         if self._on_batch_created is not None:
             try:
@@ -430,24 +490,18 @@ def _map_block_from_v2(item: dict[str, Any]) -> dict[str, Any] | None:
         content = {}
 
     text = ""
+    has_image = False
     if raw_type == "title":
         text = _concat_fragments(content.get("title_content", []))
     elif raw_type == "paragraph":
         text = _concat_fragments(content.get("paragraph_content", []))
     elif raw_type == "equation_interline":
         text = str(content.get("math_content", "") or "")
-    elif raw_type == "image":
-        captions = content.get("image_caption", [])
-        text = _concat_fragments(captions)
-        if not text:
-            return None
-        norm_type = "figure_caption"
-    elif raw_type == "chart":
-        captions = content.get("chart_caption", [])
-        text = _concat_fragments(captions)
-        if not text:
-            return None
-        norm_type = "figure_caption"
+    elif raw_type in {"image", "chart"}:
+        has_image = True
+        text = _concat_fragments(content.get(f"{raw_type}_caption", []))
+        # Keep caption-less figures so the reader can crop them from the PDF.
+        norm_type = "figure_caption" if text else "figure"
     elif raw_type == "table":
         # table_body is the actual table in HTML; keeping only captions loses
         # the content that table-oriented questions need.
@@ -474,14 +528,24 @@ def _map_block_from_v2(item: dict[str, Any]) -> dict[str, Any] | None:
         text = _concat_fragments(content.get("page_footnote_content", []))
 
     text = text.strip()
-    if not text:
+    if not text and norm_type not in {"formula", "table", "figure"}:
         return None
 
-    return {
+    mapped: dict[str, Any] = {
         "type": norm_type,
         "text": text,
         "bbox": bbox,
     }
+    if has_image:
+        mapped["has_image"] = True
+    if raw_type == "title":
+        # v2 把标题层级放在 content.level；老版本可能只有 text_level
+        level = content.get("level")
+        if level is None:
+            level = item.get("text_level")
+        if level is not None:
+            mapped["heading_level"] = level
+    return mapped
 
 
 def _map_block_from_v1(item: dict[str, Any]) -> dict[str, Any] | None:
@@ -490,6 +554,7 @@ def _map_block_from_v1(item: dict[str, Any]) -> dict[str, Any] | None:
     text = str(item.get("text", "")).strip()
     bbox = item.get("bbox", [0.0, 0.0, 0.0, 0.0])
 
+    has_image = False
     if raw_type == "text":
         text_level = item.get("text_level", 0)
         norm_type = "title" if text_level >= 1 else "paragraph"
@@ -504,18 +569,26 @@ def _map_block_from_v1(item: dict[str, Any]) -> dict[str, Any] | None:
             part.strip() for part in (caption, body, footnote) if part and part.strip()
         )
     elif raw_type in {"image", "chart"}:
-        norm_type = "figure_caption"
+        has_image = True
         text = _concat_fragments(item.get(f"{raw_type}_caption", []))
+        # Keep caption-less figures so the reader can crop them from the PDF.
+        norm_type = "figure_caption" if text else "figure"
     elif raw_type in {"aside_text", "page_footnote"}:
         norm_type = "footnote"
     else:
         norm_type = raw_type
 
-    if not text and norm_type not in {"formula", "table"}:
+    if not text and norm_type not in {"formula", "table", "figure"}:
         return None
 
-    return {
+    mapped: dict[str, Any] = {
         "type": norm_type,
         "text": text,
         "bbox": bbox,
     }
+    if has_image:
+        mapped["has_image"] = True
+    if raw_type == "text" and item.get("text_level"):
+        # text_level 是 MinerU v1 的标题层级（1 起）
+        mapped["text_level"] = item.get("text_level")
+    return mapped
