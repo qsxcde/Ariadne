@@ -66,6 +66,20 @@ class RuntimeSettings(BaseSettings):
     ariadne_data_dir: str | None = None
     ariadne_model_dir: str | None = None
     ariadne_db_path: str | None = None
+    # Production persistence. Empty DATABASE_URL keeps the SQLite backend.
+    database_url: str | None = None
+    db_pool_min_size: int = 1
+    db_pool_max_size: int = 10
+    db_connect_timeout: float = 5.0
+    # Object storage: local keeps files under data_dir/objects.
+    object_store_backend: Literal["local", "s3"] = "local"
+    object_store_endpoint: str = "http://127.0.0.1:9000"
+    object_store_bucket: str = "ariadne"
+    object_store_access_key: str | None = None
+    object_store_secret_key: str | None = None
+    object_store_region: str = "us-east-1"
+    object_store_use_ssl: bool = False
+    object_store_cache_dir: str | None = None
     mineru_torch_device: str = "cpu"
     mineru_disable_ocr: bool = True
     mineru_table_enable: bool = True

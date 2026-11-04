@@ -203,6 +203,25 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 
 前端在打开研究面板时调用 `GET /features` 读取 `agent_enabled`；关闭时只显示快速问答，模式切换整体隐藏。修改该值需要重启服务。
 
+### 2.15 PostgreSQL 与对象存储
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `DATABASE_URL` | 空 | PostgreSQL 连接串；留空继续使用 `ARIADNE_DB_PATH` 指向的 SQLite |
+| `DB_POOL_MIN_SIZE` | `1` | 连接池最小连接数 |
+| `DB_POOL_MAX_SIZE` | `10` | 连接池最大连接数 |
+| `DB_CONNECT_TIMEOUT` | `5` | 建连与等待连接超时（秒） |
+| `OBJECT_STORE_BACKEND` | `local` | `local` 使用 `data_dir()/objects`；`s3` 连接 MinIO / S3 |
+| `OBJECT_STORE_ENDPOINT` | `http://127.0.0.1:9000` | S3 兼容端点（MinIO 默认端口） |
+| `OBJECT_STORE_BUCKET` | `ariadne` | 文件桶名；需预先创建 |
+| `OBJECT_STORE_ACCESS_KEY` | 空 | S3 / MinIO Access Key |
+| `OBJECT_STORE_SECRET_KEY` | 空 | S3 / MinIO Secret Key |
+| `OBJECT_STORE_REGION` | `us-east-1` | 区域名；MinIO 通常填 `us-east-1` |
+| `OBJECT_STORE_USE_SSL` | `false` | 是否使用 HTTPS 连接对象存储 |
+| `OBJECT_STORE_CACHE_DIR` | 空 | S3 文件的本地缓存目录；留空使用 `data_dir()/cache/objects` |
+
+`docker compose -f docker-compose.infra.yml up -d` 会启动 PostgreSQL 16 与 MinIO，并创建 `OBJECT_STORE_BUCKET`。生产环境把 `DATABASE_URL` 与 `OBJECT_STORE_*` 指向托管服务即可，代码路径不变。
+
 ## 3. 路径解析
 
 ```

@@ -1,0 +1,41 @@
+name: ariadne-infra
+
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ariadne}
+      POSTGRES_USER: ${POSTGRES_USER:-ariadne}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ariadne_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: ${MINIO_IMAGE:-bitnamilegacy/minio:latest}
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${OBJECT_STORE_ACCESS_KEY:-ariadne}
+      MINIO_ROOT_PASSWORD: ${OBJECT_STORE_SECRET_KEY:-ariadne_dev_secret}
+      MINIO_DEFAULT_BUCKETS: ${OBJECT_STORE_BUCKET:-ariadne}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  minio_data:
