@@ -36,22 +36,32 @@ cd frontend && npm install && npm run dev
 
 ### 2.1 现状
 
-`tests/` 已纳入版本库，用例覆盖核心不变量（数量不再手写，`pytest --collect-only -q | tail -1` 为准）：
+`tests/` 已纳入版本库，按用途分层（数量不再手写，`pytest --collect-only -q | tail -1` 为准）：
+
+| 目录 | 内容 |
+|---|---|
+| `tests/unit/` | 领域、用例、适配器的快速隔离用例 |
+| `tests/integration/` | 跨模块、存储、API 边界的用例 |
+| `tests/architecture/` | 分层依赖与导入边界（AST 静态校验） |
+| `tests/contracts/` | OpenAPI 快照、端点表、配置文档生成 |
+| `tests/network/` | 需要外部网络、本地模型或 Docker 的用例，默认 skip |
+
+核心不变量用例（部分）：
 
 | 文件 | 覆盖内容 |
 |---|---|
-| `test_backend_state_transitions.py` | job CAS（`mark_job_running` 幂等）、终态校验、文档状态更新清错误 |
-| `test_job_recovery.py` | `running → queued` 重排、`attempt` 保留、queued 不可重排 |
-| `test_index_commit_flow.py` | 快照提升把旧 `ready` 打 `stale`、重复提升返回 False、回滚恢复、`failed` 不可见 |
-| `test_document_intake_flow.py` | 上传落盘 + job 入队、404/413/400 分支无副作用 |
-| `test_access_control.py` | 会话归属规则、开发旁路、生产环境 fail closed |
-| `test_gc_index_snapshots.py` | 只回收 `failed`/旧 `stale`、dry-run、越界路径跳过 |
-| `test_llm_output.py` | LLM 输出的 Markdown fence 剥离（含单行 fence）与 JSON 对象校验 |
-| `test_prompt_loader.py` | `prompts.toml` 单点加载：命中、缺省值、缺 section 报错 |
-| `test_ingestion_render.py` | `render_block` / `ordered_blocks`，以及 chunk 文本与 Markdown 渲染一致 |
-| `test_lazy_resource.py` | 外部客户端只构造一次，并发访问不重复构造 |
+| `tests/unit/test_backend_state_transitions.py` | job CAS（`mark_job_running` 幂等）、终态校验、文档状态更新清错误 |
+| `tests/unit/test_job_recovery.py` | `running → queued` 重排、`attempt` 保留、queued 不可重排 |
+| `tests/unit/test_index_commit_flow.py` | 快照提升把旧 `ready` 打 `stale`、重复提升返回 False、回滚恢复、`failed` 不可见 |
+| `tests/integration/test_document_intake_flow.py` | 上传落盘 + job 入队、404/413/400 分支无副作用 |
+| `tests/unit/test_access_control.py` | 会话归属规则、开发旁路、生产环境 fail closed |
+| `tests/integration/test_gc_index_snapshots.py` | 只回收 `failed`/旧 `stale`、dry-run、越界路径跳过 |
+| `tests/unit/test_llm_output.py` | LLM 输出的 Markdown fence 剥离（含单行 fence）与 JSON 对象校验 |
+| `tests/unit/test_prompt_loader.py` | `prompts.toml` 单点加载：命中、缺省值、缺 section 报错 |
+| `tests/unit/test_ingestion_render.py` | `render_block` / `ordered_blocks`，以及 chunk 文本与 Markdown 渲染一致 |
+| `tests/unit/test_lazy_resource.py` | 外部客户端只构造一次，并发访问不重复构造 |
 
-`test_package_boundaries.py` 用 AST 静态校验分层依赖（application 不依赖 fastapi、storage 不依赖 rag、rag/answer 不读 settings、仅 api 与 main 依赖 fastapi），不加载任何重依赖。
+`tests/architecture/test_package_boundaries.py` 用 AST 静态校验分层依赖（application 不依赖 fastapi、storage 不依赖 rag、rag/answer 不读 settings、仅 api 与 main 依赖 fastapi），不加载任何重依赖。
 
 尚未覆盖（导入需要 torch/faiss 全套依赖）：`FAISSVectorStore`、`application.chat.StreamCollector` 的 SSE 状态机、`rag.answer` 检索/生成链路。
 
@@ -90,12 +100,12 @@ CI（`.github/workflows/ci.yml`）后端 job 安装轻量依赖（pytest / pydan
 ### 3.1 分层
 
 - 路由层（`api/routes`）只做参数绑定、状态码、调用用例；不写业务判断、不直接读仓储。
-- 用例层（`application/`）是**模块级函数**，不定义类，不通过 `Depends` 注入；不 import `fastapi`，失败抛领域异常。
+- 用例层（`application/<context>/`）以**模块级函数**为主，不定义类，不通过 `Depends` 注入；不 import `fastapi`，失败抛领域异常。上下文子包为 `library / reading / ingestion / conversation / follow / synthesis`。
 - 授权只有一个调用入口：`api/deps.get_accessible_session`；策略本体在 `domain/access.py`。
 - 领域异常到 HTTP 的映射只在 `api/errors.py`；SSE 分帧只在 `api/streaming.py`。
 - 仓储层只写 SQL，不写业务判断；返回 `dict`（`sqlite3.Row` 转换）。
 - `rag/*` 不依赖 `api` / `application`，也不 import `settings`（参数由 `application/policies.py` 注入），保持可被 CLI/测试直接调用。
-- 同一逻辑只能有一份实现：prompt 读取走 `prompts/loader.py`，LLM 输出的 fence/JSON 清洗走 `rag/llm_output.py`，外部客户端单例走 `rag/resources.py`，DocumentIR 渲染走 `rag/ingestion/render.py`。新增第二份实现前先看这四个模块。
+- 同一逻辑只能有一份实现：prompt 读取走 `prompts/loader.py`，LLM 输出的 fence/JSON 清洗走 `rag/llm_output.py`，外部客户端单例走 `adapters/resources.py`，DocumentIR 渲染走 `rag/ingestion/render.py`。新增第二份实现前先看这四个模块。
 
 ### 3.2 数据库
 
@@ -119,7 +129,7 @@ CI（`.github/workflows/ci.yml`）后端 job 安装轻量依赖（pytest / pydan
 ### 4.1 新增一个 HTTP 端点
 
 1. 在 `api/schemas/` 定义请求/响应模型。
-2. 在 `application/` 加编排函数（不写 SQL）。
+2. 在对应的 `application/<context>/` 加编排函数（不写 SQL）。
 3. 在对应 `api/routes/*.py` 加 `@router.<method>`，绑定 `Depends(get_current_user)`。
 4. 新 router 才需要在 `main.py` `include_router`。
 5. 更新 [04 API 参考](04-api.md) 与前端 `api.ts`。
@@ -134,15 +144,15 @@ CI（`.github/workflows/ci.yml`）后端 job 安装轻量依赖（pytest / pydan
 
 ### 4.3 新增解析后端
 
-1. 实现 `ParserBackend`（`name`、`version`、`parse`），返回 `RawParserResult`。
-2. 在 `rag/ingestion/pipeline._build_parser_chain` 按优先级插入。
+1. 在 `adapters/parsers/` 实现 `ParserBackend`（`name`、`version`、`parse`），返回 `RawParserResult`。
+2. 在 `composition/parser_chain()` 按优先级插入。
 3. 若返回 `pages`，归一化可利用 bbox 做双栏/页眉页脚处理；只返回 `markdown` 也能工作（走 markdown 兜底切块）。
 4. 补一个 `parser_backend=` 定位的单后端测试。
 
 ### 4.4 改数据表结构
 
 1. `schema.py` 的建表 DDL 改为最新形态（影响新库）。
-2. `CURRENT_SCHEMA_VERSION` +1，在 `_migrate_schema` 加对应版本分支（影响旧库）。
+2. `CURRENT_SCHEMA_VERSION` +1，在 `storage/sqlite/migrations/versions.py` 的 `migrate_schema` 加对应版本分支（影响旧库）。
 3. 若改外键，参考 v4 的 `foreign_keys = OFF` → 建 `*_new` → 拷数据 → `DROP` → `RENAME` → 重建索引 → `ON` 流程。
 4. 更新仓储函数与 [03 数据模型与存储](03-data-model.md)。
 
@@ -196,7 +206,7 @@ uv run --project backend python -m backend.scripts.migrate_storage \
 ## 7. 仓库与工程约定
 
 - `openspec/`：spec-driven change 归档，命名 `archive/<YYYY-MM-DD>-<kebab-name>/`，每个 change 含 `.openspec.yaml` + `proposal.md` + `design.md` + `tasks.md`。当前**没有 `openspec/specs/`**，两个已归档 change 都设置了 `skip_specs: true`。
-- `.gitignore` 关键项：`data/`、`backend/data/`、`.env`、`eval_outputs/`、`*.db` 及 `-wal`/`-shm`；`docs/` 通过 `docs/*` + `!docs/wiki/` 只放行 Wiki，其它文档不入库。
+- `.gitignore` 关键项：`data/`、`backend/data/`、`.env`、`eval_outputs/`、`*.db` 及 `-wal`/`-shm`；`docs/` 通过 `docs/*` 放行 `wiki/`、`analysis/`、`planning/`、`adr/`，其它文档不入库。
 - `tests/` 已解除忽略，测试与源码一起提交；CI 定义在 `.github/workflows/ci.yml`。
 - `frontend/README.md` 是未清理的 React 模板，不要参考。
 - 没有 `CLAUDE.md` / `AGENTS.md`。
@@ -205,9 +215,9 @@ uv run --project backend python -m backend.scripts.migrate_storage \
 
 1. **重依赖模块无测试**：`FAISSVectorStore`、`application.chat.StreamCollector` SSE 状态机、检索/生成链路仍靠人工验证。
 2. **多副本不可用**：任务队列、会话锁与向量库缓存均为进程内状态。
-3. **前端路由表是死代码**：`main.ts` 未注册 router。
+3. **legacy 入口未隔离**：旧 `/chat` 与 `/sessions/:sessionId/reader` 仍与新工作台并列。
 4. **`status` 事件未消费**：前端无细粒度进度。
 5. **`cancelled` 状态无写入路径**：任务取消能力缺失。
 6. **无 token 预算**：上下文只按块数限制。
 7. **无可观测性**：没有 `/metrics` 或 tracing，只有 stdout 日志。
-8. **无容器化交付**：仓库无 Dockerfile / 部署脚本。
+8. **部署基线有限**：已有 compose，但缺 metrics / trace / 多实例方案。

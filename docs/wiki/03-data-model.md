@@ -1,6 +1,7 @@
 # 03 数据模型与存储
 
-权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 11`）。
+权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 16`，含当前全量 DDL）。
+增量迁移：`backend/src/backend/storage/sqlite/migrations/versions.py`（v2 → v16）。
 仓储实现：`backend/src/backend/storage/sqlite/*.py`（纯 SQL，无 ORM）。
 
 ## 1. 表总览
@@ -336,7 +337,7 @@ backend/data/                              # 默认数据根 = backend_project_d
 
 `discard_store(session_id)` 在快照提交成功、会话删除时调用。
 
-FAISS 落盘格式（`rag/indexing/vector_store.py`）：
+FAISS 落盘格式（`adapters/vector/faiss_store.py`）：
 
 - `<token>.faiss.index`：`faiss.write_index` 二进制。
 - `<token>.chunks.json`：`[chunk.model_dump()]`，**不含向量**。

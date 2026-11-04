@@ -5,35 +5,38 @@
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ 展示层  frontend/src（Vue 3）                                  │
-│         api.ts（REST + SSE 客户端）→ /sessions /documents ...   │
+│         api.ts（REST + SSE 客户端）→ /sessions /papers ...      │
 └───────────────────────────┬──────────────────────────────────┘
                             │ HTTP + text/event-stream
 ┌───────────────────────────▼──────────────────────────────────┐
 │ 接口层  backend/api/                                          │
-│         routes/*（路由） schemas/*（传输契约）                  │
-│         deps.py（授权依赖） streaming.py（SSE 编码）            │
-│         errors.py（领域异常 → HTTP） security.py（JWT）         │
+│         routes/{library,reading,ingestion,conversation,       │
+│                  follow,synthesis,auth}.py                    │
+│         schemas/*（传输契约） deps.py（授权依赖）               │
+│         streaming.py（SSE 编码） errors.py（异常 → HTTP）       │
 ├──────────────────────────────────────────────────────────────┤
 │ 应用层  backend/application/                                  │
-│         sessions / documents / ingestion / indexing           │
-│         chat / evaluation（评测用例）                          │
-│         store_cache（索引 LRU） session_index / policies        │
+│         library / reading / ingestion / conversation          │
+│         follow / synthesis（按限界上下文分包）                  │
 │         只做编排与状态流转，不依赖 Web 框架                     │
 ├──────────────────────────────────────────────────────────────┤
 │ 领域层  backend/domain/                                       │
-│         models.py（Pydantic 模型）states.py（枚举）            │
-│         access.py（授权规则）exceptions.py                     │
+│         models.py states.py access.py exceptions.py           │
 ├──────────────────────────────────────────────────────────────┤
-│ 能力层                                                        │
-│  rag/ingestion   rag/indexing   rag/retrieval                 │
-│  rag/generation  rag/embedding  rag/answer.py                 │
+│ 能力层  backend/rag/                                          │
+│         ingestion / retrieval / answer.py（纯逻辑）            │
+├──────────────────────────────────────────────────────────────┤
+│ 适配层  backend/adapters/                                     │
+│         llm / embedding / vector（外部 I/O 与模型客户端）       │
 ├──────────────────────────────────────────────────────────────┤
 │ 存储层  backend/storage/                                      │
-│  sqlite/*（13 张表仓储） paths.py（目录布局）                   │
+│  sqlite/*（19 张表仓储） paths.py（目录布局）                   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-依赖方向是单向的：`api → application → (domain, rag, storage)`。`storage/*` 不依赖 `rag/*`；`rag/*` 不依赖 `api` / `application`，也不读全局配置；`domain/*` 不依赖任何上层模块。装配（settings、runner、异常处理器、job handler）只发生在 `backend/main.py`。
+依赖方向是单向的：`api → application → (domain, rag, storage)`；`adapters/*` 实现 `domain/ports.py` 中的端口，供 `application` / `rag` 注入使用；`composition/` 是唯一把配置翻译成具体能力的装配缝；`main.py` 只负责组装 FastAPI app。`storage/*` 不依赖 `rag/*`；`rag/*` 不依赖 `api` / `application`；`domain/*` 不依赖任何上层模块。
+
+> 已知过渡项：`rag/retrieval/{history_rewriter,query_rewriter,term_expander}.py` 仍通过 `composition` 取 LLM；`rag/ingestion/pipeline.py` 仍读全局 `settings` 的切块参数。reranker 已迁入 `adapters/rerank/`，FAISS 与解析器也已归位；剩余项有棘轮测试防止扩大。
 
 ## 2. 模块职责
 
@@ -41,36 +44,47 @@
 
 | 文件 | 职责 |
 |---|---|
-| `backend/main.py` | 装配根：`init_db` → 孤儿文档清理 → 中断 job 重排 → 启动 runner；注册 CORS、异常处理器、job handler 与 4 个 router；`/health` |
-| `api/schemas/{auth,session,document,chat}.py` | 请求/响应与 SSE 事件的 Pydantic 模型，按域拆分，无 alias |
+| `backend/main.py` | 装配根：`init_db` → 孤儿文档清理 → 中断 job 重排 → 启动 runner；注册 CORS、异常处理器、job handler 与 13 个 router；`/health` |
+| `api/schemas/{auth,session,document,chat,feed,paper}.py` | 请求/响应与 SSE 事件的 Pydantic 模型，按域拆分，无 alias |
 | `api/security.py` | `OAuth2PasswordBearer` + JWT 签发/校验 + bcrypt 口令哈希 |
 | `api/deps.py` | `get_accessible_session`：授权规则的唯一调用入口，失败抛 `SessionNotFoundError` |
 | `api/errors.py` | 领域异常 → HTTP 映射（404 / 413 / 400），是唯一的错误翻译点 |
 | `api/streaming.py` | 应用事件 → SSE `data: {...}\n\n` |
-| `api/routes/sessions.py` | 会话 CRUD 与快照读取 |
-| `api/routes/documents.py` | PDF 上传（`multipart`，字段名 `file`），返回 `202` |
-| `api/routes/chat.py` | SSE 端点；只做事件编码与客户端断连处理 |
-| `api/routes/auth.py` | 注册 / 登录 / `me` |
+| `api/routes/library.py` | 论文列表、上传、导入、导出、详情、更新与删除 |
+| `api/routes/reading.py` | 阅读时长、统计、周报、速读卡、解释、术语与引用 |
+| `api/routes/annotations.py` | 论文批注的增删改查 |
+| `api/routes/collections.py` | 集合 CRUD 与论文成员关系 |
+| `api/routes/synthesis.py` | 集合问答与多论文对比 |
+| `api/routes/{sessions,documents,chat,auth}.py` | 会话、文档上传、SSE 问答与账号端点 |
+| `api/routes/{feed,notifications,integrations,settings}.py` | 跟进、提醒、导出集成与提醒设置 |
 | `worker/runner.py` | `InProcessJobRunner`：FIFO 取任务、会话级串行锁、崩溃恢复、handler 注册表 |
 | `worker/handlers.py` | `document_ingestion` handler：读 PDF 字节 → 调摄服用例 → 标记 job 完成 |
 
 ### 2.2 应用层
 
-| 模块 | 职责边界 | 关键事实 |
+| 子包 | 模块 | 职责边界 |
 |---|---|---|
-| `sessions.py` | 会话聚合与派生状态 | `get_session_snapshot` 一次聚合 6 张表；归档会话返回 `None` |
-| `documents.py` | 上传落地与启动清理 | 文件写盘 + `documents` / `jobs` 行 + 回滚补偿；失败抛领域异常，不再依赖 `HTTPException` |
-| `ingestion.py` | 单次摄取的状态机 | 解析 → 产物落盘 → 切块 → 建候选快照 → 提交；失败统一 `_mark_failed` |
-| `indexing.py` | 索引两阶段发布 | `build_candidate_snapshot` / `commit_ready_snapshot` / 回滚 / 文件清理 |
-| `chat.py` | 一次问答的用例 | 等索引、持久化消息、调用 RAG、产出 `application.events` 事件；不认识 SSE |
-| `evaluation.py` | 评测用例 | `evaluate_session_chat` / `evaluate_session_retrieval`，仅供 `scipal_eval` CLI |
-| `store_cache.py` | 向量库进程内缓存 | `session_id → FAISSVectorStore` 的 LRU（容量 16） |
-| `session_index.py` | 索引解析与等待 | 取 active ready 快照，指数退避等待 |
-| `policies.py` | 配置 → 能力参数 | 把 `settings` 翻译成 `RetrievalOptions` / `AnswerPolicy` |
+| `application/library/` | `papers` / `collections` / `annotations` / `paper_import` / `citations` / `export` / `integrations` | 论文资产、集合、批注、导入导出与外部文献库集成 |
+| `application/reading/` | `brief` / `explain` / `glossary` / `progress` / `review` / `stats` / `generation_log` | 速读卡、划词解释、术语、阅读进度、统计与周报 |
+| `application/ingestion/` | `documents` / `job` / `indexing` / `index_maintenance` | 上传落地、单次摄取状态机、候选快照构建与原子提交 |
+| `application/conversation/` | `chat` / `sessions` / `session_index` / `policies` / `evaluation` / `events` | 会话快照、问答编排、索引等待、配置翻译与离线评测 |
+| `application/follow/` | `feed` / `notifications` / `alerts` / `citation_alerts` / `version_alerts` | 订阅、Feed、站内通知与两类提醒 |
+| `application/synthesis/` | `service` | 集合问答与多论文对比 |
+| `application/auth.py` | `auth` | 注册、登录与用户查询（单模块上下文） |
+
+关键事实：
+
+- `sessions.get_session_snapshot` 一次聚合 6 张表；归档会话返回 `None`。
+- `documents` 负责文件写盘 + `documents` / `jobs` 行 + 回滚补偿；失败抛领域异常，不依赖 `HTTPException`。
+- `job` 负责解析 → 产物落盘 → 切块 → 建候选快照 → 提交；失败统一 `_mark_failed`。
+- `chat` 不认识 SSE，只产出 `application/conversation/events.py` 定义的领域事件。
+- `store_cache` 已归入 `adapters/vector/store_cache.py`，不在 `application` 内。
 
 ### 2.3 领域层 `backend/src/backend/domain/`
 
-- `models.py`：`ChunkMetadata`、`Chunk`、`SourceRef`，全部 Pydantic `BaseModel`（非 dataclass）。
+- `models.py`：`ChunkMetadata`、`Chunk`、`SourceRef`、`VectorSearchHit`、`BBoxUnit`。
+- `parsing.py`：`ParserBackend` 协议与 `RawParserResult`，供摄取流水线和解析器适配器共用。
+- `ports.py`：`TextCompleter`、`VectorStore`、`Embedder` 三个能力端口。
 - `states.py`：`SessionStatus`、`DocumentStage`、`IndexSnapshotStatus`、`JobStatus` 四个 `StrEnum`，外加 `TERMINAL_JOB_STATUSES` 与 `PROCESSING_DOCUMENT_STAGES` 两个常量集合。
 - `access.py`：`session_is_accessible`，纯函数授权规则。
 - `exceptions.py`：`PaperParseError`、`EmbeddingModelUnavailableError`、`SessionNotFoundError`、`ActiveIndexNotReadyError`、`SnapshotCommitError`，以及上传校验用的 `UploadValidationError` / `UploadTooLargeError` / `InvalidUploadError`。
@@ -81,14 +95,15 @@
 
 | 包 | 关键入口 | 说明 |
 |---|---|---|
-| `ingestion/` | `pipeline.process_pdf_document` | 解析器链 + 归一化 + 切块，纯函数式，不碰数据库 |
-| `indexing/` | `vector_store.FAISSVectorStore` / `create_vector_store` | FAISS 封装：`add_chunks` / `search_with_ranks` / `save` / `load` |
+| `ingestion/` | `pipeline.process_pdf_document` | 归一化 + 切块 + 质量报告；解析器链必须由调用方注入 |
 | `retrieval/` | `hybrid_retriever.retrieve_hybrid_context` | BM25 + Dense + RRF + Rerank + 上下文扩展 |
-| `generation/` | `answer_generator.stream_answer`、`model_client` | 提示词拼装、多 provider 降级、流式 token |
-| `embedding/` | `embedding.create_embed_fn` | 远程 → 本地链式选择；输入上限集中在 `embedding/limits.py` |
+| `adapters/parsers/` | `mineru_api_backend` / `mineru_backend` / `text_pdf_backend` | 具体 PDF 解析后端；实现 `domain.parsing.ParserBackend` |
+| `adapters/vector/` | `faiss_store.FAISSVectorStore` / `store_cache` | FAISS 封装与进程内 LRU：`add_chunks` / `search_with_ranks` / `save` / `load` |
+| `adapters/llm/` | `answer_generator.stream_answer`、`model_client` | 提示词拼装、多 provider 降级、流式 token |
+| `adapters/embedding/` | `embedding.create_embed_fn` | 远程 → 本地链式选择；输入上限集中在 `embedding/limits.py` |
 | `ingestion/render.py` | `render_block` / `ordered_blocks` | DocumentIR 渲染的唯一入口：chunk 正文与导出 Markdown 共用，避免两套渲染漂移 |
 | `llm_output.py` | `strip_markdown_fence` / `parse_json_object` | LLM 结构化输出的统一清洗；改写/术语扩展/Judge 都走这里 |
-| `resources.py` | `LazyResource` | 外部客户端（OpenAI / httpx）的线程安全懒加载单例 |
+| `adapters/resources.py` | `LazyResource` | 外部客户端（OpenAI / httpx）的线程安全懒加载单例；reranker 客户端复用 |
 | `answer.py` | `answer.stream_answer` | 单轮问答能力（检索 + 生成 + 引用校验）；`options` 与 `policy` 必须由调用方显式传入 |
 
 ### 2.5 存储层
@@ -97,12 +112,14 @@
 |---|---|
 | `storage/paths.py` | 会话目录布局；`remove_session_dir` 带越界校验 |
 | `storage/sqlite/connection.py` | 路径三级回退、PRAGMA、`transaction()` 上下文管理器 |
-| `storage/sqlite/schema.py` | DDL、`init_db()`、`PRAGMA user_version` 增量迁移 |
-| `storage/sqlite/{sessions,documents,jobs,chunks,messages,indexes,index_snapshots,users}.py` | 各表仓储函数（无 ORM，纯 SQL） |
+| `storage/sqlite/schema.py` | 当前全量 DDL、`init_db()` 与 `PRAGMA user_version` 版本声明 |
+| `storage/sqlite/migrations/versions.py` | v2 → v16 的增量迁移函数，由 `schema.init_db()` 调用 |
+| `storage/sqlite/uow.py` | `unit_of_work()`：多步存储操作的显式事务边界 |
+| `storage/sqlite/*.py` | 19 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / index_snapshots / papers / collections / annotations / feed / notifications 等 |
 
 ### 2.6 配置 `backend/src/backend/config.py`
 
-`RuntimeSettings`（全量字段见 08 章）、`Settings`（强制 `DEEPSEEK_API_KEY`）、模块级单例 `settings`、`data_dir()` / `model_dir()` 等路径函数。能力层不得直接 import 它，只能通过 `application/policies.py` 注入参数。
+`RuntimeSettings`（全量字段见 08 章）、`Settings`（强制 `DEEPSEEK_API_KEY`）、模块级单例 `settings`、`data_dir()` / `model_dir()` 等路径函数。`composition` 负责把配置翻译成能力参数；`api/deps.py` 注入 LLM completer，`worker/handlers.py` 注入解析器链。当前仅 `rag/ingestion/pipeline.py` 仍直接读取 settings 的切块参数（见 2.4 过渡项）。
 
 提示词统一由 `backend/prompts/loader.py::load_prompt(section, key="system", default=None)` 读取 `prompts.toml`；`default` 仅用于允许降级的场景，缺 section 且无 `default` 时直接抛 `KeyError`。
 
@@ -222,6 +239,7 @@ POST /sessions/{id}/messages
 - **状态派生**：`SessionStatus` 不落库，任何时刻由文档状态集合推导；前端不要缓存该值。
 - **索引可见性**：对外可用索引 = `index_snapshots` 中 active `ready` 快照；`retrieval_indexes` 为 legacy 兼容读取路径。
 - **资源归属**：策略在 `domain/access.session_is_accessible`，调用入口在 `api/deps.get_accessible_session`；`user_id IS NULL` 的历史会话对所有调用方开放，其余必须与当前用户一致，否则按 404 处理。
-- **依赖边界**：`tests/test_package_boundaries.py` 用 AST 静态校验「application 不依赖 fastapi」「storage 不依赖 rag」「rag/answer 不读 settings」「仅 api 与 main 依赖 fastapi」。
+- **依赖边界**：`tests/architecture/test_package_boundaries.py` 用 AST 静态校验「application 不依赖 fastapi」「storage 不依赖 rag」「rag/answer 不读 settings」「仅 api 与 main 依赖 fastapi」。
+- **上下文边界**：`application/{library,reading,ingestion,conversation,follow,synthesis}` 各自拥有用例；跨上下文只调用公开函数或共用 domain 类型；`api/routes` 与 `application` 子包一一对应。
 
 细节见 [04 API 参考](04-api.md) 与 [03 数据模型与存储](03-data-model.md)。

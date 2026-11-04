@@ -2,7 +2,7 @@
 
 面向 SciPal 仓库的工程知识库。所有结论均以当前代码为准，正文中标注了对应的源码路径，便于随时回查验证。
 
-- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 11`
+- 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 16`
 - 最后核对：2026-11-03
 - 覆盖范围：`backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`
 

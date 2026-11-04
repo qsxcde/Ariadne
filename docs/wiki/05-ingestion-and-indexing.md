@@ -2,11 +2,11 @@
 
 覆盖"上传 PDF → 可检索"的完整链路。相关代码：
 
-- 落盘与建行：`backend/src/backend/application/documents.py`
+- 落盘与建行：`backend/src/backend/application/ingestion/documents.py`
 - 调度：`backend/src/backend/worker/runner.py`
-- 状态机与产物：`backend/src/backend/application/ingestion.py`
-- 解析与切块：`backend/src/backend/rag/ingestion/`
-- 索引提交：`backend/src/backend/application/indexing.py`、`backend/src/backend/rag/indexing/vector_store.py`
+- 状态机与产物：`backend/src/backend/application/ingestion/job.py`
+- 解析与切块：`backend/src/backend/rag/ingestion/`；具体解析器在 `backend/src/backend/adapters/parsers/`
+- 索引提交：`backend/src/backend/application/ingestion/indexing.py`、`backend/src/backend/adapters/vector/faiss_store.py`
 
 ## 1. 阶段总览
 
@@ -67,7 +67,7 @@
 
 ## 4. 解析器链
 
-`rag/ingestion/pipeline.py:22-30` 构建候选链，按顺序尝试，第一个成功即返回：
+`composition/parser_chain()` 构建候选链，`rag/ingestion/pipeline.py` 按顺序尝试，第一个成功即返回：
 
 ```
 [mineru_api（仅当配置 MINERU_API_KEY）] → mineru（本地 CLI） → text_pdf（pypdf 兜底）
@@ -77,7 +77,7 @@
 配置 `MINERU_REQUIRE_CLOUD=true` 且云解析失败时直接抛错，不再静默降级。
 传 `parser_backend=` 参数时只使用指定后端（测试/评测用）。
 
-`ParserBackend` 协议（`parser_backend.py`）：
+`ParserBackend` 协议（`domain/parsing.py`），具体实现在 `adapters/parsers/`：
 
 ```python
 class ParserBackend(Protocol):
@@ -285,8 +285,8 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 
 **新增解析后端**：
 
-1. 在 `rag/ingestion/` 实现 `ParserBackend`（`name`、`version`、`parse`）。
-2. 在 `pipeline._build_parser_chain` 中按优先级插入。
+1. 在 `adapters/parsers/` 实现 `ParserBackend`（`name`、`version`、`parse`）。
+2. 在 `composition.parser_chain()` 中按优先级插入。
 3. 若后端不返回 `pages`，只靠 `markdown` 也能工作（会走 markdown 兜底切块）。
 
 **调整切块策略**：改 `chunking.py` 的 `MERGEABLE_TYPES` / `SEPARATORS` / token 估算；若改单位语义，需同步 `settings.max_chunk_tokens` 的注释与评测预期。
