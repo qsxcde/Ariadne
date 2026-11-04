@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 
 import httpx
 
+from backend.adapters import http as shared_http
 from backend.application.library.papers import import_paper_upload, serialize_authors
 from backend.domain.exceptions import (
     DuplicatePaperError,
@@ -113,17 +114,14 @@ def _http_get(
 ) -> httpx.Response:
     """Single HTTP entry point so tests can stub every external call."""
     try:
-        response = httpx.get(
+        return shared_http.get(
             url,
             params=params,
             timeout=timeout,
-            follow_redirects=True,
-            headers={"User-Agent": USER_AGENT},
+            user_agent=USER_AGENT,
         )
-        response.raise_for_status()
     except httpx.HTTPError as exc:
         raise ImportFetchError(f"抓取失败：{url}（{exc}）") from exc
-    return response
 
 
 def fetch_arxiv_reference(identifier: str) -> PaperReference:

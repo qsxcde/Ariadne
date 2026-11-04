@@ -1,11 +1,23 @@
 """BibTeX / CSL JSON / Markdown export for the personal library."""
 
+import io
 import json
 from collections.abc import Mapping
 from typing import Any
 
+from pybtex.database import BibliographyData, Entry
+from pybtex.database.output.bibtex import Writer
+
 from backend.storage.sqlite import annotations as annotation_repo
 from backend.storage.sqlite import papers as paper_repo
+
+# Fields copied verbatim from the persisted paper row, in BibTeX naming.
+_BIBTEX_TEXT_FIELDS = (
+    ("journal", "venue"),
+    ("doi", "doi"),
+    ("url", "url"),
+    ("abstract", "abstract"),
+)
 
 
 def _authors(raw: str | None) -> list[str]:
@@ -18,25 +30,32 @@ def _authors(raw: str | None) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
-def _entry(paper: Mapping[str, Any]) -> str:
-    fields: list[tuple[str, str]] = [
-        ("title", paper["title"]),
-        ("author", " and ".join(_authors(paper["authors_json"]))),
-        ("year", str(paper["year"]) if paper["year"] else ""),
-        ("journal", paper["venue"] or ""),
-        ("doi", paper["doi"] or ""),
-        ("url", paper["url"] or ""),
-        ("abstract", paper["abstract"] or ""),
-    ]
-    body = "\n".join(
-        f"  {name} = {{{value}}}," for name, value in fields if value
-    )
-    return f"@article{{{paper['id']},\n{body}\n}}"
+def _bibtex_entry(paper: Mapping[str, Any]) -> Entry:
+    """Map a paper row to a pybtex entry (escaping and joining are delegated)."""
+    fields: dict[str, str] = {"title": str(paper["title"])}
+    authors = _authors(paper["authors_json"])
+    if authors:
+        # pybtex writes ``author`` verbatim, so ordering survives unchanged.
+        fields["author"] = " and ".join(authors)
+    if paper["year"]:
+        fields["year"] = str(paper["year"])
+    for bibtex_name, column in _BIBTEX_TEXT_FIELDS:
+        value = paper[column]
+        if value:
+            fields[bibtex_name] = str(value)
+    return Entry("article", fields=fields)
 
 
 def export_bibtex(user_id: str | None) -> str:
     papers = paper_repo.list_papers(user_id, limit=1000)
-    return "\n\n".join(_entry(paper) for paper in papers) + ("\n" if papers else "")
+    if not papers:
+        return ""
+    bibliography = BibliographyData()
+    for paper in papers:
+        bibliography.add_entry(str(paper["id"]), _bibtex_entry(paper))
+    stream = io.StringIO()
+    Writer().write_stream(bibliography, stream)
+    return stream.getvalue().replace("\r\n", "\n").strip() + "\n"
 
 
 def export_csl_json(user_id: str | None) -> list[dict[str, Any]]:

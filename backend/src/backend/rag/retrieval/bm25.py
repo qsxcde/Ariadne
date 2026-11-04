@@ -1,3 +1,13 @@
+"""Okapi BM25 with Robertson's ``+1`` IDF smoothing and a CJK-aware tokenizer.
+
+This is deliberately *not* ``rank_bm25.BM25Okapi``. That implementation computes
+``log(N - df + 0.5) - log(df + 0.5)`` and clamps negatives to ``epsilon * avgdl``,
+which reverses the contribution of terms appearing in more than half the corpus.
+The ``log(1 + ...)`` form below stays positive, so a common word simply counts
+for less instead of flipping sign. ``tests/unit/test_bm25.py`` pins that
+behaviour: swapping libraries is a ranking change, not a refactor.
+"""
+
 from __future__ import annotations
 
 from collections import Counter

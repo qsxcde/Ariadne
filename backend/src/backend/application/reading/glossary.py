@@ -1,11 +1,11 @@
 """Generate a small glossary from a paper's chunks."""
 
-import json
 from typing import Any
 
 from backend.application.library.papers import get_accessible_paper
 from backend.domain.models import Chunk
 from backend.domain.ports import TextCompleter
+from backend.rag.llm_output import parse_json_object
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import sessions as session_repo
@@ -26,20 +26,16 @@ _PROMPT = """你是论文阅读助手。请从下面的论文片段中提取 5-1
 
 
 def _digest(chunks: list[Chunk]) -> str:
+    # 推理模型对长上下文会持续思考；摘要控制在约 3.6k 字符，保证正文预算。
     return "\n\n".join(
-        f"[Section: {chunk.metadata.section} | Chunk: {chunk.metadata.chunk_index}] {chunk.text[:1200]}"
-        for chunk in chunks[:10]
+        f"[Section: {chunk.metadata.section} | Chunk: {chunk.metadata.chunk_index}] {chunk.text[:600]}"
+        for chunk in chunks[:6]
     )
 
 
 def _parse(raw: str) -> list[dict[str, Any]]:
-    text = raw.strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        text = text[start : end + 1]
     try:
-        payload = json.loads(text)
+        payload = parse_json_object(raw)
     except (TypeError, ValueError):
         return []
     terms = payload.get("terms")
@@ -78,8 +74,11 @@ def generate_glossary(
     runner = completer
     with generation_timer("glossary", paper_id=paper_id):
         raw = runner.complete(_PROMPT.replace("{digest}", _digest(chunks)))
+    terms = _parse(raw)
+    if not terms:
+        raise ValueError("模型未返回可解析的术语，请重试")
     return {
         "paper_id": paper["id"],
-        "terms": _parse(raw),
+        "terms": terms,
         "generated_at": now_iso(),
     }

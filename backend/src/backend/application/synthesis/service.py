@@ -1,6 +1,5 @@
 """Collection-level Q&A and structured paper comparison."""
 
-import json
 from typing import Any
 
 from backend.adapters.llm.prompt_template import build_prompt
@@ -9,6 +8,7 @@ from backend.application.library.papers import get_accessible_paper
 from backend.domain.models import Chunk, VectorSearchHit
 from backend.domain.ports import TextCompleter
 from backend.rag.answer import RetrievalOptions, retrieve_context
+from backend.rag.llm_output import parse_json_object
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import collections as collection_repo
 from backend.storage.sqlite import documents as document_repo
@@ -170,13 +170,8 @@ def compare_papers(
 
 
 def _parse_fields(raw: str) -> dict[str, str]:
-    text = raw.strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        text = text[start : end + 1]
     try:
-        payload = json.loads(text)
+        payload = parse_json_object(raw)
     except (TypeError, ValueError):
         payload = {}
     return {

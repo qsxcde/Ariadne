@@ -124,6 +124,8 @@ def generate_glossary(
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Glossary generation failed: {exc}") from exc
 
 
 @router.post("/papers/{paper_id}/brief", response_model=PaperBrief)

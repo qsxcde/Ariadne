@@ -5,7 +5,10 @@ import json
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from tenacity import wait_none
 
+from backend.adapters import http as shared_http
+from backend.adapters.resources import LazyResource
 from backend.api.security import get_current_user
 from backend.application.follow import feed
 from backend.main import app
@@ -94,16 +97,22 @@ def test_rss_source_parses_items(monkeypatch):
 def test_get_retries_then_succeeds(monkeypatch):
     attempts = {"count": 0}
 
-    def flaky(*args, **kwargs):
+    def flaky() -> FakeResponse:
         attempts["count"] += 1
         if attempts["count"] < 3:
             raise httpx.ConnectError("boom")
         return FakeResponse(text="ok")
 
-    monkeypatch.setattr(feed.httpx, "get", flaky)
-    monkeypatch.setattr(feed.time, "sleep", lambda _seconds: None)
+    class FakeClient:
+        def get(self, _url, **_kwargs):
+            return flaky()
 
-    response = feed._get("https://example.org")
+    monkeypatch.setattr(shared_http, "_client", LazyResource(FakeClient))
+    monkeypatch.setattr(
+        shared_http, "_retrying", shared_http.build_retrying(wait=wait_none())
+    )
+
+    response = shared_http.get("https://example.org")
 
     assert response.text == "ok"
     assert attempts["count"] == 3

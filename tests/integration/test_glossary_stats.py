@@ -76,6 +76,18 @@ def test_glossary_uses_chunks_and_returns_terms():
     assert "Sparse attention" in fake.prompts[0]
 
 
+@pytest.mark.integration
+def test_glossary_rejects_empty_model_output():
+    paper_id = _seed()
+
+    class EmptyCompleter:
+        def complete(self, prompt: str) -> str:
+            return ""
+
+    with pytest.raises(ValueError, match="未返回"):
+        generate_glossary(paper_id, "u1", completer=EmptyCompleter())
+
+
 @pytest.mark.unit
 def test_glossary_rejects_unindexed_paper():
     session = session_repo.create_session("Empty", user_id="u1")

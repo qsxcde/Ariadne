@@ -1,12 +1,12 @@
 """Feed subscriptions, discovery and save-to-queue."""
 
 import json
-import time
 from typing import Any, Protocol
 from xml.etree import ElementTree
 
 import httpx
 
+from backend.adapters import http as shared_http
 from backend.application.follow import notifications as notification_service
 from backend.storage.records import FeedItemRecord, SubscriptionRecord
 from backend.storage.sqlite import feed as feed_repo
@@ -14,7 +14,6 @@ from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite import subscriptions as subscription_repo
 
 _ATOM = "{http://www.w3.org/2005/Atom}"
-_MAX_ATTEMPTS = 3
 
 
 class FeedSource(Protocol):
@@ -35,24 +34,12 @@ def _get(
     url: str, *, params: dict[str, Any] | None = None, timeout: float = 20
 ) -> httpx.Response:
     """GET with bounded retries; every adapter shares the same backoff policy."""
-    last_error: httpx.HTTPError | None = None
-    for attempt in range(_MAX_ATTEMPTS):
-        try:
-            response = httpx.get(
-                url,
-                params=params,
-                timeout=timeout,
-                follow_redirects=True,
-                headers={"User-Agent": "SciPal/0.1 (feed)"},
-            )
-            response.raise_for_status()
-            return response
-        except httpx.HTTPError as exc:
-            last_error = exc
-            if attempt < _MAX_ATTEMPTS - 1:
-                time.sleep(0.5 * (2**attempt))
-    assert last_error is not None
-    raise last_error
+    return shared_http.get(
+        url,
+        params=params,
+        timeout=timeout,
+        user_agent="SciPal/0.1 (feed)",
+    )
 
 
 def _clean(value: str | None) -> str:

@@ -8,6 +8,7 @@ from typing import Any
 from backend.application.library.papers import get_accessible_paper
 from backend.domain.models import Chunk
 from backend.domain.ports import TextCompleter
+from backend.rag.llm_output import parse_json_object
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import papers as paper_repo
@@ -67,13 +68,8 @@ def _build_section_digest(chunks: list[Chunk]) -> str:
 
 
 def _parse_brief(raw: str, sections: list[dict[str, Any]]) -> dict[str, Any]:
-    text = raw.strip()
-    start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        text = text[start : end + 1]
     try:
-        payload = json.loads(text)
+        payload = parse_json_object(raw)
     except (TypeError, ValueError):
         payload = {"tldr": raw.strip()}
 
