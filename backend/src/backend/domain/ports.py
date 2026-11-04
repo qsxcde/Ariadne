@@ -8,7 +8,7 @@ root, instead of every module importing a global singleton.
 from collections.abc import Callable, Iterator
 from typing import Protocol, runtime_checkable
 
-from backend.domain.models import Chunk
+from backend.domain.models import Chunk, VectorSearchHit
 
 
 @runtime_checkable
@@ -31,5 +31,9 @@ class VectorStore(Protocol):
     def add_chunks(self, chunks: list[Chunk]) -> None: ...
 
     def search(self, query: str, k: int = 5) -> list[Chunk]: ...
+
+    def search_with_ranks(
+        self, query: str, k: int = 5
+    ) -> list[VectorSearchHit]: ...
 
     def list_chunks(self) -> list[Chunk]: ...

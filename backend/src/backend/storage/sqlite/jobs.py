@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import Literal, cast
 
-from backend.core.model.records import JobRecord
+from backend.storage.records import JobRecord
 
 from backend.domain.states import DocumentStage
 from backend.domain.states import JobStatus

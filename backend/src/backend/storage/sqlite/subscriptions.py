@@ -3,7 +3,7 @@
 import uuid
 from typing import cast
 
-from backend.core.model.records import SubscriptionRecord
+from backend.storage.records import SubscriptionRecord
 from backend.storage.sqlite.connection import connect, transaction
 from backend.storage.sqlite.sessions import now_iso
 

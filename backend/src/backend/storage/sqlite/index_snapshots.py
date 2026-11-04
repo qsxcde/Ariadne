@@ -4,7 +4,7 @@ import uuid
 from backend.domain.states import IndexSnapshotStatus
 from typing import cast
 
-from backend.core.model.records import SnapshotRecord
+from backend.storage.records import SnapshotRecord
 from backend.storage.sqlite.connection import connect
 from backend.storage.sqlite.connection import row_to_dict
 from backend.storage.sqlite.connection import transaction

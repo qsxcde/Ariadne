@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 
 from typing import cast
 
-from backend.core.model.records import SessionRecord, SessionSummaryRecord
+from backend.storage.records import SessionRecord, SessionSummaryRecord
 from backend.storage.sqlite.connection import connect, transaction
 
 

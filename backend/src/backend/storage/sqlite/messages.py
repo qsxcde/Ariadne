@@ -2,7 +2,7 @@ import json
 import uuid
 from typing import cast
 
-from backend.core.model.records import MessageRecord
+from backend.storage.records import MessageRecord
 from typing import Literal
 
 from backend.domain.models import SourceRef

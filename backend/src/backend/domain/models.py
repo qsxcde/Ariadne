@@ -3,10 +3,13 @@
 Data contracts only — behavior belongs to the layer that owns it.
 """
 
+from dataclasses import dataclass
 from typing import Literal
 
 from pydantic import BaseModel
 
+
+BBoxUnit = Literal["points", "normalized_1000", "normalized_1"]
 
 ChunkType = Literal[
     "abstract", "paragraph", "table", "heading", "formula", "code", "caption", "reference"
@@ -34,6 +37,15 @@ class ChunkMetadata(BaseModel):
 class Chunk(BaseModel):
     text: str
     metadata: ChunkMetadata
+
+
+@dataclass(frozen=True, slots=True)
+class VectorSearchHit:
+    """A dense-search result: chunk, distance score and 1-based rank."""
+
+    chunk: Chunk
+    score: float
+    rank: int
 
 
 class SourceRef(BaseModel):

@@ -2,7 +2,7 @@ import uuid
 
 from typing import cast
 
-from backend.core.model.records import DocumentRecord
+from backend.storage.records import DocumentRecord
 from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite.connection import connect, transaction
 from backend.storage.sqlite.sessions import now_iso

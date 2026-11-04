@@ -3,7 +3,7 @@
 import uuid
 from typing import cast
 
-from backend.core.model.records import AnnotationRecord
+from backend.storage.records import AnnotationRecord
 from backend.storage.sqlite.connection import connect, row_to_dict, transaction
 from backend.storage.sqlite.sessions import now_iso
 
@@ -150,3 +150,24 @@ def delete_annotation(annotation_id: str) -> bool:
     with transaction() as conn:
         cursor = conn.execute("DELETE FROM annotations WHERE id = ?", (annotation_id,))
     return cursor.rowcount > 0
+
+
+def count_by_type_for_papers(
+    paper_ids: list[str], *, since: str | None = None
+) -> dict[str, int]:
+    """Aggregate annotation counts for a set of papers, optionally since a time."""
+    if not paper_ids:
+        return {}
+    placeholders = ", ".join("?" for _ in paper_ids)
+    sql = (
+        f"SELECT type, COUNT(*) AS total FROM annotations "
+        f"WHERE paper_id IN ({placeholders})"
+    )
+    params: list[object] = list(paper_ids)
+    if since is not None:
+        sql += " AND created_at >= ?"
+        params.append(since)
+    sql += " GROUP BY type"
+    with connect() as conn:
+        rows = conn.execute(sql, tuple(params)).fetchall()
+    return {str(row["type"]): int(row["total"]) for row in rows}
