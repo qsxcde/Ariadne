@@ -1173,6 +1173,81 @@
         "title": "DocumentSummary",
         "type": "object"
       },
+      "EmbeddingSettingsView": {
+        "properties": {
+          "api_key_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Hint"
+          },
+          "api_key_set": {
+            "title": "Api Key Set",
+            "type": "boolean"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "dim": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dim"
+          },
+          "key_source": {
+            "enum": [
+              "user",
+              "env",
+              "local"
+            ],
+            "title": "Key Source",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "remote",
+              "local"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "api_key_set",
+          "key_source",
+          "mode"
+        ],
+        "title": "EmbeddingSettingsView",
+        "type": "object"
+      },
       "ExplainRequest": {
         "properties": {
           "mode": {
@@ -1400,6 +1475,71 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "IndexEmbeddingStatus": {
+        "description": "Whether the active index can serve the user's current embedder.",
+        "properties": {
+          "current_mode": {
+            "default": "remote",
+            "enum": [
+              "remote",
+              "local"
+            ],
+            "title": "Current Mode",
+            "type": "string"
+          },
+          "current_model": {
+            "default": "",
+            "title": "Current Model",
+            "type": "string"
+          },
+          "index_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index Model"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
+          }
+        },
+        "title": "IndexEmbeddingStatus",
+        "type": "object"
+      },
+      "IndexRebuildResponse": {
+        "properties": {
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "empty"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "IndexRebuildResponse",
+        "type": "object"
+      },
       "IndexSnapshotStatus": {
         "enum": [
           "building",
@@ -1422,6 +1562,28 @@
             },
             "title": "Document Ids",
             "type": "array"
+          },
+          "embedding_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Fingerprint"
+          },
+          "embedding_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model"
           },
           "error_message": {
             "anyOf": [
@@ -1691,6 +1853,60 @@
         "title": "LibraryStats",
         "type": "object"
       },
+      "LlmSettingsView": {
+        "properties": {
+          "api_key_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Hint"
+          },
+          "api_key_set": {
+            "title": "Api Key Set",
+            "type": "boolean"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "key_source": {
+            "enum": [
+              "user",
+              "env"
+            ],
+            "title": "Key Source",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "model",
+          "api_key_set",
+          "key_source"
+        ],
+        "title": "LlmSettingsView",
+        "type": "object"
+      },
       "MessageStatus": {
         "enum": [
           "complete",
@@ -1699,6 +1915,225 @@
         ],
         "title": "MessageStatus",
         "type": "string"
+      },
+      "ModelCatalog": {
+        "properties": {
+          "embedding": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderCatalog"
+            },
+            "title": "Embedding",
+            "type": "array"
+          },
+          "llm": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderCatalog"
+            },
+            "title": "Llm",
+            "type": "array"
+          },
+          "rerank": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderCatalog"
+            },
+            "title": "Rerank",
+            "type": "array"
+          }
+        },
+        "title": "ModelCatalog",
+        "type": "object"
+      },
+      "ModelOption": {
+        "properties": {
+          "dim": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dim"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "ModelOption",
+        "type": "object"
+      },
+      "ModelSettingsResponse": {
+        "properties": {
+          "catalog": {
+            "$ref": "#/components/schemas/ModelCatalog"
+          },
+          "embedding": {
+            "$ref": "#/components/schemas/EmbeddingSettingsView"
+          },
+          "llm": {
+            "$ref": "#/components/schemas/LlmSettingsView"
+          },
+          "rerank": {
+            "$ref": "#/components/schemas/RerankSettingsView"
+          }
+        },
+        "required": [
+          "llm",
+          "embedding",
+          "rerank",
+          "catalog"
+        ],
+        "title": "ModelSettingsResponse",
+        "type": "object"
+      },
+      "ModelSettingsUpdate": {
+        "description": "PATCH fields; omitted = unchanged, empty api key = clear the user key.",
+        "properties": {
+          "embedding_api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Api Key"
+          },
+          "embedding_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Base Url"
+          },
+          "embedding_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Model"
+          },
+          "embedding_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Provider"
+          },
+          "llm_api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Api Key"
+          },
+          "llm_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Base Url"
+          },
+          "llm_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model"
+          },
+          "llm_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Provider"
+          },
+          "rerank_api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Api Key"
+          },
+          "rerank_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Base Url"
+          },
+          "rerank_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Model"
+          },
+          "rerank_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Provider"
+          }
+        },
+        "title": "ModelSettingsUpdate",
+        "type": "object"
       },
       "NotificationDeliverRequest": {
         "properties": {
@@ -1816,6 +2251,25 @@
       "PaperBlock": {
         "description": "Reader 用的正文块，`id` 与 citations 的 block_ids 对齐。",
         "properties": {
+          "bbox": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bbox"
+          },
+          "has_image": {
+            "default": false,
+            "title": "Has Image",
+            "type": "boolean"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -2685,6 +3139,42 @@
         "title": "PersistedMessage",
         "type": "object"
       },
+      "ProviderCatalog": {
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelOption"
+            },
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "ProviderCatalog",
+        "type": "object"
+      },
       "ReadingDayStat": {
         "properties": {
           "day": {
@@ -2806,6 +3296,75 @@
         "title": "ReadingTimeResponse",
         "type": "object"
       },
+      "RerankSettingsView": {
+        "properties": {
+          "api_key_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Hint"
+          },
+          "api_key_set": {
+            "title": "Api Key Set",
+            "type": "boolean"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key_source": {
+            "enum": [
+              "user",
+              "env",
+              "local"
+            ],
+            "title": "Key Source",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "remote",
+              "local"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "provider",
+          "model",
+          "api_key_set",
+          "key_source",
+          "mode"
+        ],
+        "title": "RerankSettingsView",
+        "type": "object"
+      },
       "RetrievalIndexSummary": {
         "properties": {
           "chunks_path": {
@@ -2882,6 +3441,16 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "index_embedding": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndexEmbeddingStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "indexed_chunks": {
             "title": "Indexed Chunks",
@@ -5829,6 +6398,77 @@
         "summary": "Delete Document"
       }
     },
+    "/sessions/{session_id}/documents/{document_id}/blocks/{block_id}/crop": {
+      "get": {
+        "description": "返回正文块在原始 PDF 中的裁切图（公式/图片/复杂表格展示用）。",
+        "operationId": "read_block_crop_sessions__session_id__documents__document_id__blocks__block_id__crop_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "block_id",
+            "required": true,
+            "schema": {
+              "title": "Block Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scale",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "maximum": 3,
+              "minimum": 1,
+              "title": "Scale",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Read Block Crop"
+      }
+    },
     "/sessions/{session_id}/documents/{document_id}/chunks/{chunk_index}": {
       "get": {
         "description": "把回答里的引用还原为原文段落，供前端阅读器定位。",
@@ -5998,6 +6638,51 @@
         "summary": "Read Document File"
       }
     },
+    "/sessions/{session_id}/index/rebuild": {
+      "post": {
+        "description": "按当前用户的 Embedding 配置重建会话索引（同步）。",
+        "operationId": "rebuild_session_index_sessions__session_id__index_rebuild_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndexRebuildResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Rebuild Session Index"
+      }
+    },
     "/sessions/{session_id}/messages": {
       "post": {
         "description": "发送提问，以 text/event-stream 流式返回回答。",
@@ -6113,6 +6798,70 @@
           }
         ],
         "summary": "Update Alert Settings"
+      }
+    },
+    "/settings/models": {
+      "get": {
+        "operationId": "get_model_settings_settings_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Model Settings"
+      },
+      "patch": {
+        "operationId": "update_model_settings_settings_models_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelSettingsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Update Model Settings"
       }
     },
     "/subscriptions": {

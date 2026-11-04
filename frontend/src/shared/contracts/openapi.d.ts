@@ -808,6 +808,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{session_id}/documents/{document_id}/blocks/{block_id}/crop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Block Crop
+         * @description 返回正文块在原始 PDF 中的裁切图（公式/图片/复杂表格展示用）。
+         */
+        get: operations["read_block_crop_sessions__session_id__documents__document_id__blocks__block_id__crop_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{session_id}/documents/{document_id}/chunks/{chunk_index}": {
         parameters: {
             query?: never;
@@ -868,6 +888,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{session_id}/index/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rebuild Session Index
+         * @description 按当前用户的 Embedding 配置重建会话索引（同步）。
+         */
+        post: operations["rebuild_session_index_sessions__session_id__index_rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{session_id}/messages": {
         parameters: {
             query?: never;
@@ -904,6 +944,24 @@ export interface paths {
         head?: never;
         /** Update Alert Settings */
         patch: operations["update_alert_settings_settings_alerts_patch"];
+        trace?: never;
+    };
+    "/settings/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Model Settings */
+        get: operations["get_model_settings_settings_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Model Settings */
+        patch: operations["update_model_settings_settings_models_patch"];
         trace?: never;
     };
     "/subscriptions": {
@@ -1364,6 +1422,31 @@ export interface components {
             /** Updated At */
             updated_at: string;
         };
+        /** EmbeddingSettingsView */
+        EmbeddingSettingsView: {
+            /** Api Key Hint */
+            api_key_hint?: string | null;
+            /** Api Key Set */
+            api_key_set: boolean;
+            /** Base Url */
+            base_url?: string | null;
+            /** Dim */
+            dim?: number | null;
+            /**
+             * Key Source
+             * @enum {string}
+             */
+            key_source: "user" | "env" | "local";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "remote" | "local";
+            /** Model */
+            model: string;
+            /** Provider */
+            provider: string;
+        };
         /** ExplainRequest */
         ExplainRequest: {
             /**
@@ -1449,6 +1532,40 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * IndexEmbeddingStatus
+         * @description Whether the active index can serve the user's current embedder.
+         */
+        IndexEmbeddingStatus: {
+            /**
+             * Current Mode
+             * @default remote
+             * @enum {string}
+             */
+            current_mode: "remote" | "local";
+            /**
+             * Current Model
+             * @default
+             */
+            current_model: string;
+            /** Index Model */
+            index_model?: string | null;
+            /**
+             * Stale
+             * @default false
+             */
+            stale: boolean;
+        };
+        /** IndexRebuildResponse */
+        IndexRebuildResponse: {
+            /** Snapshot Id */
+            snapshot_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ready" | "empty";
+        };
+        /**
          * IndexSnapshotStatus
          * @enum {string}
          */
@@ -1459,6 +1576,10 @@ export interface components {
             chunks_path: string;
             /** Document Ids */
             document_ids: string[];
+            /** Embedding Fingerprint */
+            embedding_fingerprint?: string | null;
+            /** Embedding Model */
+            embedding_model?: string | null;
             /** Error Message */
             error_message?: string | null;
             /** Id */
@@ -1569,11 +1690,84 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** LlmSettingsView */
+        LlmSettingsView: {
+            /** Api Key Hint */
+            api_key_hint?: string | null;
+            /** Api Key Set */
+            api_key_set: boolean;
+            /** Base Url */
+            base_url?: string | null;
+            /**
+             * Key Source
+             * @enum {string}
+             */
+            key_source: "user" | "env";
+            /** Model */
+            model: string;
+            /** Provider */
+            provider: string;
+        };
         /**
          * MessageStatus
          * @enum {string}
          */
         MessageStatus: "complete" | "failed" | "stopped";
+        /** ModelCatalog */
+        ModelCatalog: {
+            /** Embedding */
+            embedding?: components["schemas"]["ProviderCatalog"][];
+            /** Llm */
+            llm?: components["schemas"]["ProviderCatalog"][];
+            /** Rerank */
+            rerank?: components["schemas"]["ProviderCatalog"][];
+        };
+        /** ModelOption */
+        ModelOption: {
+            /** Dim */
+            dim?: number | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
+        /** ModelSettingsResponse */
+        ModelSettingsResponse: {
+            catalog: components["schemas"]["ModelCatalog"];
+            embedding: components["schemas"]["EmbeddingSettingsView"];
+            llm: components["schemas"]["LlmSettingsView"];
+            rerank: components["schemas"]["RerankSettingsView"];
+        };
+        /**
+         * ModelSettingsUpdate
+         * @description PATCH fields; omitted = unchanged, empty api key = clear the user key.
+         */
+        ModelSettingsUpdate: {
+            /** Embedding Api Key */
+            embedding_api_key?: string | null;
+            /** Embedding Base Url */
+            embedding_base_url?: string | null;
+            /** Embedding Model */
+            embedding_model?: string | null;
+            /** Embedding Provider */
+            embedding_provider?: string | null;
+            /** Llm Api Key */
+            llm_api_key?: string | null;
+            /** Llm Base Url */
+            llm_base_url?: string | null;
+            /** Llm Model */
+            llm_model?: string | null;
+            /** Llm Provider */
+            llm_provider?: string | null;
+            /** Rerank Api Key */
+            rerank_api_key?: string | null;
+            /** Rerank Base Url */
+            rerank_base_url?: string | null;
+            /** Rerank Model */
+            rerank_model?: string | null;
+            /** Rerank Provider */
+            rerank_provider?: string | null;
+        };
         /** NotificationDeliverRequest */
         NotificationDeliverRequest: {
             /** Email To */
@@ -1617,6 +1811,15 @@ export interface components {
          * @description Reader 用的正文块，`id` 与 citations 的 block_ids 对齐。
          */
         PaperBlock: {
+            /** Bbox */
+            bbox?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Has Image
+             * @default false
+             */
+            has_image: boolean;
             /** Id */
             id: string;
             /** Page Number */
@@ -1882,6 +2085,17 @@ export interface components {
             sources?: components["schemas"]["SourceRef"][];
             status: components["schemas"]["MessageStatus"];
         };
+        /** ProviderCatalog */
+        ProviderCatalog: {
+            /** Base Url */
+            base_url?: string | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Models */
+            models?: components["schemas"]["ModelOption"][];
+        };
         /** ReadingDayStat */
         ReadingDayStat: {
             /** Day */
@@ -1927,6 +2141,31 @@ export interface components {
             /** Total Seconds */
             total_seconds: number;
         };
+        /** RerankSettingsView */
+        RerankSettingsView: {
+            /** Api Key Hint */
+            api_key_hint?: string | null;
+            /** Api Key Set */
+            api_key_set: boolean;
+            /** Base Url */
+            base_url?: string | null;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Key Source
+             * @enum {string}
+             */
+            key_source: "user" | "env" | "local";
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "remote" | "local";
+            /** Model */
+            model: string;
+            /** Provider */
+            provider: string;
+        };
         /** RetrievalIndexSummary */
         RetrievalIndexSummary: {
             /** Chunks Path */
@@ -1955,6 +2194,7 @@ export interface components {
             documents: components["schemas"]["DocumentSummary"][];
             /** Id */
             id: string;
+            index_embedding?: components["schemas"]["IndexEmbeddingStatus"] | null;
             /** Indexed Chunks */
             indexed_chunks: number;
             /**
@@ -3776,6 +4016,41 @@ export interface operations {
             };
         };
     };
+    read_block_crop_sessions__session_id__documents__document_id__blocks__block_id__crop_get: {
+        parameters: {
+            query?: {
+                scale?: number;
+            };
+            header?: never;
+            path: {
+                session_id: string;
+                document_id: string;
+                block_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_source_chunk_sessions__session_id__documents__document_id__chunks__chunk_index__get: {
         parameters: {
             query?: never;
@@ -3873,6 +4148,37 @@ export interface operations {
             };
         };
     };
+    rebuild_session_index_sessions__session_id__index_rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexRebuildResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     chat_sessions__session_id__messages_post: {
         parameters: {
             query?: never;
@@ -3948,6 +4254,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AlertSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_settings_settings_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelSettingsResponse"];
+                };
+            };
+        };
+    };
+    update_model_settings_settings_models_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelSettingsResponse"];
                 };
             };
             /** @description Validation Error */
