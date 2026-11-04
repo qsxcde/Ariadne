@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends
 
 from backend.api.schemas import AlertSettings, AlertSettingsUpdate, DigestResponse
 from backend.api.security import get_current_user
-from backend.application import alerts as alert_service
-from backend.application import feed as feed_service
-from backend.application import review as review_service
+from backend.application.follow import alerts as alert_service
+from backend.application.follow import feed as feed_service
+from backend.application.reading import review as review_service
 
 router = APIRouter()
 

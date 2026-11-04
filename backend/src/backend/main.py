@@ -9,9 +9,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.errors import register_exception_handlers
-from backend.api.routes import auth, chat, documents, feed, integrations, notifications, papers, sessions, settings as settings_routes
+from backend.api.routes import (
+    annotations,
+    auth,
+    chat,
+    collections,
+    documents,
+    feed,
+    integrations,
+    library,
+    notifications,
+    reading,
+    sessions,
+    settings as settings_routes,
+    synthesis,
+)
 from backend.api.security import anonymous_access_allowed
-from backend.application.documents import recover_orphaned_documents
+from backend.application.ingestion.documents import recover_orphaned_documents
 from backend.config import env_file_path, repo_env_file_warning, settings
 from backend.storage.sqlite.schema import init_db
 from backend.worker.handlers import register_default_handlers
@@ -94,7 +108,12 @@ register_default_handlers()
 app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(documents.router)
-app.include_router(papers.router)
+# Static /papers/* paths (stats, reading-stats) must be matched before /papers/{paper_id}.
+app.include_router(reading.router)
+app.include_router(library.router)
+app.include_router(annotations.router)
+app.include_router(collections.router)
+app.include_router(synthesis.router)
 app.include_router(feed.router)
 app.include_router(notifications.router)
 app.include_router(integrations.router)

@@ -8,8 +8,8 @@ from backend.api.deps import get_accessible_session
 from backend.api.schemas import ChatMessage
 from backend.api.security import get_current_user
 from backend.api.streaming import encode_sse_event, stream_with_heartbeat
-from backend.application.chat import stream_session_chat
-from backend.application.events import DoneEvent, ErrorEvent
+from backend.application.conversation.chat import stream_session_chat
+from backend.application.conversation.events import DoneEvent, ErrorEvent
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

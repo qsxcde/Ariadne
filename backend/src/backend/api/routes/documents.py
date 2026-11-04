@@ -10,7 +10,7 @@ from backend.api.schemas import (
     SourceChunkResponse,
 )
 from backend.api.security import get_current_user
-from backend.application.documents import (
+from backend.application.ingestion.documents import (
     delete_document as delete_document_use_case,
     get_document_content,
     get_document_file,

@@ -3,8 +3,15 @@
 from fastapi import Depends
 
 from backend.api.security import get_current_user
-from backend.application import sessions as session_service
+from backend.application.conversation import sessions as session_service
+from backend.composition import text_completer
 from backend.domain.exceptions import SessionNotFoundError
+from backend.domain.ports import TextCompleter
+
+
+def get_text_completer() -> TextCompleter:
+    """Wire the process-wide LLM capability at the transport edge."""
+    return text_completer()
 
 
 def get_accessible_session(

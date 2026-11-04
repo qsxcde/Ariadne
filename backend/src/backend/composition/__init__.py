@@ -7,7 +7,7 @@ a global singleton, so the heavy dependencies stay behind a single seam.
 from collections.abc import Callable
 from functools import lru_cache
 
-from backend.core.contracts.ports import Embedder, TextCompleter
+from backend.domain.ports import Embedder, TextCompleter
 
 
 class LlmTextCompleter:
@@ -38,9 +38,9 @@ def parser_chain(
 ) -> list:
     """Ordered parser fallbacks: MinerU cloud (if key) -> local MinerU -> text PDF."""
     from backend.config import settings
-    from backend.rag.ingestion.mineru_api_backend import MinerUApiBackend
-    from backend.rag.ingestion.mineru_backend import MinerUBackend
-    from backend.rag.ingestion.text_pdf_backend import TextPDFBackend
+    from backend.adapters.parsers.mineru_api_backend import MinerUApiBackend
+    from backend.adapters.parsers.mineru_backend import MinerUBackend
+    from backend.adapters.parsers.text_pdf_backend import TextPDFBackend
 
     if settings.mineru_require_cloud and not settings.mineru_api_key:
         raise RuntimeError("MINERU_REQUIRE_CLOUD=true requires MINERU_API_KEY")

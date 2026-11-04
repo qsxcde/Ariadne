@@ -11,7 +11,7 @@ from backend.api.schemas import (
     SubscriptionSummary,
 )
 from backend.api.security import get_current_user
-from backend.application import feed as feed_service
+from backend.application.follow import feed as feed_service
 
 router = APIRouter()
 

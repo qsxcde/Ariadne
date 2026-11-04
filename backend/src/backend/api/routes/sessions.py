@@ -8,7 +8,7 @@ from backend.api.schemas import (
     SessionUpdateRequest,
 )
 from backend.api.security import get_current_user
-from backend.application import sessions as session_service
+from backend.application.conversation import sessions as session_service
 from backend.domain.exceptions import SessionNotFoundError
 
 router = APIRouter()

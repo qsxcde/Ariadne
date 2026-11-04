@@ -10,9 +10,9 @@ from backend.api.schemas import (
     UpdateCheckResponse,
 )
 from backend.api.security import get_current_user
-from backend.application import citation_alerts as citation_alert_service
-from backend.application import notifications as notification_service
-from backend.application import version_alerts as version_alert_service
+from backend.application.follow import citation_alerts as citation_alert_service
+from backend.application.follow import notifications as notification_service
+from backend.application.follow import version_alerts as version_alert_service
 
 router = APIRouter()
 

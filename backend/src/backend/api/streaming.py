@@ -17,7 +17,7 @@ from backend.api.schemas.chat import (
     ChatStreamTokenEvent,
     ChatStreamWarningEvent,
 )
-from backend.application.events import (
+from backend.application.conversation.events import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,

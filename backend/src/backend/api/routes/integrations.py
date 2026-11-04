@@ -9,7 +9,7 @@ from backend.api.schemas import (
     ZoteroExportRequest,
 )
 from backend.api.security import get_current_user
-from backend.application import integrations as integration_service
+from backend.application.library import integrations as integration_service
 
 router = APIRouter()
 
