@@ -6,7 +6,7 @@ from openai import OpenAI
 
 from backend.config import settings
 from backend.adapters.embedding.local_embedder import truncate_for_embedding
-from backend.rag.resources import LazyResource
+from backend.adapters.resources import LazyResource
 
 logger = logging.getLogger(__name__)
 

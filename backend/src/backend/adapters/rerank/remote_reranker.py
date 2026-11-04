@@ -6,7 +6,7 @@ import httpx
 
 from backend.config import settings
 from backend.domain.models import Chunk
-from backend.rag.resources import LazyResource
+from backend.adapters.resources import LazyResource
 
 logger = logging.getLogger(__name__)
 

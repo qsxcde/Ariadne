@@ -1,4 +1,4 @@
-"""PDF ingestion pipeline: parsing, chunking, metadata extraction, and quality reporting."""
+"""PDF ingestion pipeline: normalization, chunking, metadata and quality."""
 __all__ = [
     "artifacts",
     "block_classifier",
@@ -6,13 +6,9 @@ __all__ = [
     "document_ir",
     "exporters",
     "linker",
-    "mineru_api_backend",
-    "mineru_backend",
     "normalizer",
-    "parser_backend",
     "pipeline",
     "quality_reporter",
     "reading_order",
     "section_builder",
-    "text_pdf_backend",
 ]

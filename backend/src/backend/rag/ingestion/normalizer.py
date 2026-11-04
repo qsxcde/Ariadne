@@ -1,11 +1,12 @@
 import logging
 from typing import cast
 
-from backend.rag.ingestion.document_ir import BBox, BBoxUnit, BlockIR, BlockType, DocumentIR, PageIR
+from backend.domain.models import BBoxUnit
+from backend.rag.ingestion.document_ir import BBox, BlockIR, BlockType, DocumentIR, PageIR
 from backend.rag.ingestion.document_ir import BlockLink
 from backend.rag.ingestion.block_classifier import clean_heading, confidence_for_type, detect_block_type
 from backend.rag.ingestion.linker import attach_caption_links
-from backend.rag.ingestion.parser_backend import ParserBackend, RawParserResult
+from backend.domain.parsing import ParserBackend, RawParserResult
 from backend.rag.ingestion.quality_reporter import build_quality_report, find_repeated_header_footer_texts
 from backend.rag.ingestion.reading_order import bbox_tuple, sorted_blocks_for_reading_order
 

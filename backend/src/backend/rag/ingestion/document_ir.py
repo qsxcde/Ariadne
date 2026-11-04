@@ -2,8 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
-BBoxUnit = Literal["points", "normalized_1000", "normalized_1"]
+from backend.domain.models import BBoxUnit
 
 
 BlockType = Literal[

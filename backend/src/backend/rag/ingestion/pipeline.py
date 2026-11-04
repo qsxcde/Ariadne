@@ -9,18 +9,11 @@ from backend.rag.ingestion.document_ir import DocumentIR
 from backend.rag.ingestion.document_ir import QualityReport
 from backend.rag.ingestion.exporters import export_markdown
 from backend.domain.models import Chunk, ChunkMetadata
-from backend.rag.ingestion.mineru_backend import MinerUBackend
 from backend.rag.ingestion.normalizer import normalize_parser_output
-from backend.rag.ingestion.parser_backend import ParserBackend
-from backend.rag.ingestion.parser_backend import RawParserResult
-from backend.rag.ingestion.text_pdf_backend import TextPDFBackend
+from backend.domain.parsing import ParserBackend
+from backend.domain.parsing import RawParserResult
 
 logger = logging.getLogger(__name__)
-
-
-def default_parser_chain() -> list[ParserBackend]:
-    """Fallback chain used when the caller does not inject one."""
-    return [MinerUBackend(), TextPDFBackend()]
 
 
 class IngestionResult(BaseModel):
@@ -143,7 +136,7 @@ def process_pdf_document(
     elif parser_chain is not None:
         backends = parser_chain
     else:
-        backends = default_parser_chain()
+        raise ValueError("parser_chain or parser_backend is required")
 
     raw, backend = _try_parsers(backends, pdf_bytes, filename)
     return _process_parsed_result(raw, backend, paper_id, filename)

@@ -1,4 +1,4 @@
-"""Hybrid retrieval: dense + BM25, query rewriting, context expansion, and reranking."""
+"""Hybrid retrieval: dense + BM25, query rewriting and context expansion."""
 __all__ = [
     "bm25",
     "context_builder",
@@ -8,8 +8,6 @@ __all__ = [
     "hybrid_retriever",
     "language",
     "query_rewriter",
-    "remote_reranker",
-    "reranker",
     "retriever",
     "term_expander",
 ]

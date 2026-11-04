@@ -5,37 +5,14 @@ import numpy as np
 import os
 import threading
 import time
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from backend import config
 from backend.adapters.embedding import create_embed_fn
-from backend.domain.models import Chunk
+from backend.domain.models import Chunk, VectorSearchHit
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True, slots=True)
-class VectorSearchHit:
-    chunk: Chunk
-    score: float
-    rank: int
-
-
-class AbstractVectorStore(ABC):
-    @abstractmethod
-    def add_chunks(self, chunks: list[Chunk]) -> None: ...
-
-    @abstractmethod
-    def search(self, query: str, k: int = 5) -> list[Chunk]: ...
-
-    @abstractmethod
-    def search_with_ranks(self, query: str, k: int = 5) -> list[VectorSearchHit]: ...
-
-    @abstractmethod
-    def list_chunks(self) -> list[Chunk]: ...
 
 
 # Default embedding function — built from the fallback chain (remote → local).
@@ -43,7 +20,7 @@ class AbstractVectorStore(ABC):
 _default_embed = create_embed_fn()
 
 
-class FAISSVectorStore(AbstractVectorStore):
+class FAISSVectorStore:
     def __init__(
         self,
         embed_fn: Callable[[list[str]], list[list[float]]] | None = None,

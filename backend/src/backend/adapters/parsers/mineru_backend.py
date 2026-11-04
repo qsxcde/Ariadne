@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 from backend.config import data_dir
 from backend.config import settings
-from backend.rag.ingestion.parser_backend import RawParserResult
+from backend.domain.parsing import RawParserResult
 from backend.config import mineru_model_dir
 from backend.config import mineru_modelscope_cache_dir
 

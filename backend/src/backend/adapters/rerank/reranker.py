@@ -24,7 +24,7 @@ class FallbackReranker:
         if not chunks:
             return []
         if settings.reranker_remote_enabled and settings.embedding_remote_api_key:
-            from backend.rag.retrieval import remote_reranker
+            from backend.adapters.rerank import remote_reranker
             remote_result = remote_reranker.rerank(query, chunks, top_k)
             if remote_result is not None:
                 return remote_result

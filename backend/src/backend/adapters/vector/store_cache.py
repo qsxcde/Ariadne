@@ -5,12 +5,12 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from backend.core.model.records import SnapshotRecord
+from backend.storage.records import SnapshotRecord
 from backend.domain.states import PROCESSING_DOCUMENT_STAGES
 from backend.rag.retrieval.filters import filter_indexable_chunks
 
 if TYPE_CHECKING:
-    from backend.rag.indexing.vector_store import FAISSVectorStore
+    from backend.adapters.vector.faiss_store import FAISSVectorStore
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import index_snapshots as snapshot_repo
@@ -31,13 +31,13 @@ def _cache_store(session_id: str, cache_key: str, store: FAISSVectorStore) -> No
 
 def _new_store() -> FAISSVectorStore:
     """Import FAISS lazily so importing this module stays dependency-light."""
-    from backend.rag.indexing.vector_store import FAISSVectorStore
+    from backend.adapters.vector.faiss_store import FAISSVectorStore
 
     return FAISSVectorStore()
 
 
 def _load_store(index_path: Path, chunks_path: Path) -> FAISSVectorStore:
-    from backend.rag.indexing.vector_store import FAISSVectorStore
+    from backend.adapters.vector.faiss_store import FAISSVectorStore
 
     return FAISSVectorStore.load(index_path=index_path, chunks_path=chunks_path)
 

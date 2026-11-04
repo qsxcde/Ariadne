@@ -1,6 +1,5 @@
-"""RAG capability packages: ingestion, indexing and retrieval."""
+"""RAG capability packages: ingestion, retrieval and answer."""
 __all__ = [
-    "indexing",
     "ingestion",
     "pipeline",
     "retrieval",

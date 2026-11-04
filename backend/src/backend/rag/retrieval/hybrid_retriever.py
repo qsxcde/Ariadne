@@ -8,7 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from backend.domain.models import Chunk
-from backend.core.contracts.ports import VectorStore
+from backend.domain.ports import VectorStore
 from backend.rag.retrieval.bm25 import BM25Retriever
 from backend.rag.retrieval.context_builder import ExpansionDebugEntry, expand_context_with_debug
 from backend.rag.retrieval.filters import chunk_matches_scope, filter_chunks_by_scope, filter_indexable_chunks
@@ -156,7 +156,7 @@ def _rerank_if_needed(
 ) -> list[Chunk]:
     """Apply cross-encoder reranker if enabled and available."""
     if options.enable_reranker and options.rerank_top_k > 0:
-        from backend.rag.retrieval import reranker as _reranker_mod
+        from backend.adapters.rerank import reranker as _reranker_mod
         reranker = _reranker_mod.get_reranker()
         if reranker is not None:
             rerank_start = time.monotonic()

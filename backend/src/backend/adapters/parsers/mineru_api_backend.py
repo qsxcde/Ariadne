@@ -16,15 +16,15 @@ from collections.abc import Callable
 from typing import Any
 
 from backend.config import settings
-from backend.rag.ingestion.document_ir import BBoxUnit
-from backend.rag.ingestion.mineru_client import (
+from backend.domain.models import BBoxUnit
+from backend.adapters.parsers.mineru_client import (
     MinerUBatchFile,
     MinerUBatchNotFoundError,
     MinerUClient,
     MinerUClientConfig,
     MinerUError,
 )
-from backend.rag.ingestion.parser_backend import RawParserResult
+from backend.domain.parsing import RawParserResult
 
 logger = logging.getLogger(__name__)
 

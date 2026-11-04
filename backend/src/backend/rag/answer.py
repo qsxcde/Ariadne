@@ -14,7 +14,7 @@ from backend.adapters.llm.answer_generator import build_sources
 from backend.adapters.llm.answer_generator import generate_answer
 from backend.adapters.llm.answer_generator import stream_answer as stream_answer_for_chunks
 from backend.domain.models import Chunk, SourceRef
-from backend.core.contracts.ports import VectorStore
+from backend.domain.ports import VectorStore
 from backend.rag.retrieval.context_builder import expand_context
 from backend.rag.retrieval.filters import filter_chunks_by_scope
 from backend.rag.retrieval.hybrid_retriever import HybridRetrievalOptions
@@ -169,7 +169,9 @@ def retrieve_context(
             return hybrid_result.prompt_chunks, sources, diagnostics
         return hybrid_result.prompt_chunks, sources
 
-    seed_chunks = retrieve_seed_chunks(store, query, k=effective_top_k)
+    seed_chunks = retrieve_seed_chunks(
+        store, query, k=effective_top_k, default_k=retrieval_options.seed_top_k
+    )
     seed_chunks = filter_chunks_by_scope(
         seed_chunks,
         document_ids=retrieval_options.document_ids,
