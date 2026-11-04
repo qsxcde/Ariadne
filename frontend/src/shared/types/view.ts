@@ -6,6 +6,15 @@ export type PaperSession = {
   docId?: string;
   fileName: string;
   chunkCount: number;
+  indexEmbedding?: IndexEmbeddingState | null;
+};
+
+/** 当前 Embedding 配置与活动索引是否匹配。 */
+export type IndexEmbeddingState = {
+  stale: boolean;
+  current_model: string;
+  current_mode: "remote" | "local";
+  index_model?: string | null;
 };
 
 /** 聊天区渲染用的消息模型，与持久化实体解耦。 */
@@ -38,13 +47,19 @@ export type SessionActionTarget = {
   title: string;
 };
 
-type UploadPhase = "idle" | "parsing" | "indexing" | "ready" | "error";
+type UploadPhase = "idle" | "uploading" | "parsing" | "indexing" | "ready" | "error";
 
 export type UploadStatus = {
   fileName: string;
   fileSizeLabel: string;
   errorMessage?: string;
   phase: UploadPhase;
+  /** 0-100，按后端处理阶段推算；ready 时为 100 */
+  progress: number;
+  /** 阶段文案，如「正在解析 PDF」 */
+  stageLabel: string;
+  /** 解析完成前为 false：阅读器必须等文档就绪才能打开 */
+  canOpen: boolean;
 };
 
 export type SuggestedPrompt = {

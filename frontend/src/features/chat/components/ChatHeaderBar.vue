@@ -5,6 +5,8 @@ defineProps<{
   paperHint: string;
   sessionTitle: string;
   canOpenReader: boolean;
+  /** 阅读器被解析阻塞时的说明，例如「正在解析 PDF 35%」 */
+  readerHint?: string;
 }>();
 
 const emit = defineEmits<{
@@ -24,16 +26,22 @@ const emit = defineEmits<{
       <p v-else class="chat-header-bar__hint">暂未关联论文</p>
     </div>
 
-    <el-button
-      class="chat-header-bar__reader"
-      :icon="Document"
-      :disabled="!canOpenReader"
-      text
-      size="small"
-      @click="emit('openReader')"
-    >
-      原文
-    </el-button>
+    <div class="chat-header-bar__reader-area">
+      <span v-if="!canOpenReader && readerHint" class="chat-header-bar__reader-hint">
+        {{ readerHint }}
+      </span>
+      <el-button
+        class="chat-header-bar__reader"
+        :icon="Document"
+        :disabled="!canOpenReader"
+        :title="canOpenReader ? '打开原文阅读器' : readerHint || '解析完成后可打开'"
+        text
+        size="small"
+        @click="emit('openReader')"
+      >
+        原文
+      </el-button>
+    </div>
   </header>
 </template>
 
@@ -71,6 +79,21 @@ const emit = defineEmits<{
   white-space: nowrap;
 }
 
+.chat-header-bar__reader-area {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header-bar__reader-hint {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .chat-header-bar__reader {
   flex: 0 0 auto;
   color: var(--color-text-soft);
@@ -87,6 +110,10 @@ const emit = defineEmits<{
   .chat-header-bar__title {
     max-width: 320px;
     font-size: 18px;
+  }
+
+  .chat-header-bar__reader-hint {
+    display: none;
   }
 }
 </style>

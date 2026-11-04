@@ -13,6 +13,8 @@ defineProps<{
   isStreaming: boolean;
   messages: ChatMessageViewModel[];
   paperHint: string;
+  /** 阅读器不可用时的原因（例如「正在解析 PDF 35%」） */
+  readerHint: string;
   sessionTitle: string;
   suggestedPrompts: SuggestedPrompt[];
   uploadStatus: UploadStatus | null;
@@ -39,6 +41,7 @@ function handleDraftUpdate(value: string): void {
     <ChatHeaderBar
       :can-open-reader="canOpenReader"
       :paper-hint="paperHint"
+      :reader-hint="readerHint"
       :session-title="sessionTitle"
       @open-reader="$emit('openReader')"
     />

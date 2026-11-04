@@ -6,13 +6,16 @@ import PaperInspector from "@/features/reader/components/PaperInspector.vue";
 import PaperMetadataDialog from "@/features/reader/components/PaperMetadataDialog.vue";
 import PaperReader from "@/features/reader/components/PaperReader.vue";
 import PaperToolbar from "@/pages/paper/PaperToolbar.vue";
-import { explainSelection } from "@/api/papers";
+import { explainSelection, getPaper } from "@/api/papers";
 import { usePapers } from "@/features/library/composables/usePapers";
 import { useReadingClock } from "@/features/reader/composables/useReadingClock";
+import UploadStatusCard from "@/shared/components/UploadStatusCard.vue";
 import { shortcutLabel } from "@/shared/utils/platform";
 import type { AnnotationSummary, PaperDetail, PaperDocumentSummary } from "@/api";
-import type { SelectionAskMode } from "@/shared/types";
+import type { SelectionAskMode, UploadStatus } from "@/shared/types";
 import { toErrorMessage } from "@/shared/utils/error";
+import { formatFileSize } from "@/shared/utils/format";
+import { uploadStepFromStatus } from "@/shared/utils/upload";
 
 const props = defineProps<{
   paperId: string;
@@ -55,10 +58,90 @@ let pendingProgress: number | null = null;
 const inspectorShortcutHint = computed(
   () => `显示或隐藏论文面板（${shortcutLabel("\\")}）`,
 );
-const documentItem = computed<PaperDocumentSummary | null>(
-  () => (currentPaper.value?.documents ?? [])[0] ?? null,
-);
+/** 同一篇论文可能重复上传，取最近一次解析的文档，而不是最早那条记录。 */
+const documentItem = computed<PaperDocumentSummary | null>(() => {
+  const documents = currentPaper.value?.documents ?? [];
+  if (!documents.length) {
+    return null;
+  }
+  return [...documents].sort(
+    (left, right) => new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+  )[0];
+});
 const primarySessionId = computed(() => currentPaper.value?.primary_session_id ?? "");
+
+/** 解析完成前不渲染阅读器，避免打开一份空正文。 */
+const documentStep = computed(() => uploadStepFromStatus(documentItem.value?.status));
+const isDocumentReady = computed(() => documentStep.value.canOpen);
+const documentStatus = computed<UploadStatus | null>(() => {
+  const document = documentItem.value;
+  if (!document) {
+    return null;
+  }
+  const step = documentStep.value;
+  return {
+    fileName: document.filename,
+    fileSizeLabel: formatFileSize(document.file_size),
+    phase: step.phase,
+    progress: step.progress,
+    stageLabel: step.stageLabel,
+    canOpen: step.canOpen,
+    errorMessage: document.status === "failed" ? "解析失败，请重新上传" : undefined,
+  };
+});
+const isParseFailed = computed(() => documentItem.value?.status === "failed");
+const pendingTitle = computed(() =>
+  isParseFailed.value ? "这篇论文解析失败" : `${documentStep.value.stageLabel} · ${documentStep.value.progress}%`,
+);
+const pendingDescription = computed(() =>
+  isParseFailed.value
+    ? "可以回到文献库重新上传，或稍后点「刷新」重试。"
+    : "解析完成后会自动打开阅读器，也可以稍后点「刷新」。",
+);
+
+const POLL_INTERVAL_MS = 2000;
+let pollTimer: number | null = null;
+
+function stopDocumentPolling(): void {
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+/** 轮询走静默刷新，避免每 2 秒触发 isLoading 让工具栏闪动。 */
+async function pollDocument(): Promise<void> {
+  try {
+    currentPaper.value = await getPaper(props.paperId);
+  } catch {
+    // 单次失败忽略，下一轮继续
+  }
+}
+
+function startDocumentPolling(): void {
+  if (pollTimer !== null) {
+    return;
+  }
+  pollTimer = window.setInterval(() => {
+    if (isDocumentReady.value || isParseFailed.value) {
+      stopDocumentPolling();
+      return;
+    }
+    void pollDocument();
+  }, POLL_INTERVAL_MS);
+}
+
+watch(
+  () => [isDocumentReady.value, documentItem.value?.id, isParseFailed.value] as const,
+  ([ready, , failed]) => {
+    if (ready || failed) {
+      stopDocumentPolling();
+      return;
+    }
+    startDocumentPolling();
+  },
+  { immediate: true },
+);
 
 useReadingClock(toRef(props, "paperId"));
 
@@ -204,6 +287,7 @@ onBeforeUnmount(() => {
   if (progressTimer !== null) {
     window.clearTimeout(progressTimer);
   }
+  stopDocumentPolling();
 });
 </script>
 
@@ -244,7 +328,7 @@ onBeforeUnmount(() => {
     />
 
     <div
-      v-if="currentPaper && documentItem && primarySessionId"
+      v-if="currentPaper && documentItem && primarySessionId && isDocumentReady"
       class="paper-workspace__body"
       :class="{ 'paper-workspace__body--collapsed': isInspectorCollapsed }"
     >
@@ -286,6 +370,17 @@ onBeforeUnmount(() => {
       </aside>
     </div>
 
+    <div v-else-if="currentPaper && documentStatus" class="paper-workspace__pending">
+      <UploadStatusCard :status="documentStatus" />
+      <StateBlock
+        :kind="isParseFailed ? 'error' : 'loading'"
+        :title="pendingTitle"
+        :description="pendingDescription"
+        :action-label="isParseFailed ? '回到文献库' : '刷新'"
+        @action="isParseFailed ? emit('openLibrary') : refresh"
+      />
+    </div>
+
     <StateBlock
       v-else-if="currentPaper"
       kind="loading"
@@ -306,6 +401,23 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow: hidden;
   background: var(--color-bg);
+}
+
+.paper-workspace__pending {
+  display: flex;
+  width: 100%;
+  max-width: 720px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  overflow-y: auto;
+}
+
+.paper-workspace__pending :deep(.state-block) {
+  width: 100%;
 }
 
 .paper-workspace__body {

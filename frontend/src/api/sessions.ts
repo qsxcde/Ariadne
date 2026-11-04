@@ -1,6 +1,7 @@
 import { jsonRequest, requestJson, requestVoid } from "@/api/client";
 import type {
   DocumentUploadResult,
+  IndexRebuildResult,
   SessionSnapshot,
   SessionSummary,
   SessionUpdatePayload,
@@ -19,6 +20,14 @@ export function listSessions(): Promise<SessionSummary[]> {
 
 export function getSession(sessionId: string): Promise<SessionSnapshot> {
   return requestJson<SessionSnapshot>(`/sessions/${sessionId}`, "读取会话详情失败");
+}
+
+export function rebuildSessionIndex(sessionId: string): Promise<IndexRebuildResult> {
+  return requestJson<IndexRebuildResult>(
+    `/sessions/${sessionId}/index/rebuild`,
+    "重建索引失败",
+    { method: "POST" },
+  );
 }
 
 export function updateSession(

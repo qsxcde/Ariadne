@@ -22,9 +22,13 @@ export type LibraryDocument = Schemas["LibraryDocumentSummary"];
 export type SessionSummary = Schemas["SessionSummary"];
 export type SessionSnapshot = Schemas["SessionSnapshot"];
 export type SessionUpdatePayload = Schemas["SessionUpdateRequest"];
+export type IndexRebuildResult = Schemas["IndexRebuildResponse"];
 
 export type PaperBlock = Schemas["PaperBlock"];
 export type PaperContent = Schemas["DocumentContentResponse"];
+
+export type ModelSettings = Schemas["ModelSettingsResponse"];
+export type ModelSettingsUpdatePayload = Schemas["ModelSettingsUpdate"];
 
 export type PaperSummary = Schemas["PaperSummary"];
 export type PaperDetail = Schemas["PaperDetail"];

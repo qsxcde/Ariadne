@@ -105,6 +105,9 @@ async function generateGlossary(): Promise<void> {
           </button>
         </header>
         <p v-if="!glossary" class="paper-workspace__empty">提取关键术语与一句话解释。</p>
+        <p v-else-if="!(glossary.terms?.length)" class="paper-workspace__empty">
+          没有提取到术语，请重试。
+        </p>
         <ul v-else class="paper-workspace__brief-list">
           <li v-for="term in glossary.terms ?? []" :key="term.term">
             <strong>{{ term.term }}</strong>：{{ term.definition }}

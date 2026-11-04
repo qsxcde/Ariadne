@@ -4,13 +4,13 @@ import {
   createSession,
   getSession,
   listSessions,
+  rebuildSessionIndex,
   updateSession,
   uploadDocument,
 } from "@/api";
 import type { PaperDocument, SessionSummary } from "@/api";
 import { DEMO_SESSION_ID } from "@/shared/constants/app";
 import {
-  INDEXING_DOCUMENT_STATUSES,
   UPLOAD_MAX_POLLS,
   UPLOAD_POLL_INTERVAL_MS,
   UPLOAD_STATUS_LABELS,
@@ -18,6 +18,7 @@ import {
 import type { PaperSession, SessionSummaryViewModel, UploadStatus } from "@/shared/types";
 import { toErrorMessage } from "@/shared/utils/error";
 import { formatFileSize } from "@/shared/utils/format";
+import { UPLOADING_STEP, uploadStepFromStatus } from "@/shared/utils/upload";
 
 type SessionSnapshotResult = Awaited<ReturnType<typeof getSession>>;
 
@@ -60,6 +61,7 @@ export function useSessionState(options: UseSessionStateOptions) {
   const sessions = ref<SessionSummaryViewModel[]>([]);
   const documents = ref<PaperDocument[]>([]);
   const isUploading = ref(false);
+  const isRebuildingIndex = ref(false);
   const uploadStatus = ref<UploadStatus | null>(null);
 
   const hasPaper = computed(() => documents.value.length > 0);
@@ -81,6 +83,7 @@ export function useSessionState(options: UseSessionStateOptions) {
       docId: latestDocument?.id,
       fileName: snapshot.title || latestDocument?.filename || "新论文会话",
       chunkCount: snapshot.indexed_chunks,
+      indexEmbedding: snapshot.index_embedding ?? null,
     };
     if (!payload.preserveUploadStatus) {
       uploadStatus.value = null;
@@ -100,6 +103,7 @@ export function useSessionState(options: UseSessionStateOptions) {
     resetSessionState();
     sessions.value = [];
     isUploading.value = false;
+    isRebuildingIndex.value = false;
   }
 
   async function refreshSessions(activeSessionId?: string): Promise<void> {
@@ -144,7 +148,7 @@ export function useSessionState(options: UseSessionStateOptions) {
     uploadStatus.value = {
       fileName: file.name,
       fileSizeLabel: formatFileSize(file.size),
-      phase: "parsing",
+      ...UPLOADING_STEP,
     };
     try {
       const activeSessionId = paperSession.value?.sessionId;
@@ -166,11 +170,20 @@ export function useSessionState(options: UseSessionStateOptions) {
       uploadStatus.value = {
         fileName: file.name,
         fileSizeLabel: formatFileSize(file.size, "PDF "),
-        phase: result.session_status === "processing" ? "indexing" : "parsing",
+        ...uploadStepFromStatus(result.document_status),
       };
 
       const completedSnapshot = await waitForUploadCompletion(sessionId, result.document_id);
       if (!completedSnapshot) {
+        uploadStatus.value = {
+          fileName: file.name,
+          fileSizeLabel: "",
+          errorMessage: "解析超时，可稍后在文献库重试",
+          phase: "error",
+          progress: uploadStatus.value?.progress ?? 90,
+          stageLabel: "解析超时",
+          canOpen: false,
+        };
         return nextState;
       }
 
@@ -186,7 +199,7 @@ export function useSessionState(options: UseSessionStateOptions) {
         fileName: file.name,
         fileSizeLabel: uploadFailed ? "" : formatFileSize(file.size, "PDF "),
         errorMessage: uploadFailed ? uploadedDocument.error_message || "解析失败" : undefined,
-        phase: uploadFailed ? "error" : "ready",
+        ...uploadStepFromStatus(uploadFailed ? "failed" : "ready"),
       };
       return completedState;
     } catch (error) {
@@ -195,7 +208,7 @@ export function useSessionState(options: UseSessionStateOptions) {
         fileName: file.name,
         fileSizeLabel: "上传失败",
         errorMessage: "上传失败",
-        phase: "error",
+        ...uploadStepFromStatus("failed"),
       };
       return null;
     } finally {
@@ -220,7 +233,7 @@ export function useSessionState(options: UseSessionStateOptions) {
       uploadStatus.value = {
         fileName: document.filename,
         fileSizeLabel: UPLOAD_STATUS_LABELS[document.status] ?? document.status,
-        phase: INDEXING_DOCUMENT_STATUSES.has(document.status) ? "indexing" : "parsing",
+        ...uploadStepFromStatus(document.status),
       };
     }
     return null;
@@ -274,6 +287,27 @@ export function useSessionState(options: UseSessionStateOptions) {
     }
   }
 
+  async function rebuildIndex(): Promise<boolean> {
+    const sessionId = paperSession.value?.sessionId;
+    if (!sessionId || sessionId === DEMO_SESSION_ID || isRebuildingIndex.value) {
+      return false;
+    }
+    options.setErrorMessage("");
+    isRebuildingIndex.value = true;
+    try {
+      await rebuildSessionIndex(sessionId);
+      const snapshot = await getSession(sessionId);
+      applySnapshot({ preserveUploadStatus: true, snapshot });
+      await refreshSessions(sessionId);
+      return true;
+    } catch (error) {
+      options.setErrorMessage(toErrorMessage(error, "重建索引失败"));
+      return false;
+    } finally {
+      isRebuildingIndex.value = false;
+    }
+  }
+
   async function deleteSession(sessionId: string): Promise<{ nextSessionId?: string } | null> {
     options.setErrorMessage("");
     try {
@@ -302,6 +336,7 @@ export function useSessionState(options: UseSessionStateOptions) {
     documents,
     hasPaper,
     indexedChunks,
+    isRebuildingIndex,
     isUploading,
     paperSession,
     sessions,
@@ -311,6 +346,7 @@ export function useSessionState(options: UseSessionStateOptions) {
     handleUpload,
     initializeSessions,
     openSession,
+    rebuildIndex,
     renameSession,
     reset,
     togglePinSession,

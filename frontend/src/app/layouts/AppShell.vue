@@ -18,6 +18,7 @@ import { useLibrary } from "@/features/library/composables/useLibrary";
 import { useSourcePreview } from "@/shared/composables/useSourcePreview";
 import type { SelectionAskMode, SidebarSessionItem, SuggestedPrompt } from "@/shared/types";
 import { buildSelectionPrompt } from "@/shared/utils/prompt";
+import { canOpenDocument, uploadStepFromStatus } from "@/shared/utils/upload";
 
 const route = useRoute();
 const router = useRouter();
@@ -56,7 +57,40 @@ const isSidebarCollapsed = ref(false);
 const { setActiveSession } = useSourcePreview();
 
 const activeSessionId = computed(() => paperSession.value?.sessionId ?? "");
-const readerDocument = computed(() => documents.value[0] ?? null);
+/**
+ * 后端的会话文档按 created_at 升序返回，``documents[0]`` 是最早上传的那篇。
+ * 阅读器必须跟随当前文档（``paperSession.docId``），否则新上传的文件会被旧文档遮住。
+ */
+const readerDocument = computed(() => {
+  const documents_ = documents.value;
+  if (!documents_.length) {
+    return null;
+  }
+  const activeId = paperSession.value?.docId;
+  const active = activeId ? documents_.find((document) => document.id === activeId) : undefined;
+  return active ?? documents_[documents_.length - 1] ?? null;
+});
+/** 只有解析完成的文档才能进阅读器，避免打开一个空白正文。 */
+const canOpenReader = computed(() =>
+  readerDocument.value ? canOpenDocument(readerDocument.value.status) : false,
+);
+const readerProgressHint = computed(() => {
+  if (canOpenReader.value) {
+    return "";
+  }
+  const status = uploadStatus.value;
+  if (status && !status.canOpen && status.phase !== "error") {
+    return `${status.stageLabel} ${status.progress}%`;
+  }
+  const document = readerDocument.value;
+  if (document) {
+    const step = uploadStepFromStatus(document.status);
+    return step.phase === "error"
+      ? "解析失败，请重新上传"
+      : `${step.stageLabel} ${step.progress}%`;
+  }
+  return "解析中，完成后可打开";
+});
 const showReader = computed(() => route.name === "session-reader");
 const showToday = computed(() => route.name === "today");
 const showSynthesis = computed(() => route.name === "synthesis");
@@ -154,6 +188,9 @@ function toggleSidebarCollapse(): void {
 }
 
 function openReader(): void {
+  if (!canOpenReader.value) {
+    return;
+  }
   const paperId = readerDocument.value?.paper_id;
   if (paperId) {
     void router.push({ name: "paper", params: { paperId } });
@@ -257,7 +294,7 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
       />
 
       <PaperReader
-        v-else-if="showReader && readerDocument && activeSessionId"
+        v-else-if="showReader && readerDocument && activeSessionId && canOpenReader"
         :session-id="activeSessionId"
         :document-id="readerDocument.id"
         @ask="handleAsk"
@@ -269,13 +306,14 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
       <ChatWorkspace
         v-if="!showLibrary && !showToday && !showSynthesis && !showFeed && !showPaper && !showReader && !showSettings"
         v-model:draft="draft"
-        :can-open-reader="Boolean(readerDocument)"
+        :can-open-reader="canOpenReader"
         :error-message="errorMessage"
         :has-paper="hasPaper"
         :is-streaming="isStreaming"
         :is-uploading="isUploading"
         :messages="messages"
         :paper-hint="currentPaperHint"
+        :reader-hint="readerProgressHint"
         :session-title="currentSessionTitle"
         :suggested-prompts="suggestedPrompts"
         :upload-status="uploadStatus"
