@@ -4,6 +4,7 @@
 
 | 文档 | 内容 | 日期 |
 |---|---|---|
+| [agent-upgrade-2026-11-04.md](agent-upgrade-2026-11-04.md) | RAG → Agent 升级：P0 LangChain create_agent + LangGraph、前端 Run 运行层、P1 Deep Agents、依赖门禁与验收 | 2026-11-04 |
 | [product-plan-2026-11-02.md](product-plan-2026-11-02.md) | 产品方向、三种「进度」、六层功能地图、M0–M4 路线图 | 2026-11-02 |
 | [goals-2026-11-03.md](goals-2026-11-03.md) | 阶段 Objective、关键结果、退出条件、停止规则与功能级 DoD | 2026-11-03 |
 | [phase-tasks-2026-11-03.md](phase-tasks-2026-11-03.md) | 把目标卡拆成 M0–M4 的可勾选任务清单：依赖、验收证据、任务系统映射 | 2026-11-03 |
