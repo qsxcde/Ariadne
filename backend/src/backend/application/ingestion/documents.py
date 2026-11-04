@@ -4,7 +4,7 @@ import re
 import shutil
 import uuid
 from contextlib import suppress
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from backend.adapters.pdf.cropper import CropRenderError, render_block_crop
 from backend.application.ingestion import index_maintenance
@@ -411,6 +411,9 @@ def _remove_document_files(document: DocumentRecord) -> None:
             root = data_dir().resolve()
             if artifact_dir != root and artifact_dir.is_relative_to(root):
                 shutil.rmtree(artifact_dir, ignore_errors=True)
+        else:
+            with suppress(OSError, ValueError):
+                store.delete_prefix(str(PurePosixPath(ir_ref).parent))
 
 
 def list_library_documents(user_id: str | None) -> list[dict]:
