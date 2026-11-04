@@ -78,7 +78,7 @@ def _create_initial_schema(conn) -> None:
           url TEXT NULL,
           metadata_json TEXT NULL,
           reading_status TEXT NOT NULL DEFAULT 'inbox',
-          progress REAL NOT NULL DEFAULT 0,
+          progress DOUBLE PRECISION NOT NULL DEFAULT 0,
           last_location_json TEXT NULL,
           last_read_at TEXT NULL,
           time_spent_seconds INTEGER NOT NULL DEFAULT 0,
@@ -152,7 +152,7 @@ def _create_initial_schema(conn) -> None:
           block_ids_json TEXT NULL,
           block_types_json TEXT NULL,
           linked_block_ids_json TEXT NULL,
-          confidence REAL NULL
+          confidence DOUBLE PRECISION NULL
         );
 
         CREATE TABLE IF NOT EXISTS retrieval_indexes (
