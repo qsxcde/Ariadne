@@ -28,6 +28,19 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      minio:
+        image: bitnamilegacy/minio:latest
+        env:
+          MINIO_ROOT_USER: ariadne
+          MINIO_ROOT_PASSWORD: ariadne_dev_secret
+          MINIO_DEFAULT_BUCKETS: ariadne
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
 
@@ -46,7 +59,7 @@ jobs:
           uv pip install --python .venv-ci/bin/python \
             pytest pytest-asyncio fastapi pydantic pydantic-settings \
             python-jose bcrypt httpx ruff mypy \
-            "psycopg[binary,pool]" \
+            "psycopg[binary,pool]" boto3 \
             openai langchain langgraph langchain-openai langgraph-checkpoint-sqlite
 
       - name: Lint (ruff)
@@ -68,6 +81,14 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://ariadne:ariadne_dev@127.0.0.1:5432/ariadne_test
         run: .venv-ci/bin/python -m pytest -m "unit or integration"
+
+      - name: Run tests (MinIO object storage)
+        env:
+          TEST_S3_ENDPOINT: http://127.0.0.1:9000
+          TEST_S3_BUCKET: ariadne
+          TEST_S3_ACCESS_KEY: ariadne
+          TEST_S3_SECRET_KEY: ariadne_dev_secret
+        run: .venv-ci/bin/python -m pytest -q tests/integration/test_object_store_minio.py
 
   frontend:
     name: Frontend build
