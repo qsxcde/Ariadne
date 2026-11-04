@@ -132,10 +132,10 @@ const emit = defineEmits<{
 .paper-reader__mode.is-active {
   color: var(--color-text);
   background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(60, 50, 35, 0.08);
+  box-shadow: var(--shadow-hairline);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1200px) {
   .paper-reader__bar {
     align-items: center;
     padding: 8px 16px;

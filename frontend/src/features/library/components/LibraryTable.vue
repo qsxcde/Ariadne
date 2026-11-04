@@ -174,7 +174,7 @@ function visibleTags(paper: PaperSummary): string[] {
 .library-table thead th {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-sticky);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-page);
   padding: 8px 10px;
@@ -231,7 +231,7 @@ function visibleTags(paper: PaperSummary): string[] {
 }
 
 /* 1024 断点：先让出标题宽度，再逐级隐藏低优先级列。 */
-@media (max-width: 1320px) {
+@media (max-width: 1200px) {
   .library-table__venue-col,
   .library-table__tags-col {
     display: none;
@@ -242,7 +242,7 @@ function visibleTags(paper: PaperSummary): string[] {
   }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1100px) {
   .library-table__read-col {
     display: none;
   }

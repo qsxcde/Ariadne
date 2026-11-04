@@ -146,7 +146,7 @@ function toggleMore(): void {
 
 .chat-composer__input {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-sticky);
 }
 
 .chat-composer__input :deep(.el-textarea__inner) {
@@ -178,7 +178,7 @@ function toggleMore(): void {
   color: var(--color-white);
   background: var(--gradient-accent);
   border-color: transparent;
-  box-shadow: 0 12px 25px rgba(71, 110, 230, 0.24);
+  box-shadow: var(--shadow-accent);
 }
 
 @media (max-width: 1200px) {

@@ -78,7 +78,7 @@
 }
 
 .el-overlay {
-  background-color: rgba(25, 23, 19, 0.38);
+  background-color: var(--overlay-modal);
 }
 
 .el-overlay-dialog {
@@ -144,7 +144,7 @@
 
 .chat-composer__send.el-button.is-disabled,
 .chat-composer__send.el-button.is-disabled:hover {
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-on-dark-muted);
   background: var(--paper-300);
   border-color: var(--paper-300);
   box-shadow: none;

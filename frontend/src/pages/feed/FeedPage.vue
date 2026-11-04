@@ -118,7 +118,7 @@ onBeforeUnmount(() => {
   gap: 30px;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
   .feed-view__grid {
     grid-template-columns: 1fr;
   }

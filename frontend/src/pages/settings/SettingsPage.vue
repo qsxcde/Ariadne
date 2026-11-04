@@ -181,13 +181,7 @@ onMounted(() => {
   min-width: 0;
 }
 
-.settings-hint {
-  margin-top: 10px !important;
-  color: var(--color-text-muted) !important;
-  font-size: 11px !important;
-}
-
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .settings-view__layout {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;

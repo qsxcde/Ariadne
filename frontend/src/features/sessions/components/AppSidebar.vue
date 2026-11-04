@@ -152,7 +152,7 @@ function handlePin(sessionId: string): void {
   position: absolute;
   top: 22px;
   left: 22px;
-  z-index: 4;
+  z-index: var(--z-sidebar);
   display: inline-flex;
   width: auto;
   height: auto;
@@ -181,7 +181,7 @@ function handlePin(sessionId: string): void {
   font-size: 16px;
   font-weight: 850;
   background: var(--gradient-brand);
-  box-shadow: 0 10px 22px rgba(71, 110, 230, 0.2);
+  box-shadow: var(--shadow-accent);
 }
 
 .app-sidebar__collapsed-button.el-button {

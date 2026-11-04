@@ -112,30 +112,6 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
   min-width: 0;
 }
 
-.synthesis__pane-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-}
-
-.synthesis__pane-head h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.synthesis__pane-head span {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
 .synthesis__paper-list {
   margin: 0 0 14px;
   padding: 0;
@@ -212,20 +188,6 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
   font-weight: 700;
 }
 
-.synthesis__primary {
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  padding: 7px 14px;
-  color: var(--color-white);
-  font-size: 12px;
-}
-
-.synthesis__primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 .synthesis__generate {
   width: 100%;
 }
@@ -267,7 +229,7 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
 .synthesis__table thead th {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-sticky);
   background: var(--color-page);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -280,7 +242,7 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
 .synthesis__sticky-col {
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: var(--z-raised);
   width: 22%;
   background: var(--color-surface);
   color: var(--color-text);
@@ -290,7 +252,7 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
 }
 
 .synthesis__table thead .synthesis__sticky-col {
-  z-index: 3;
+  z-index: var(--z-corner);
   background: var(--color-page);
 }
 

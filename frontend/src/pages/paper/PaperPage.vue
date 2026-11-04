@@ -32,7 +32,7 @@ const {
   addNote,
 } = usePapers();
 
-const NARROW_QUERY = "(max-width: 1180px)";
+const NARROW_QUERY = "(max-width: 1200px)";
 const INSPECTOR_STORAGE_KEY = "scipal.inspector.collapsed";
 const PROGRESS_THROTTLE_MS = 1200;
 const STATUS_FEEDBACK_MS = 1800;
@@ -327,7 +327,7 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1200px) {
   .paper-workspace__body {
     position: relative;
     grid-template-columns: minmax(0, 1fr);
@@ -336,18 +336,18 @@ onBeforeUnmount(() => {
   .paper-workspace__scrim {
     position: absolute;
     inset: 0;
-    z-index: 15;
+    z-index: var(--z-page-scrim);
     display: block;
     border: 0;
-    background: rgba(25, 23, 19, 0.28);
+    background: var(--overlay-page);
   }
 
   .paper-workspace__inspector {
     position: absolute;
     inset: 0 0 0 auto;
-    z-index: 20;
+    z-index: var(--z-page-panel);
     width: min(360px, 88vw);
-    box-shadow: -18px 0 40px rgba(60, 50, 35, 0.14);
+    box-shadow: var(--shadow-drawer);
   }
 }
 </style>

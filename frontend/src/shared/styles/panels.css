@@ -1,0 +1,145 @@
+/**
+ * 跨页面复用的面板基础件。
+ *
+ * 这些 BEM 类名在多个页面/面板中重复出现，抽到全局避免每个组件各写一份；
+ * 类名带业务前缀，不会与其他组件冲突。
+ */
+
+/* ---------- 论文工作台：顶栏、Inspector 与笔记面板 ---------- */
+.paper-workspace__secondary {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.paper-workspace__secondary:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.paper-workspace__secondary--primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-white);
+}
+
+.paper-workspace__secondary--primary:hover {
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+  color: var(--color-white);
+}
+
+.paper-workspace__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 8px;
+  height: 30px;
+}
+
+/* ---------- 设置页 ---------- */
+.settings-hint {
+  margin-top: 10px !important;
+  color: var(--color-text-muted) !important;
+  font-size: 11px !important;
+}
+
+.settings-button {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  padding: 6px 12px;
+  color: var(--color-text-soft);
+  font-size: 12px;
+}
+
+.settings-button:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.settings-button--primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-white);
+}
+
+.settings-button--primary:hover:not(:disabled) {
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+  color: var(--color-white);
+}
+
+/* ---------- 跨论文综合 ---------- */
+.synthesis__pane-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.synthesis__pane-head h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.synthesis__pane-head span {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.synthesis__primary {
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  padding: 7px 14px;
+  color: var(--color-white);
+  font-size: 12px;
+}
+
+.synthesis__primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ---------- Today ---------- */
+.today__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.today__section-head h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.today__section-head span {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}

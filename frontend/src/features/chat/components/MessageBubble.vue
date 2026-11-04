@@ -102,7 +102,7 @@ const displayText = computed(() => {
   justify-content: center;
   border-radius: 11px;
   background: var(--gradient-accent);
-  box-shadow: 0 14px 28px rgba(71, 110, 230, 0.2);
+  box-shadow: var(--shadow-accent);
 }
 
 .avatar-shell__brand {

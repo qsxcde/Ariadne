@@ -52,7 +52,7 @@ a {
 }
 
 ::selection {
-  background: rgba(178, 58, 42, 0.18);
+  background: var(--accent-wash-18);
 }
 
 :focus-visible {

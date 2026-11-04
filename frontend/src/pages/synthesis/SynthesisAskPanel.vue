@@ -41,30 +41,6 @@ const { papers, question, answer, isAsking, selectedCollectionId, ask } = useSyn
   max-width: 820px;
 }
 
-.synthesis__pane-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 8px;
-  margin-bottom: 10px;
-}
-
-.synthesis__pane-head h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.synthesis__pane-head span {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
 .synthesis__textarea {
   width: 100%;
   border: 1px solid var(--color-border);
@@ -86,20 +62,6 @@ const { papers, question, answer, isAsking, selectedCollectionId, ask } = useSyn
   margin-top: 8px;
   color: var(--color-text-muted);
   font-size: 11px;
-}
-
-.synthesis__primary {
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  padding: 7px 14px;
-  color: var(--color-white);
-  font-size: 12px;
-}
-
-.synthesis__primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .synthesis__answer {

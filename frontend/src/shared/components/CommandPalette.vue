@@ -253,13 +253,13 @@ function handleKeydown(event: KeyboardEvent): void {
 .palette {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-palette);
 }
 
 .palette__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(25, 23, 19, 0.3);
+  background: var(--overlay-strong);
 }
 
 .palette__panel {
@@ -271,7 +271,7 @@ function handleKeydown(event: KeyboardEvent): void {
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  box-shadow: 0 24px 60px rgba(40, 33, 22, 0.22);
+  box-shadow: var(--shadow-palette);
 }
 
 .palette__search {

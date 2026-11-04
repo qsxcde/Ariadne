@@ -46,30 +46,6 @@ function openPaper(paper: PaperSummary): void {
 </template>
 
 <style scoped>
-.today__section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
-}
-
-.today__section-head h2 {
-  margin: 0;
-  color: var(--color-text);
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.today__section-head span {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
 .today__queue {
   min-width: 0;
 }

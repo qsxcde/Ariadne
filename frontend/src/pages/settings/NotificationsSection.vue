@@ -136,28 +136,9 @@ const {
   margin-top: 12px;
 }
 
-.settings-button {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  padding: 6px 12px;
-  color: var(--color-text-soft);
-  font-size: 12px;
-}
-
-.settings-button:hover:not(:disabled) {
-  border-color: var(--color-border-strong);
-  color: var(--color-text);
-}
-
 .settings-saved {
   color: var(--color-success);
   font-size: 11px;
 }
 
-.settings-hint {
-  margin-top: 10px !important;
-  color: var(--color-text-muted) !important;
-  font-size: 11px !important;
-}
 </style>

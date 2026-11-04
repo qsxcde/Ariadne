@@ -36,19 +36,19 @@ const ASK_ACTIONS: { mode: SelectionAskMode; label: string }[] = [
 <style scoped>
 .paper-selection {
   position: fixed;
-  z-index: 2300;
+  z-index: var(--z-selection);
   display: flex;
   gap: 2px;
   padding: 4px;
   background: var(--color-text);
   border-radius: var(--radius-sm);
-  box-shadow: 0 8px 20px rgba(25, 23, 19, 0.22);
+  box-shadow: var(--shadow-float);
   transform: translate(-50%, calc(-100% - 10px));
 }
 
 .paper-selection__action {
   padding: 5px 10px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--color-on-dark);
   font-size: 12px;
   background: none;
   border: 0;

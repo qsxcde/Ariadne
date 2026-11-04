@@ -258,7 +258,7 @@ function handleStatusChange(event: Event): void {
   white-space: nowrap;
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1200px) {
   .paper-workspace__action-label {
     display: none;
   }

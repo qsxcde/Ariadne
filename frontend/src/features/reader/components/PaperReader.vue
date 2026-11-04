@@ -228,7 +228,7 @@ onBeforeUnmount(() => {
   top: 24px;
   right: 10px;
   bottom: 24px;
-  z-index: 2;
+  z-index: var(--z-raised);
   width: 1px;
   background: var(--color-border);
   pointer-events: none;

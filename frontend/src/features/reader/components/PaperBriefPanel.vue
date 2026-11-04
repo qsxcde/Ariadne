@@ -98,33 +98,6 @@ async function generateBrief(): Promise<void> {
   text-transform: uppercase;
 }
 
-.paper-workspace__secondary {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 11px;
-  padding: 4px 8px;
-}
-
-.paper-workspace__secondary:hover {
-  border-color: var(--color-border-strong);
-  color: var(--color-text);
-}
-
-.paper-workspace__secondary--primary {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-white);
-}
-
-.paper-workspace__secondary--primary:hover {
-  border-color: var(--color-accent-strong);
-  background: var(--color-accent-strong);
-  color: var(--color-white);
-}
-
 .paper-workspace__brief {
   display: flex;
   flex-direction: column;

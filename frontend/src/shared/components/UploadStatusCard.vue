@@ -44,7 +44,7 @@ defineProps<{
   font-size: 9px;
   font-weight: 900;
   background: var(--color-surface);
-  border: 1px solid rgba(71, 110, 230, 0.24);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
 }
 

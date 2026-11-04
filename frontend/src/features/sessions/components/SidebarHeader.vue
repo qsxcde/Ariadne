@@ -75,7 +75,7 @@ defineEmits<{
   font-weight: 900;
   background: var(--gradient-brand);
   border-radius: 11px;
-  box-shadow: 0 12px 24px rgba(71, 110, 230, 0.22);
+  box-shadow: var(--shadow-accent);
 }
 
 .sidebar-header__copy {

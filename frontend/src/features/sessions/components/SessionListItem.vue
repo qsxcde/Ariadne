@@ -98,7 +98,7 @@ function handleRename(): void {
 }
 
 .session-item--pinned {
-  border-color: rgba(123, 147, 232, 0.34);
+  border-color: var(--color-border-strong);
 }
 
 .session-item--collapsed {
@@ -133,7 +133,7 @@ function handleRename(): void {
   color: var(--color-accent-strong);
   font-size: 14px;
   background: var(--color-surface);
-  border: 1px solid rgba(71, 110, 230, 0.24);
+  border: 1px solid var(--color-border);
   border-radius: 9px;
 }
 

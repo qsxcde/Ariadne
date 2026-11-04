@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const STORAGE_KEY = "scipal.rail.collapsed";
-const NARROW_QUERY = "(max-width: 1180px)";
+const NARROW_QUERY = "(max-width: 1200px)";
 const isNarrow = ref(window.matchMedia(NARROW_QUERY).matches);
 const collapsed = ref(
   window.localStorage.getItem(STORAGE_KEY) === "1" || isNarrow.value,

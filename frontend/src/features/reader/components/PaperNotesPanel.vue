@@ -134,35 +134,6 @@ function exportNotes(): void {
   font-size: 11px;
 }
 
-.paper-workspace__secondary {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 11px;
-  padding: 4px 8px;
-}
-
-.paper-workspace__secondary:hover {
-  border-color: var(--color-border-strong);
-  color: var(--color-text);
-}
-
-.paper-workspace__primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-white);
-  cursor: pointer;
-  font-size: 11px;
-  padding: 0 8px;
-  height: 30px;
-}
-
 .paper-workspace__note-compose {
   display: flex;
   flex-direction: column;
