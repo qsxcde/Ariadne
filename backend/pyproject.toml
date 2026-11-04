@@ -21,6 +21,12 @@ dependencies = [
     "mineru>=1.1",
     "pypdf>=5.0",
     "modelscope>=1.20",
+    "tenacity>=8.5.0",
+    "cachetools>=7.2.8",
+    "sse-starlette>=3.6.0",
+    "pybtex>=0.26.1",
+    "langchain-text-splitters>=0.3.11",
+    "pdfminer-six>=20250506",
 ]
 
 [project.optional-dependencies]
