@@ -149,6 +149,97 @@ def test_index_snapshot_round_trip_via_minio(tmp_path, monkeypatch):
     assert not store.exists(snapshot["chunks_path"])
 
 
+def test_file_migration_uploads_artifacts_and_rewrites_refs(tmp_path, monkeypatch):
+    from backend import config
+    from backend.scripts import migrate_files_to_object_store as migrate_files
+    from backend.storage.object_store import get_object_store
+    from backend.storage.sqlite import documents as document_repo
+    from backend.storage.sqlite import index_snapshots as snapshot_repo
+    from backend.storage.sqlite import indexes as index_repo
+    from backend.storage.sqlite import sessions
+
+    _configure_s3(monkeypatch, tmp_path)
+    data_root = config.data_dir()
+    session = sessions.create_session("migration")
+    document_id = str(uuid.uuid4())
+    pdf_path = data_root / "raw" / session["id"] / f"{document_id}.pdf"
+    _write(pdf_path, b"%PDF-1.7")
+    artifact_dir = data_root / "raw" / session["id"] / "parsed" / document_id
+    ir_path = _write(artifact_dir / "document.ir.json", b"{}")
+    _write(artifact_dir / "document.md", b"# paper")
+    _write(artifact_dir / "document.normalized.md", b"# paper")
+    _write(artifact_dir / "quality_report.json", b"{}")
+    _write(artifact_dir / "crops" / "b1-2x.png", b"png")
+    document_repo.create_document(
+        session_id=session["id"],
+        filename="paper.pdf",
+        file_path=str(pdf_path),
+        mime_type="application/pdf",
+        file_size=8,
+        document_id=document_id,
+    )
+    document_repo.update_document_artifacts(
+        document_id=document_id,
+        parsed_ir_path=str(ir_path),
+        parsed_markdown_path=str(artifact_dir / "document.md"),
+        quality_report_path=str(artifact_dir / "quality_report.json"),
+        parser_name="mineru",
+        parser_version="2.1",
+        parse_quality_status="good",
+    )
+    snapshot_index = _write(
+        data_root / "index" / session["id"] / "legacy.faiss.index", b"index"
+    )
+    snapshot_chunks = _write(
+        data_root / "index" / session["id"] / "legacy.chunks.json", b"[]"
+    )
+    snapshot = snapshot_repo.create_building_snapshot(
+        session_id=session["id"],
+        index_path=str(snapshot_index),
+        chunks_path=str(snapshot_chunks),
+        document_ids=[document_id],
+    )
+    _write(data_root / "index" / session["id"] / "legacy2.faiss.index", b"legacy")
+    _write(data_root / "index" / session["id"] / "legacy2.chunks.json", b"[]")
+    index_repo.upsert_index(
+        session["id"],
+        str(data_root / "index" / session["id"] / "legacy2.faiss.index"),
+        str(data_root / "index" / session["id"] / "legacy2.chunks.json"),
+        "ready",
+    )
+
+    dry_run = migrate_files.run(apply=False)
+    assert dry_run["uploads"] >= 9
+    assert document_repo.get_document(document_id)["file_path"] == str(pdf_path)
+
+    report = migrate_files.run(apply=True)
+    assert report["uploads"] == dry_run["uploads"]
+    store = get_object_store()
+    migrated = document_repo.get_document(document_id)
+    assert migrated["file_path"] == f"raw/{session['id']}/{document_id}.pdf"
+    assert migrated["parsed_ir_path"] == (
+        f"raw/{session['id']}/parsed/{document_id}/document.ir.json"
+    )
+    assert store.exists(migrated["file_path"])
+    assert store.exists(migrated["parsed_ir_path"])
+    assert store.exists(
+        f"raw/{session['id']}/parsed/{document_id}/document.normalized.md"
+    )
+    assert store.exists(f"raw/{session['id']}/parsed/{document_id}/crops/b1-2x.png")
+    assert snapshot_repo.get_snapshot(snapshot["id"])["index_path"].startswith("index/")
+    assert index_repo.get_index(session["id"])["index_path"].startswith("index/")
+
+    second = migrate_files.run(apply=True)
+    assert second["uploads"] == 0
+    assert second["updates"] == 0
+
+
+def _write(path, data: bytes):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return path
+
+
 def _embed(texts: list[str]) -> list[list[float]]:
     vectors = []
     for text in texts:

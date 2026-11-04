@@ -185,6 +185,24 @@ uv run --project backend python -m backend.scripts.migrate_sqlite_to_postgres \
 
 > 数据库迁移不移动上传文件与索引文件，磁盘路径仍按原样读取。
 
+### 4.8 迁移本地文件到对象存储
+
+切换 `OBJECT_STORE_BACKEND=s3` 后，先让脚本把数据库引用的本地产物上传到桶里并改写为对象 key：
+
+```bash
+# 默认 dry-run：只统计文件数、字节数与待更新行数
+uv run --project backend python -m backend.scripts.migrate_files_to_object_store
+
+# 正式上传并更新数据库；--delete-local 在事务提交后删除本地副本
+uv run --project backend python -m backend.scripts.migrate_files_to_object_store \
+  --apply --delete-local
+```
+
+- 只处理数据根内的绝对路径；已是对象 key 的引用会跳过，可重复执行。
+- `parsed_ir_path` 所在目录会整体上传（含 markdown、normalized、crops）。
+- 覆盖 `documents`、`index_snapshots`、`retrieval_indexes` 三张表的路径列。
+- 文件缺失或位于数据根之外时只报告，不阻断其余文件。
+
 ## 5. 排障 FAQ
 
 | 现象 | 原因 | 处理 |

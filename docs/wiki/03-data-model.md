@@ -417,6 +417,8 @@ backend/data/                              # 默认数据根 = backend_project_d
 
 `backend/src/backend/scripts/migrate_storage.py` 提供旧布局迁移：把 `data/uploads/sessions/<sid>/{documents,parsed,indexes}` 平移到 `backend/data/{raw,parsed,index}/<sid>`；同名冲突且内容不同会 `raise RuntimeError("Storage migration conflict")`。
 
+从本地磁盘切换到 S3 / MinIO 时使用 `backend/src/backend/scripts/migrate_files_to_object_store.py`：上传 `documents`、`index_snapshots`、`retrieval_indexes` 引用的文件并把列改写为对象 key，支持 dry-run、`--apply` 与 `--delete-local`。
+
 ## 6. 向量库注册表与缓存
 
 `backend/src/backend/application/store_cache.py`
