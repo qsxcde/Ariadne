@@ -1,5 +1,5 @@
-import { jsonRequest, requestJson, requestVoid } from "./client";
-import type { CollectionCreatePayload, CollectionSummary } from "./types";
+import { jsonRequest, requestJson, requestVoid } from "@/api/client";
+import type { CollectionCreatePayload, CollectionSummary } from "@/api/types";
 
 export function listCollections(): Promise<CollectionSummary[]> {
   return requestJson<CollectionSummary[]>("/collections", "读取集合失败");

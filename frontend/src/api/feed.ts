@@ -1,10 +1,10 @@
-import { jsonRequest, requestJson, requestVoid } from "./client";
+import { jsonRequest, requestJson, requestVoid } from "@/api/client";
 import type {
   FeedItemSummary,
   FeedRefreshResult,
   SubscriptionCreatePayload,
   SubscriptionSummary,
-} from "./types";
+} from "@/api/types";
 
 export function listSubscriptions(): Promise<SubscriptionSummary[]> {
   return requestJson<SubscriptionSummary[]>("/subscriptions", "读取订阅失败");

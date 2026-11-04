@@ -2,12 +2,12 @@
 import { computed, ref } from "vue";
 import { ElMessage } from "element-plus";
 
-import { getCitations, getGlossary } from "../../../api/papers";
-import { usePapers } from "../../../composables/usePapers";
-import PaperAskPanel from "./PaperAskPanel.vue";
-import PaperBriefPanel from "./PaperBriefPanel.vue";
-import PaperNotesPanel from "./PaperNotesPanel.vue";
-import type { AnnotationSummary, CitationGraph, GlossaryResponse } from "../../../api";
+import { getCitations, getGlossary } from "@/api/papers";
+import { usePapers } from "@/features/library/composables/usePapers";
+import PaperAskPanel from "@/features/reader/components/PaperAskPanel.vue";
+import PaperBriefPanel from "@/features/reader/components/PaperBriefPanel.vue";
+import PaperNotesPanel from "@/features/reader/components/PaperNotesPanel.vue";
+import type { AnnotationSummary, CitationGraph, GlossaryResponse } from "@/api";
 
 const props = defineProps<{
   paperId: string;

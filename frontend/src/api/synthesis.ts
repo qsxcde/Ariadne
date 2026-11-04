@@ -1,5 +1,5 @@
-import { jsonRequest, requestJson } from "./client";
-import type { CollectionAskResult, PaperComparison } from "./types";
+import { jsonRequest, requestJson } from "@/api/client";
+import type { CollectionAskResult, PaperComparison } from "@/api/types";
 
 export function askCollection(
   collectionId: string,

@@ -1,4 +1,4 @@
-import { jsonRequest, requestForm, requestJson, requestText, requestVoid } from "./client";
+import { jsonRequest, requestForm, requestJson, requestText, requestVoid } from "@/api/client";
 import type {
   ExplainResponse,
   CitationGraph,
@@ -12,7 +12,7 @@ import type {
   PaperUpdatePayload,
   PaperUploadResult,
   WeeklyReview,
-} from "./types";
+} from "@/api/types";
 
 type PaperListFilters = {
   status?: string;

@@ -4,9 +4,9 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vu
 // 旧浏览器会在 getDocument 阶段直接失败；legacy 构建内置对应 polyfill。
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
-import { fetchDocumentFile } from "../../../api";
-import type { SourceBlockBox } from "../../../api";
-import { toErrorMessage } from "../../../utils/error";
+import { fetchDocumentFile } from "@/api";
+import type { SourceBlockBox } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 

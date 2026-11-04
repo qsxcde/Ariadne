@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
-import { importPaperByReference } from "../../../api/papers";
-import type { PaperImportPayload } from "../../../api";
-import { toErrorMessage } from "../../../utils/error";
+import { importPaperByReference } from "@/api/papers";
+import type { PaperImportPayload } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const props = defineProps<{
   visible: boolean;

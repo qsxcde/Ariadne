@@ -1,5 +1,5 @@
-import { requestJson, requestVoid } from "./client";
-import type { LibraryDocument } from "./types";
+import { requestJson, requestVoid } from "@/api/client";
+import type { LibraryDocument } from "@/api/types";
 
 /** 跨会话的文献库列表（已归档会话不计入）。 */
 export function listLibraryDocuments(): Promise<LibraryDocument[]> {

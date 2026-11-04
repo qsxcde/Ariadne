@@ -2,8 +2,8 @@
 import { computed, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 
-import { usePapers } from "../../../composables/usePapers";
-import type { AnnotationSummary } from "../../../api";
+import { usePapers } from "@/features/library/composables/usePapers";
+import type { AnnotationSummary } from "@/api";
 
 const props = defineProps<{
   paperId: string;

@@ -1,9 +1,9 @@
-import { jsonRequest, requestJson } from "./client";
+import { jsonRequest, requestJson } from "@/api/client";
 import type {
   NotificationDeliverResult,
   NotificationSummary,
   UpdateCheckResult,
-} from "./types";
+} from "@/api/types";
 
 export function listNotifications(status?: string): Promise<NotificationSummary[]> {
   const query = status ? "?status=" + encodeURIComponent(status) : "";

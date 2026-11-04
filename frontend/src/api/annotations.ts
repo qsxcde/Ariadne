@@ -1,5 +1,5 @@
-import { jsonRequest, requestJson, requestVoid } from "./client";
-import type { AnnotationCreatePayload, AnnotationSummary } from "./types";
+import { jsonRequest, requestJson, requestVoid } from "@/api/client";
+import type { AnnotationCreatePayload, AnnotationSummary } from "@/api/types";
 
 export function createAnnotation(
   paperId: string,

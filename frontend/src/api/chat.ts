@@ -1,6 +1,6 @@
-import { jsonRequest, openStream } from "./client";
-import { readSseData } from "./sse";
-import type { MessageChunk } from "./types";
+import { jsonRequest, openStream } from "@/api/client";
+import { readSseData } from "@/api/sse";
+import type { MessageChunk } from "@/api/types";
 
 type StreamChatOptions = {
   /** 复用上一条提问重新生成，不会新增 user 消息 */

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Close, Tickets } from "@element-plus/icons-vue";
 
-import type { PaperContent } from "../../../api";
+import type { PaperContent } from "@/api";
 
 defineProps<{
   content: PaperContent | null;

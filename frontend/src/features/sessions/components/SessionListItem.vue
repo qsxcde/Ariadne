@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ChatDotRound, ChatLineRound, CollectionTag, MoreFilled } from "@element-plus/icons-vue";
-import SessionActionsMenu from "./SessionActionsMenu.vue";
+import SessionActionsMenu from "@/features/sessions/components/SessionActionsMenu.vue";
 
 const props = withDefaults(
   defineProps<{

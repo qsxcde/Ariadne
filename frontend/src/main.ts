@@ -24,9 +24,9 @@ import "element-plus/theme-chalk/el-message.css";
 import "element-plus/theme-chalk/el-message-box.css";
 import "element-plus/theme-chalk/el-overlay.css";
 import "element-plus/theme-chalk/el-scrollbar.css";
-import "./styles/index.css";
-import App from "./App.vue";
-import router from "./router";
+import "@/shared/styles/index.css";
+import App from "@/App.vue";
+import router from "@/app/router";
 
 createApp(App)
   .use(router)

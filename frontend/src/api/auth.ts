@@ -1,5 +1,5 @@
-import { jsonRequest, requestJson } from "./client";
-import type { AuthResult, UserSummary } from "./types";
+import { jsonRequest, requestJson } from "@/api/client";
+import type { AuthResult, UserSummary } from "@/api/types";
 
 export function register(username: string, password: string): Promise<AuthResult> {
   return requestJson<AuthResult>("/auth/register", "注册失败", {

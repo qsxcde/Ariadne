@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
-import MarkdownContent from "../../../components/MarkdownContent.vue";
-import { usePaperReader } from "../../../composables/usePaperReader";
-import { findBlockBySection } from "../../../utils/section";
-import type { PaperBlock, PaperContent } from "../../../api";
-import type { SelectionAskMode } from "../../../types";
+import MarkdownContent from "@/shared/components/MarkdownContent.vue";
+import { usePaperReader } from "@/features/reader/composables/usePaperReader";
+import { findBlockBySection } from "@/shared/utils/section";
+import type { PaperBlock, PaperContent } from "@/api";
+import type { SelectionAskMode } from "@/shared/types";
 
 const props = defineProps<{
   content: PaperContent | null;

@@ -4,7 +4,7 @@
  * 全部由 contracts/openapi.json 生成（npm run gen），不要手改；
  * 视图模型放 src/types/view.ts。
  */
-import type { components } from "../contracts/openapi";
+import type { components } from "@/shared/contracts/openapi";
 
 type Schemas = components["schemas"];
 

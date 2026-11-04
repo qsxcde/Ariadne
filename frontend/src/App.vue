@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
-import { useAuth } from "./composables/useAuth";
+import { useAuth } from "@/shared/composables/useAuth";
 
 const { loading } = useAuth();
 </script>

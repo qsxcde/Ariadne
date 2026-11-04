@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
-import PaperOutline from "./PaperOutline.vue";
-import PaperReaderBar from "./PaperReaderBar.vue";
-import PaperSelectionMenu from "./PaperSelectionMenu.vue";
-import PaperTextView from "./PaperTextView.vue";
-import { usePaperReader } from "../../../composables/usePaperReader";
-import type { SelectionAskMode } from "../../../types";
+import PaperOutline from "@/features/reader/components/PaperOutline.vue";
+import PaperReaderBar from "@/features/reader/components/PaperReaderBar.vue";
+import PaperSelectionMenu from "@/features/reader/components/PaperSelectionMenu.vue";
+import PaperTextView from "@/features/reader/components/PaperTextView.vue";
+import { usePaperReader } from "@/features/reader/composables/usePaperReader";
+import type { SelectionAskMode } from "@/shared/types";
 
 // pdf.js 体积较大，只在切到「原页」时才加载
-const PdfViewer = defineAsyncComponent(() => import("./PdfViewer.vue"));
+const PdfViewer = defineAsyncComponent(() => import("@/features/reader/components/PdfViewer.vue"));
 
 const props = defineProps<{
   sessionId: string;

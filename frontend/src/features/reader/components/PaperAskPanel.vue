@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
-import MarkdownContent from "../../../components/MarkdownContent.vue";
-import StateBlock from "../../../components/StateBlock.vue";
-import SourceCitationList from "../../chat/components/SourceCitationList.vue";
-import { usePaperChat } from "../../../composables/usePaperChat";
-import { useSourcePreview } from "../../../composables/useSourcePreview";
-import type { SourceRef } from "../../../api";
+import MarkdownContent from "@/shared/components/MarkdownContent.vue";
+import StateBlock from "@/shared/components/StateBlock.vue";
+import SourceCitationList from "@/shared/components/SourceCitationList.vue";
+import { usePaperChat } from "@/features/chat/composables/usePaperChat";
+import { useSourcePreview } from "@/shared/composables/useSourcePreview";
+import type { SourceRef } from "@/api";
 
 const props = defineProps<{
   sessionId: string;

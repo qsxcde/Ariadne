@@ -2,10 +2,10 @@
 import { Promotion } from "@element-plus/icons-vue";
 import { computed, nextTick, ref, watch } from "vue";
 import type { InputInstance } from "element-plus";
-import ComposerTools from "./ComposerTools.vue";
-import UploadStatusCard from "../../../components/UploadStatusCard.vue";
-import { usePaperChat } from "../../../composables/usePaperChat";
-import type { ComposerToolState, UploadStatus } from "../../../types";
+import ComposerTools from "@/features/chat/components/ComposerTools.vue";
+import UploadStatusCard from "@/shared/components/UploadStatusCard.vue";
+import { usePaperChat } from "@/features/chat/composables/usePaperChat";
+import type { ComposerToolState, UploadStatus } from "@/shared/types";
 
 const props = defineProps<{
   draft: string;

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { Expand, Plus } from "@element-plus/icons-vue";
-import RenameSessionDialog from "./RenameSessionDialog.vue";
-import SessionList from "./SessionList.vue";
-import SidebarHeader from "./SidebarHeader.vue";
-import type { SessionActionTarget, SidebarSessionItem } from "../../../types";
+import RenameSessionDialog from "@/features/sessions/components/RenameSessionDialog.vue";
+import SessionList from "@/features/sessions/components/SessionList.vue";
+import SidebarHeader from "@/features/sessions/components/SidebarHeader.vue";
+import type { SessionActionTarget, SidebarSessionItem } from "@/shared/types";
 
 const props = withDefaults(
   defineProps<{

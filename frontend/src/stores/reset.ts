@@ -1,7 +1,7 @@
-import { useLibrary } from "../composables/useLibrary";
-import { resetPaperChat } from "../composables/usePaperChat";
-import { usePaperReader } from "../composables/usePaperReader";
-import { useSourcePreview } from "../composables/useSourcePreview";
+import { useLibrary } from "@/features/library/composables/useLibrary";
+import { resetPaperChat } from "@/features/chat/composables/usePaperChat";
+import { usePaperReader } from "@/features/reader/composables/usePaperReader";
+import { useSourcePreview } from "@/shared/composables/useSourcePreview";
 
 /**
  * Clear every module-scoped store that survives the login route.

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import ChatComposer from "./ChatComposer.vue";
-import ChatHeaderBar from "./ChatHeaderBar.vue";
-import MessageList from "./MessageList.vue";
-import type { ChatMessageViewModel, SuggestedPrompt, UploadStatus } from "../../../types";
+import ChatComposer from "@/features/chat/components/ChatComposer.vue";
+import ChatHeaderBar from "@/features/chat/components/ChatHeaderBar.vue";
+import MessageList from "@/features/chat/components/MessageList.vue";
+import type { ChatMessageViewModel, SuggestedPrompt, UploadStatus } from "@/shared/types";
 
 defineProps<{
   canOpenReader: boolean;

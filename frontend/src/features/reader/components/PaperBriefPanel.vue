@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { ElMessage } from "element-plus";
 
-import { usePapers } from "../../../composables/usePapers";
+import { usePapers } from "@/features/library/composables/usePapers";
 
 const props = defineProps<{
   paperId: string;

@@ -1,10 +1,10 @@
-import { jsonRequest, requestJson, requestVoid } from "./client";
+import { jsonRequest, requestJson, requestVoid } from "@/api/client";
 import type {
   DocumentUploadResult,
   SessionSnapshot,
   SessionSummary,
   SessionUpdatePayload,
-} from "./types";
+} from "@/api/types";
 
 export async function createSession(): Promise<string> {
   const data = await requestJson<{ session_id: string }>("/sessions", "创建会话失败", {

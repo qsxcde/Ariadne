@@ -1,4 +1,4 @@
-import { fetchBinary } from "./client";
+import { fetchBinary } from "@/api/client";
 
 /** 拉取原始 PDF 字节，交由前端 pdf.js 渲染。 */
 export function fetchDocumentFile(sessionId: string, documentId: string): Promise<ArrayBuffer> {

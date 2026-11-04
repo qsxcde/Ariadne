@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PaperSummary } from "../../../api";
-import { formatUpdatedAt } from "../../../utils/format";
+import type { PaperSummary } from "@/api";
+import { formatUpdatedAt } from "@/shared/utils/format";
 
 const props = withDefaults(
   defineProps<{

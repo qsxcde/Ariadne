@@ -2,8 +2,8 @@
 import { Bottom } from "@element-plus/icons-vue";
 import type { ScrollbarInstance } from "element-plus";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-import MessageBubble from "./MessageBubble.vue";
-import type { ChatMessageViewModel, SuggestedPrompt } from "../../../types";
+import MessageBubble from "@/features/chat/components/MessageBubble.vue";
+import type { ChatMessageViewModel, SuggestedPrompt } from "@/shared/types";
 
 const props = defineProps<{
   hasPaper: boolean;

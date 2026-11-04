@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SelectionAskMode } from "../../../types";
+import type { SelectionAskMode } from "@/shared/types";
 
 defineProps<{
   menu: { text: string; x: number; y: number };

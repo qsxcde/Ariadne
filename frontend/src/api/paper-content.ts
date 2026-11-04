@@ -1,5 +1,5 @@
-import { requestJson } from "./client";
-import type { PaperContent } from "./types";
+import { requestJson } from "@/api/client";
+import type { PaperContent } from "@/api/types";
 
 /** 读取解析后的结构化正文，用于阅读器渲染与引用定位。 */
 export function getPaperContent(sessionId: string, documentId: string): Promise<PaperContent> {

@@ -1,5 +1,5 @@
-import { requestJson } from "./client";
-import type { SourceChunk } from "./types";
+import { requestJson } from "@/api/client";
+import type { SourceChunk } from "@/api/types";
 
 /** 把回答里的引用还原为原文段落。 */
 export function getSourceChunk(
