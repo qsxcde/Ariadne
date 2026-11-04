@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
-import * as pdfjs from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+// pdf.js 6.x 现代构建依赖 Uint8Array.prototype.toHex 等新 API（Chrome/Edge 140+），
+// 旧浏览器会在 getDocument 阶段直接失败；legacy 构建内置对应 polyfill。
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import { fetchDocumentFile } from "../../../api";
 import type { SourceBlockBox } from "../../../api";
 import { toErrorMessage } from "../../../utils/error";
