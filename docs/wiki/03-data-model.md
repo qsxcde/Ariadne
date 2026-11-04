@@ -1,7 +1,7 @@
 # 03 数据模型与存储
 
-权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 16`，含当前全量 DDL）。
-增量迁移：`backend/src/backend/storage/sqlite/migrations/versions.py`（v2 → v16）。
+权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 18`，含当前全量 DDL）。
+增量迁移：`backend/src/backend/storage/sqlite/migrations/versions.py`（v2 → v18）。
 仓储实现：`backend/src/backend/storage/sqlite/*.py`（纯 SQL，无 ORM）。
 
 ## 1. 表总览
@@ -27,6 +27,7 @@
 | `index_snapshots` | 索引快照 | 不可变快照与原子切换 |
 | `retrieval_indexes` | 已发布索引 | legacy 兼容的"当前索引指针" |
 | `users` | 用户 | 登录账号（v5 引入） |
+| `user_model_settings` | 用户模型设置 | LLM/Embedding/Rerank 供应商、模型与加密密钥（v17 引入） |
 
 ## 2. 表结构
 
@@ -141,6 +142,8 @@
 | `index_path` | TEXT | NOT NULL | `index/<sid>/snapshots/<token>.faiss.index` |
 | `chunks_path` | TEXT | NOT NULL | `index/<sid>/snapshots/<token>.chunks.json` |
 | `document_ids_json` | TEXT | NOT NULL | 该快照覆盖的文档 id 数组 |
+| `embedding_fingerprint` | TEXT | NULL | 构建该快照的 Embedding 指纹（v18）；NULL 表示 Phase 2 前的历史快照，按 env 配置处理 |
+| `embedding_model` | TEXT | NULL | 构建时的模型名，用于重建提示（v18） |
 | `error_message` | TEXT | NULL | 失败 / 回滚原因 |
 | `created_at` / `updated_at` | TEXT | NOT NULL | |
 
@@ -195,6 +198,28 @@
 | `page_start` / `page_end` / `bbox_json` | 原文定位 |
 
 **`collections` / `collection_papers` / `paper_tags`**：集合与标签；`collection_papers` 为多对多关系，`paper_tags` 以 `(paper_id, tag)` 为主键。
+
+### 2.10 `user_model_settings`（v17）
+
+每个用户一行，`user_id` 唯一（弱关联，无外键，与 sessions/papers 一致）。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| `id` | TEXT | PK，UUID |
+| `user_id` | TEXT | NOT NULL UNIQUE，归属用户 |
+| `llm_provider` / `llm_model` | TEXT | 对话模型供应商与模型名 |
+| `llm_api_key` | TEXT | Fernet 密文；NULL 表示未设置，回退 env `DEEPSEEK_API_KEY` |
+| `llm_base_url` | TEXT | 可选，覆盖 env 端点 |
+| `embedding_provider` / `embedding_model` | TEXT | 词嵌入配置；摄取与查询共用，变更后旧索引会被判定过期 |
+| `embedding_api_key` / `embedding_base_url` | TEXT | Fernet 密文 / 端点覆盖 |
+| `embedding_dim` | INTEGER | 向量维度（由模型目录自动写入） |
+| `rerank_provider` / `rerank_model` | TEXT | 重排序配置，仅影响检索排序 |
+| `rerank_api_key` / `rerank_base_url` | TEXT | Fernet 密文 / 端点覆盖 |
+| `updated_at` | TEXT | NOT NULL，ISO8601 UTC |
+
+密钥加密：`backend/src/backend/application/model_settings/crypto.py`，密钥来自 `MODEL_SETTINGS_ENCRYPTION_KEY`，缺省时派生自 `JWT_SECRET_KEY`。API 只返回 `••••1234` 形式的掩码与来源（user/env/local），不返回明文。
+
+Embedding 解析顺序：用户 Key > env `EMBEDDING_REMOTE_API_KEY` > 本地 `EMBEDDING_MODEL`。索引快照记录不含密钥的指纹 `mode|provider|model|dim`；仅换 Key 不改变指纹，不触发重建。
 
 ## 3. 关系与文件系统映射
 
@@ -385,6 +410,8 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v14 | `papers.last_citation_count`：上次观察到的被引次数 |
 | v15 | `papers.last_arxiv_updated`：上次观察到的 arXiv 更新时间 |
 | v16 | `subscriptions.source`：订阅来源（arxiv/openalex/pubmed/rss） |
+| v17 | 新增 `user_model_settings`（按用户的 LLM/Embedding/Rerank 供应商、模型与加密密钥） |
+| v18 | `index_snapshots.embedding_fingerprint` / `embedding_model`：记录索引由哪个 Embedding 模型构建 |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

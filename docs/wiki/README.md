@@ -12,7 +12,7 @@
 |---|---|---|
 | [01 项目概览](01-overview.md) | 定位、能力边界、技术栈、术语表、端到端主流程、仓库结构 | 所有人 |
 | [02 系统架构](02-architecture.md) | 分层、模块职责、启动时序、请求生命周期、并发模型、错误处理 | 后端 |
-| [03 数据模型与存储](03-data-model.md) | 17 张表、论文资产/Feed/提醒/通知、ER 关系、状态机、迁移历史 | 后端 |
+| [03 数据模型与存储](03-data-model.md) | 20 张表、论文资产/Feed/提醒/通知、ER 关系、状态机、迁移历史 | 后端 |
 | [04 API 参考](04-api.md) | 全部 HTTP 端点、请求/响应字段、SSE 协议、错误码、调用示例 | 前后端 |
 | [05 文档摄取与索引](05-ingestion-and-indexing.md) | 上传→解析→归一化→切块→FAISS 快照提交/回滚的完整链路 | 后端 / 算法 |
 | [06 检索与问答](06-retrieval-and-chat.md) | 改写、BM25+Dense 混合召回、RRF、重排、上下文、生成与引用校验 | 后端 / 算法 |
@@ -42,7 +42,7 @@
    ▼
 FastAPI (backend.main)
    │  路由 → 服务层（模块级函数直调，无 DI 容器）
-   ├── SQLite（8 表，WAL，backend/data/scipal.db 或 SCIPAL_DB_PATH）
+   ├── SQLite（20 表，WAL，backend/data/scipal.db 或 SCIPAL_DB_PATH）
    ├── 本地文件（raw/ 解析产物 / index/ FAISS 快照）
    ├── InProcessJobRunner（daemon 线程，进程内 FIFO 任务队列）
    └── RAG（MinerU/pypdf 解析 → 切块 → Embedding → FAISS → 混合检索 → LLM 流式生成）

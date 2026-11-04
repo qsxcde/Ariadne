@@ -41,8 +41,9 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `FALLBACK_BASE_URL` | `None` | 为空则不启用备用 provider |
 | `FALLBACK_MODEL` | `glm-4-flash` | |
 | `OLLAMA_BASE_URL` | `None` | 为空则不启用 Ollama |
-| `LLM_MAX_TOKENS` | `512` | 单次生成的最大 token 数，防止长回答拖慢/超预算 |
+| `LLM_MAX_TOKENS` | `3072` | 单次生成的最大 token 上限；推理模型会先消耗 reasoning 预算 |
 | `LLM_CONTEXT_CHARS` | `24000` | 提示词上下文预算（字符）；本地小上下文模型可调低，首个命中块优先保留 |
+| `MODEL_SETTINGS_ENCRYPTION_KEY` | `None` | 用户模型 API Key 的落库加密密钥；未设置时回退 `JWT_SECRET_KEY` |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | |
 
 ### 2.3 Embedding
@@ -58,6 +59,9 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `EMBEDDING_REMOTE_API_KEY` | `None` | 配置后远程优先 |
 | `EMBEDDING_REMOTE_MODEL` | `Qwen/Qwen3-VL-Embedding-8B` | |
 | `EMBEDDING_REMOTE_BASE_URL` | `https://api.siliconflow.cn/v1` | |
+
+> 设置页的个人 Embedding 配置优先于 env；可选模型列表由 `EMBEDDING_REMOTE_MODEL` 生成。
+> 索引指纹（`mode|provider|model|dim`）变化后，旧索引会提示重建；仅更换 API Key 不会触发重建。
 
 ### 2.4 分块与上传
 
@@ -91,6 +95,7 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `MINERU_API_IS_OCR` | `False` | 云 API `files[].is_ocr`；本地 OCR 用 `MINERU_DISABLE_OCR` |
 | `MINERU_API_PAGE_RANGES` | `None` | 云 API 页范围，如 `1-50`；为空表示全部 |
 | `MINERU_MODEL_VERSION` | `vlm` | `pipeline` / `vlm` / `MinerU-HTML` |
+| `MINERU_MODEL_VERSION_FALLBACK` | `pipeline` | 主模型失败时的回退版本；空字符串表示不回退 |
 | `MINERU_LANGUAGE` | `ch` | 云 API 文档语言 |
 | `MINERU_REQUIRE_CLOUD` | `False` | 为 `True` 时云解析失败不再降级到本地/pypdf |
 | `MINERU_TORCH_DEVICE` | `cpu` | 本地 CLI 设备 |
@@ -138,6 +143,8 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 | `RERANKER_REMOTE_MODEL` | `BAAI/bge-reranker-v2-m3` | |
 | `RERANKER_REMOTE_BASE_URL` | `https://api.siliconflow.cn/v1` | |
 
+> 设置页的个人重排配置优先于 env；重排只影响检索排序，修改后立即生效，无需重建索引。
+
 ### 2.10 查询改写与术语扩展
 
 | 变量 | 默认 | 说明 |
@@ -177,6 +184,7 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 | `APP_ENV` | `development` | 决定是否允许匿名旁路：`development/dev/local/test/testing` 允许；其它值（如 `production`）在缺 `JWT_SECRET_KEY` 时对数据接口返回 503 |
 | `CORS_ORIGIN_REGEX` | `http://(localhost\|127\.0\.0\.1):\d+` | 前端跨域 |
 | `MSG_INDEX_NOT_READY` | `论文仍在处理中，请稍后重试。` | 索引超时提示 |
+| `MSG_INDEX_EMBEDDING_STALE` | `Embedding 模型已变更，当前索引需要重建后才能检索。` | 索引与当前 Embedding 配置不匹配时的提示 |
 | `MSG_EMPTY_RETRIEVAL` | `未在当前检索结果中找到可支持该问题的论文依据。` | 检索为空提示 |
 | `MSG_NO_VALID_CITATIONS` | `模型生成的回答中未引用有效论文来源，请核实。` | 引用校验 warning |
 | `MSG_DEFAULT_SESSION_TITLE` | `新论文会话` | 默认标题，同时是"是否自动改名"的哨兵值 |

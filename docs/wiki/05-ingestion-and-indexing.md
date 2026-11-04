@@ -97,9 +97,9 @@ class RawParserResult(BaseModel):
 
 | 后端 | name / version | 布局信息 | 关键行为与限制 |
 |---|---|---|---|
-| `MinerUApiBackend` | `mineru_api` / `1.1` | 有（按页分组 blocks） | MinerU 云 API v4：`POST file-urls/batch` 申请签名 URL → 无鉴权 `PUT` 上传 → 轮询 `extract-results/batch/{batch_id}` → 下载结果 ZIP；单文件 ≤ 200 MiB；`data_id` 由 document id / PDF SHA-256 生成，`batch_id` 持久化到 job payload，任务恢复时先查询已有批次避免重复提交；`model_version`（`pipeline`/`vlm`/`MinerU-HTML`）、`language`、`is_ocr`、`page_ranges`、formula/table 均由配置控制；结果优先级 `*_content_list_v2.json` → `*_content_list.json` → `content.json`；table 块拼接 `table_caption + table_body + table_footnote`，`image/chart` 只保留 caption；`content_list` 的 bbox 按 0–1000 归一化上报（`bbox_unit="normalized_1000"`） |
+| `MinerUApiBackend` | `mineru_api` / `1.2` | 有（按页分组 blocks） | MinerU 云 API v4：`POST file-urls/batch` 申请签名 URL → 无鉴权 `PUT` 上传 → 轮询 `extract-results/batch/{batch_id}` → 下载结果 ZIP；单文件 ≤ 200 MiB；`data_id` 由 document id / PDF SHA-256 生成，`batch_id` 持久化到 job payload，任务恢复时先查询已有批次避免重复提交；`model_version`（`pipeline`/`vlm`/`MinerU-HTML`）、`language`、`is_ocr`、`page_ranges`、formula/table 均由配置控制；结果优先级 `*_content_list_v2.json` → `*_content_list.json` → `content.json`；table 块拼接 `table_caption + table_body + table_footnote`，`image/chart` 保留为图块并标记 `has_image`（有 caption 时文本为 caption，无 caption 也保留供阅读器裁切）；`content_list` 的 bbox 按 0–1000 归一化上报（`bbox_unit="normalized_1000"`） |
 | `MinerUBackend` | `mineru` / `unknown` | 无（`pages=[]`，只有 `full.md`） | 子进程 `mineru -p ... -o ... -b pipeline`，超时硬编码 600s；模型缓存不完整直接抛错；注入 `MINERU_MODEL_HOME/SOURCE/DEVICE_MODE/MODELSCOPE_CACHE/TABLE/FORMULA/DISABLE_OCR`；`mps` 失败且错误含 mps/metal 时自动重试一次 `cpu` |
-| `TextPDFBackend` | `pypdf-text` / `unknown` | 有（整页单栏） | `pypdf` 抽文本，空页跳过；每页按词数切块 `clamp(max_chunk_tokens//3, 80~180)`；bbox 为整页、`type="paragraph"`、`confidence=0.5`；加密 PDF 抛 `RuntimeError` |
+| `TextPDFBackend` | `pypdf-text` / `unknown` | 有（整页单栏） | `pypdf` 抽文本，空页跳过；跨页重复行按页眉页脚丢弃，页码行跳过；每页按词数切块 `clamp(max_chunk_tokens//3, 80~180)`；用编号 / 罗马数字 / 章节关键词 / 全大写短行保守恢复 `title`（带 `heading_level`），其余为 `paragraph`；bbox 为整页、`confidence=0.5`（标题 0.6）；加密 PDF 抛 `RuntimeError` |
 
 ## 5. 归一化（`normalizer.py`）
 
@@ -108,10 +108,10 @@ class RawParserResult(BaseModel):
 0. bbox 归一化：按 `bbox_unit` 统一到 `normalized_1`——`points` 保留原值；`normalized_1000` 的 bbox 除以 1000 且页宽高置 1.0；`normalized_1` 页宽高置 1.0。页眉页脚检测与阅读顺序均基于归一化后的页面。
 1. 扫描页边缘重复文本 → 判为页眉页脚（同一文本出现在 ≥2 页的页边区域）。
 2. 逐页阅读顺序排序：双栏检测（≥4 块、左右各 ≥2 块、左列最右 < 右列最左，列缝 > 页宽 5%）→ 栏内按 `(y0, x0)`。
-3. 丢弃空文本块（`formula` 例外）；空文本且 bbox 全 0 的块告警跳过。
-4. 类型判定：解析器已给合法类型则沿用，否则走 `detect_block_type` 启发式。
-5. 丢弃纯视觉块（`image/figure/picture` 且非 caption）。
-6. 标题 → 更新 `section_path` 并 `clean_heading` 去编号；维护 `in_references` 状态（`references` 开启，appendix/supplementary/acknowledgments 关闭）；`reference` 块强制 `section_path=["References"]`。
+3. 丢弃空文本块（`formula` / `figure` 例外）；空文本且 bbox 全 0 的块告警跳过。
+4. 类型判定：解析器已给合法类型则沿用，否则走 `detect_block_type` 启发式；文本做 `sanitize_extracted_text` 清洗，非公式块用 `wrap_bare_latex` 补齐行内公式分隔符。
+5. 视觉块（`image/figure/picture`）：带 `has_image` 的保留为 `figure`，其余纯视觉块丢弃。
+6. 标题（`title` / `heading`）→ 优先用解析器上报的 `heading_level` 更新 `section_path`，缺失时回退编号启发式，并 `clean_heading` 去编号；维护 `in_references` 状态（`references` 开启，appendix/supplementary/acknowledgments 关闭）；`reference` 块强制 `section_path=["References"]`。
 7. 生成 `BlockIR`：`id = f"p{page_number}-ro{reading_order}"`，`reading_order` 全文档单调递增。
 8. 页内 `attach_caption_links`：caption → 最近的 table/figure，`relation="caption_for"`。
 9. 汇总 `outline`（heading 文本序列）与 `QualityReport`。
@@ -158,17 +158,17 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 
 流程：
 
-1. 跳过 `title / heading / header_footer`。
+1. 跳过 `title / heading / header_footer / figure`（图块不进入检索文本）。
 2. 代码块（以 ` ``` ` 开头）单独成块；`reference` 单独成块。
 3. 可合并类型 `{paragraph, figure_caption, table_caption, reference}` 进缓冲区，`section_path` 变化时 flush。
 4. 其它类型 flush 后单独成块。
-5. 超限时按分隔符递归切分，再按 `chunk_size` 聚合，尾部按 **字符** 重叠 `chunk_overlap`。
+5. 超限时用 `RecursiveCharacterTextSplitter` 按分隔符递归切分，所有长度均按 **token 估算** 计。
 
 单位与参数：
 
-- 实际传入 `chunk_size = settings.max_chunk_tokens(800)`、`chunk_overlap = settings.chunk_overlap_tokens(100)`。
-- `DEFAULT_CHUNK_SIZE=2000` / `DEFAULT_CHUNK_OVERLAP=120` 仅在未传参时生效。
-- token 估算：`estimate_tokens`（`cjk_chars / 1.5 + other_chars / 4`，最小 1），不是真实 tokenizer 计数。
+- 实际传入 `max_tokens = settings.max_chunk_tokens(800)`、`overlap_tokens = settings.chunk_overlap_tokens(100)`。
+- `DEFAULT_MAX_TOKENS=2000` / `DEFAULT_OVERLAP_TOKENS=120` 仅在未传参时生效。
+- token 估算：`token_units` 以 12 units = 1 token，ASCII 3 units/char（约 4 字符/token）、CJK 8 units/char（约 1.5 字符/token）；`estimate_tokens` 返回整数 token，不是真实 tokenizer 计数。
 - 分隔符 `["\n\n", "\n", ". ", "。", "！", "？", " ", ""]`。
 
 渲染与预算：
@@ -211,12 +211,12 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 
 `indexing.build_candidate_snapshot`：
 
-1. `uuid4()` 生成 token，`create_building_snapshot` 写 `index_snapshots(status=building, document_ids_json=[...])`。
+1. `uuid4()` 生成 token，`create_building_snapshot` 写 `index_snapshots(status=building, document_ids_json=[...], embedding_fingerprint, embedding_model)`。
 2. 取目标 chunks（当前会话全部可索引块），`filter_indexable_chunks` 剔除参考文献块。
-3. 增量构建：若存在 previous ready 快照，`FAISSVectorStore.load(prev)` 后只追加"不在 `document_ids` 中"的新文档块；否则新建 store 全量索引。
+3. 增量构建：若存在 previous ready 快照且 Embedding 指纹一致，`FAISSVectorStore.load(prev)` 后只追加"不在 `document_ids` 中"的新文档块；指纹不一致时丢弃旧快照、全量重建，避免混合不同模型的向量。
 4. `store.save(index_path, chunks_path)` 写两份文件；失败 → `SnapshotCommitError(candidate_snapshot=..., preserve_candidate_snapshot_files=False)`。
 
-关键语义：**快照是整会话累积索引**，不是单文档索引。新文档 = 旧 ready 快照 + 新块。
+关键语义：**快照是整会话累积索引**，不是单文档索引。新文档 = 旧 ready 快照 + 新块；Embedding 变化 = 全量重建。
 
 ### 9.2 提交
 
@@ -244,6 +244,8 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 ### 9.4 读取侧
 
 `registry.get_store` 优先读 `retrieval_indexes`（legacy），其次 active ready 快照，再次从 `chunks` 内存重建，最后空 store。详见 [03 数据模型与存储](03-data-model.md) 第 6 节。
+
+检索前会比较快照的 `embedding_fingerprint` 与当前用户的 Embedding runtime（`mode|provider|model|dim`）；不一致时抛 `IndexEmbeddingMismatchError`，前端阅读页显示「重建索引」。历史 NULL 指纹按 env 配置（v17 之前的行为）比较。重建入口：`POST /sessions/{session_id}/index/rebuild`。
 
 ## 10. 失败清理
 
@@ -273,6 +275,7 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 | `mineru_api_poll_max_interval` | 10.0（轮询退避上限） | 同上 |
 | `mineru_api_max_retries` / `mineru_api_retry_base_delay` / `mineru_api_retry_max_delay` | 3 / 1.0 / 30.0 | 同上 |
 | `mineru_model_version` | `vlm`（可选 `pipeline` / `MinerU-HTML`） | 同上 |
+| `mineru_model_version_fallback` | `pipeline`（空字符串关闭回退） | 主版本解析失败后重提一次，鉴权失败不回退 |
 | `mineru_language` | `ch` | 同上 |
 | `mineru_api_is_ocr` / `mineru_api_page_ranges` | `False` / `None` | 同上 |
 | `mineru_require_cloud` | `False`（true 时云解析失败不降级） | 同上 |

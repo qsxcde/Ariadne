@@ -30,7 +30,7 @@
 │         llm / embedding / vector（外部 I/O 与模型客户端）       │
 ├──────────────────────────────────────────────────────────────┤
 │ 存储层  backend/storage/                                      │
-│  sqlite/*（19 张表仓储） paths.py（目录布局）                   │
+│  sqlite/*（20 张表仓储） paths.py（目录布局）                   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -113,9 +113,9 @@
 | `storage/paths.py` | 会话目录布局；`remove_session_dir` 带越界校验 |
 | `storage/sqlite/connection.py` | 路径三级回退、PRAGMA、`transaction()` 上下文管理器 |
 | `storage/sqlite/schema.py` | 当前全量 DDL、`init_db()` 与 `PRAGMA user_version` 版本声明 |
-| `storage/sqlite/migrations/versions.py` | v2 → v16 的增量迁移函数，由 `schema.init_db()` 调用 |
+| `storage/sqlite/migrations/versions.py` | v2 → v18 的增量迁移函数，由 `schema.init_db()` 调用 |
 | `storage/sqlite/uow.py` | `unit_of_work()`：多步存储操作的显式事务边界 |
-| `storage/sqlite/*.py` | 19 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / index_snapshots / papers / collections / annotations / feed / notifications 等 |
+| `storage/sqlite/*.py` | 20 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / index_snapshots / papers / collections / annotations / feed / notifications 等 |
 
 ### 2.6 配置 `backend/src/backend/config.py`
 
