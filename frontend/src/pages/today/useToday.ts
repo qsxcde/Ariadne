@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { usePapers } from "@/features/library/composables/usePapers";
 import { getLibraryStats, getWeeklyReview, saveWeeklyNote } from "@/api/papers";
 import type { LibraryStats, PaperSummary, WeeklyReview } from "@/api";
+import { formatAuthors } from "@/shared/utils/format";
 import { toErrorMessage } from "@/shared/utils/error";
 
 const { papers, loadLibrary } = usePapers();
@@ -35,15 +36,11 @@ const todayLabel = computed(() =>
   }),
 );
 
-function progressPercent(paper: PaperSummary): number {
-  return Math.round(Math.max(0, Math.min(1, paper.progress)) * 100);
-}
-
 function authorLine(paper: PaperSummary): string {
-  const names = (paper.authors ?? []).slice(0, 3).join("、");
+  const names = formatAuthors(paper.authors);
   const year = paper.year ? " · " + paper.year : "";
   const venue = paper.venue ? " · " + paper.venue : "";
-  return (names || "未知作者") + year + venue;
+  return names + year + venue;
 }
 
 async function load(): Promise<void> {
@@ -84,7 +81,6 @@ export function useToday() {
     notesThisWeek,
     openQuestions,
     todayLabel,
-    progressPercent,
     authorLine,
     load,
     saveNote,

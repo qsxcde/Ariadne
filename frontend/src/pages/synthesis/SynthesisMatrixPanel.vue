@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import StateBlock from "@/shared/components/StateBlock.vue";
 import { MATRIX_FIELDS, useSynthesis } from "@/pages/synthesis/useSynthesis";
+import { formatAuthors } from "@/shared/utils/format";
 
 const props = defineProps<{
   mode: "compare" | "matrix";
@@ -49,7 +50,7 @@ const modeLabel = () => (props.mode === "matrix" ? "综述矩阵" : "对比表")
           <span class="synthesis__paper-main">
             <span class="synthesis__paper-title">{{ paper.title }}</span>
             <span class="synthesis__paper-meta">
-              {{ (paper.authors ?? [])[0] || "未知作者" }}
+              {{ formatAuthors(paper.authors, { max: 1, ellipsis: "" }) }}
               <template v-if="paper.year"> · {{ paper.year }}</template>
             </span>
           </span>

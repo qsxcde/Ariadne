@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 import { usePapers } from "@/features/library/composables/usePapers";
+import { downloadText } from "@/shared/utils/download";
 import type { AnnotationSummary } from "@/api";
 
 const props = defineProps<{
@@ -58,15 +59,11 @@ function exportNotes(): void {
       return `- [${annotationLabel(annotation)}] ${quote}${body}`.trim();
     }),
   ];
-  const blob = new Blob([lines.join("\n")], {
-    type: "text/markdown;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const link = window.document.createElement("a");
-  link.href = url;
-  link.download = `${currentPaper.value.title}-notes.md`;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadText(
+    lines.join("\n"),
+    `${currentPaper.value.title}-notes.md`,
+    "text/markdown;charset=utf-8",
+  );
 }
 </script>
 

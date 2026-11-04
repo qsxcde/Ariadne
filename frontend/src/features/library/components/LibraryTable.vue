@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { PaperSummary } from "@/api";
 import { paperStatusLabel } from "@/shared/constants/paper";
-import { formatUpdatedAt } from "@/shared/utils/format";
+import { formatAuthors, formatUpdatedAt, progressPercent } from "@/shared/utils/format";
 
 const props = withDefaults(
   defineProps<{
@@ -33,17 +33,11 @@ const someChecked = computed(() =>
   props.papers.some((paper) => props.checkedIds.includes(paper.id)),
 );
 
-function progressPercent(progress: number): number {
-  return Math.round(Math.max(0, Math.min(1, progress)) * 100);
-}
-
 function authorLine(paper: PaperSummary): string {
-  const authors = paper.authors ?? [];
-  const names = authors.slice(0, 3).join("、");
-  const suffix = authors.length > 3 ? " 等" : "";
+  const names = formatAuthors(paper.authors, { fallback: "" });
   const year = paper.year ? " · " + paper.year : "";
   if (names) {
-    return names + suffix + year;
+    return names + year;
   }
   return paper.year ? String(paper.year) : "—";
 }

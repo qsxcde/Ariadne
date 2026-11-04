@@ -12,6 +12,7 @@ import PaperImportDialog from "@/features/library/components/PaperImportDialog.v
 import { usePapers } from "@/features/library/composables/usePapers";
 import { exportBibtex } from "@/api/papers";
 import { addPaperToCollection, createCollection } from "@/api/collections";
+import { downloadText } from "@/shared/utils/download";
 import { toErrorMessage } from "@/shared/utils/error";
 
 const emit = defineEmits<{
@@ -70,13 +71,7 @@ async function handleImported(): Promise<void> {
 async function downloadBibtex(): Promise<void> {
   try {
     const bib = await exportBibtex();
-    const blob = new Blob([bib], { type: "application/x-bibtex;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "scipal-library.bib";
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadText(bib, "scipal-library.bib", "application/x-bibtex;charset=utf-8");
   } catch (error) {
     ElMessage.error(toErrorMessage(error, "导出 BibTeX 失败"));
   }

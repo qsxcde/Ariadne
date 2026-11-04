@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from "vue";
 import { Search } from "@element-plus/icons-vue";
 import { listPapers } from "@/api/papers";
 import type { PaperSummary } from "@/api";
+import { formatAuthors } from "@/shared/utils/format";
 
 const props = defineProps<{
   visible: boolean;
@@ -117,7 +118,12 @@ const options = computed<Option[]>(() => [
   ...papers.value.map((paper) => ({
     id: paper.id,
     label: paper.title,
-    hint: [(paper.authors ?? [])[0], paper.year].filter(Boolean).join(" · "),
+    hint: [
+      formatAuthors(paper.authors, { max: 1, ellipsis: "", fallback: "" }),
+      paper.year,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     group: "论文" as const,
     run: () => emit("openPaper", paper.id),
   })),

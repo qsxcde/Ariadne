@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import StateBlock from "@/shared/components/StateBlock.vue";
 import { FEED_STATUS_OPTIONS, useFeed } from "@/pages/feed/useFeed";
+import { formatAuthors } from "@/shared/utils/format";
 import type { FeedItemSummary } from "@/api";
 
 const emit = defineEmits<{
@@ -65,7 +66,7 @@ async function saveItem(item: FeedItemSummary): Promise<void> {
         <div class="feed-row__main">
           <h3 class="feed-row__title">{{ item.title }}</h3>
           <p class="feed-row__meta">
-            <span>{{ (item.authors ?? []).slice(0, 3).join("、") || "未知作者" }}</span>
+            <span>{{ formatAuthors(item.authors) }}</span>
             <span v-if="item.published_at"> · {{ item.published_at.slice(0, 10) }}</span>
             <span class="feed-row__reason"> · {{ item.relevance_reason }}</span>
           </p>

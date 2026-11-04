@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { CopyDocument, RefreshRight, VideoPause } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
+import { copyText } from "@/shared/utils/clipboard";
 
 const props = defineProps<{
   canRegenerate: boolean;
@@ -13,9 +14,6 @@ const emit = defineEmits<{
   stop: [];
 }>();
 
-/**
- * Copies the assistant response into the system clipboard when available.
- */
 async function handleCopy(): Promise<void> {
   const content = props.content.trim();
   if (!content) {
@@ -23,17 +21,16 @@ async function handleCopy(): Promise<void> {
     return;
   }
 
-  if (!navigator.clipboard?.writeText) {
+  const result = await copyText(content);
+  if (result === "unsupported") {
     ElMessage.error("当前环境不支持复制，请手动选择内容。");
     return;
   }
-
-  try {
-    await navigator.clipboard.writeText(content);
-    ElMessage.success("已复制回答内容。");
-  } catch {
+  if (result === "failed") {
     ElMessage.error("复制失败，请稍后重试。");
+    return;
   }
+  ElMessage.success("已复制回答内容。");
 }
 </script>
 

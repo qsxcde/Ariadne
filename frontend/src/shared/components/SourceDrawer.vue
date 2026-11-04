@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { Close } from "@element-plus/icons-vue";
 import MarkdownContent from "@/shared/components/MarkdownContent.vue";
 import { useSourcePreview } from "@/shared/composables/useSourcePreview";
+import { copyText } from "@/shared/utils/clipboard";
 import { formatPageRange } from "@/shared/utils/format";
 
 const { selection, chunk, isLoading, errorMessage, close } = useSourcePreview();
@@ -37,19 +38,17 @@ function handleBackdrop(): void {
   close();
 }
 
-async function copyText(): Promise<void> {
+async function handleCopy(): Promise<void> {
   const text = chunk.value?.text ?? selection.value?.source.text_excerpt ?? "";
   if (!text) {
     return;
   }
-  try {
-    await navigator.clipboard.writeText(text);
-    copied.value = true;
+  const result = await copyText(text);
+  copied.value = result === "ok";
+  if (copied.value) {
     window.setTimeout(() => {
       copied.value = false;
     }, 1600);
-  } catch {
-    copied.value = false;
   }
 }
 
@@ -122,7 +121,7 @@ onBeforeUnmount(() => {
 
           <footer class="source-drawer__footer">
             <span class="source-drawer__hint">按 Esc 关闭</span>
-            <el-button text class="source-drawer__copy" @click="copyText">
+            <el-button text class="source-drawer__copy" @click="handleCopy">
               {{ copied ? "已复制" : "复制原文" }}
             </el-button>
           </footer>

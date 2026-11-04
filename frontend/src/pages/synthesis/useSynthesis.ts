@@ -10,6 +10,7 @@ import type {
   PaperComparison,
   PaperSummary,
 } from "@/api";
+import { downloadText } from "@/shared/utils/download";
 import { toErrorMessage } from "@/shared/utils/error";
 
 export const SYNTHESIS_TABS = [
@@ -124,16 +125,6 @@ async function compare(): Promise<void> {
   }
 }
 
-function download(content: string, filename: string, type: string): void {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const link = window.document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function exportComparison(): void {
   if (!comparison.value.length) return;
   const header = ["论文", "方法", "数据集", "指标", "局限"];
@@ -147,7 +138,7 @@ function exportComparison(): void {
   const csv = [header, ...rows]
     .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
     .join("\n");
-  download(csv, "paper-comparison.csv", "text/csv;charset=utf-8");
+  downloadText(csv, "paper-comparison.csv", "text/csv;charset=utf-8");
 }
 
 function escapeMarkdownCell(value: string): string {
@@ -173,7 +164,7 @@ function exportMatrixMarkdown(): void {
     .map((field) => `${field.label} ${field.covered}/${comparison.value.length}`)
     .join(" · ")}`;
   const markdown = [header, separator, ...rows, coverage].join("\n");
-  download(markdown, "survey-matrix.md", "text/markdown;charset=utf-8");
+  downloadText(markdown, "survey-matrix.md", "text/markdown;charset=utf-8");
 }
 
 export function useSynthesis() {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import StateBlock from "@/shared/components/StateBlock.vue";
 import { useToday } from "@/pages/today/useToday";
+import { progressPercent } from "@/shared/utils/format";
 import type { PaperSummary } from "@/api";
 
 const emit = defineEmits<{
@@ -8,7 +9,7 @@ const emit = defineEmits<{
   library: [];
 }>();
 
-const { reading, readingPreview, progressPercent, authorLine } = useToday();
+const { reading, readingPreview, authorLine } = useToday();
 
 function openPaper(paper: PaperSummary): void {
   emit("open", paper.id);
@@ -56,10 +57,10 @@ function openPaper(paper: PaperSummary): void {
         <h3 class="reading-item__title">{{ paper.title }}</h3>
         <p class="reading-item__meta">{{ authorLine(paper) }}</p>
         <div class="reading-item__track" aria-hidden="true">
-          <span :style="{ width: progressPercent(paper) + '%' }" />
+          <span :style="{ width: progressPercent(paper.progress) + '%' }" />
         </div>
       </div>
-      <span class="reading-item__pct">{{ progressPercent(paper) }}%</span>
+      <span class="reading-item__pct">{{ progressPercent(paper.progress) }}%</span>
     </article>
 
     <p v-if="reading.length > 5" class="today__more">

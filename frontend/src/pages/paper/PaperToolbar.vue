@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { ArrowLeft, EditPen, Expand, Fold, Refresh } from "@element-plus/icons-vue";
 import type { PaperDetail } from "@/api";
 import { PAPER_STATUS_OPTIONS } from "@/shared/constants/paper";
+import { formatAuthors, progressPercent } from "@/shared/utils/format";
 
-defineProps<{
+const props = defineProps<{
   paper: PaperDetail | null;
   isLoading: boolean;
   statusSaving: boolean;
@@ -12,6 +14,14 @@ defineProps<{
   shortcutHint: string;
 }>();
 
+const authorsLine = computed(() =>
+  formatAuthors(props.paper?.authors, {
+    max: Number.POSITIVE_INFINITY,
+    ellipsis: "",
+    fallback: "",
+  }),
+);
+
 const emit = defineEmits<{
   back: [];
   toggleInspector: [];
@@ -19,10 +29,6 @@ const emit = defineEmits<{
   refresh: [];
   changeStatus: [status: string];
 }>();
-
-function progressPercent(value: number): number {
-  return Math.round(Math.max(0, Math.min(1, value)) * 100);
-}
 
 function handleStatusChange(event: Event): void {
   emit("changeStatus", (event.target as HTMLSelectElement).value);
@@ -38,7 +44,7 @@ function handleStatusChange(event: Event): void {
     <div class="paper-workspace__meta">
       <h1 class="paper-workspace__title">{{ paper?.title || "正在载入论文…" }}</h1>
       <p class="paper-workspace__sub">
-        <span v-if="(paper?.authors ?? []).length">{{ (paper?.authors ?? []).join("、") }}</span>
+        <span v-if="(paper?.authors ?? []).length">{{ authorsLine }}</span>
         <span v-if="paper?.year"> · {{ paper.year }}</span>
         <span v-if="paper?.venue"> · {{ paper.venue }}</span>
         <span v-if="(paper?.collections ?? []).length">

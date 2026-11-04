@@ -35,6 +35,34 @@ export function formatDuration(seconds: number): string {
   return minutes ? `${hours} 小时 ${minutes} 分` : `${hours} 小时`;
 }
 
+/** 阅读进度比例转为百分比整数，越界自动裁剪到 0–100。 */
+export function progressPercent(ratio: number): number {
+  return Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+}
+
+type AuthorFormatOptions = {
+  /** 最多展示几位作者，默认 3。 */
+  max?: number;
+  separator?: string;
+  fallback?: string;
+  /** 截断后缀，默认「 等」；传空串可关闭。 */
+  ellipsis?: string;
+};
+
+/** 作者列表展示：默认前 3 位 +「等」，可按需调整位数、分隔符与兜底文案。 */
+export function formatAuthors(
+  authors: readonly string[] | null | undefined,
+  options: AuthorFormatOptions = {},
+): string {
+  const { max = 3, separator = "、", fallback = "未知作者", ellipsis = " 等" } = options;
+  const list = (authors ?? []).filter(Boolean);
+  if (!list.length) {
+    return fallback;
+  }
+  const shown = list.slice(0, max).join(separator);
+  return list.length > max ? `${shown}${ellipsis}` : shown;
+}
+
 /** 页码展示：单页 `p.4`，跨页 `p.4-5`，缺省返回空串。 */
 export function formatPageRange(start?: number | null, end?: number | null): string {
   if (start == null && end == null) {
