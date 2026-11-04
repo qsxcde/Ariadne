@@ -61,6 +61,14 @@ def text_completer() -> TextCompleter:
     return LlmTextCompleter()
 
 
+@lru_cache(maxsize=1)
+def agent_runner():
+    """Framework-backed agent runner; heavy imports stay behind this seam."""
+    from backend.adapters.agent.langgraph_runner import LangGraphAgentRunner
+
+    return LangGraphAgentRunner()
+
+
 _user_completers: dict[str, tuple[str, LlmTextCompleter]] = {}
 _user_completers_lock = threading.Lock()
 

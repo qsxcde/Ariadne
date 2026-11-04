@@ -9,14 +9,17 @@ from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
 from backend.domain.models import SourceRef
+from backend.domain.ports import Reranker, VectorStore
 
 
 @dataclass(frozen=True, slots=True)
 class ToolContext:
-    """Request identity passed to every tool call."""
+    """Request identity and retrieval capabilities passed to every tool call."""
 
     session_id: str
+    store: VectorStore
     user_id: str | None = None
+    reranker: Reranker | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,6 +44,12 @@ class ToolResult:
     @classmethod
     def failure(cls, message: str) -> "ToolResult":
         return cls(ok=False, content="", summary=message, error=message)
+
+
+@dataclass(frozen=True, slots=True)
+class AgentStarted:
+    run_id: str
+    max_steps: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +80,8 @@ class AgentCompleted:
     run_id: str
     answer: str
     sources: tuple[SourceRef, ...] = ()
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,7 +89,22 @@ class AgentWarning:
     message: str
 
 
-AgentEvent = AgentToken | AgentToolCall | AgentToolResult | AgentCompleted | AgentWarning
+@dataclass(frozen=True, slots=True)
+class AgentFailed:
+    run_id: str
+    message: str
+    partial_answer: str = ""
+
+
+AgentEvent = (
+    AgentStarted
+    | AgentToken
+    | AgentToolCall
+    | AgentToolResult
+    | AgentCompleted
+    | AgentWarning
+    | AgentFailed
+)
 
 
 class AgentRunner(Protocol):
