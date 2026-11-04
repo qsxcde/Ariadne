@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
 import MarkdownContent from "@/shared/components/MarkdownContent.vue";
 import StateBlock from "@/shared/components/StateBlock.vue";
 import SourceCitationList from "@/shared/components/SourceCitationList.vue";
@@ -13,9 +14,12 @@ const props = defineProps<{
 
 const {
   messages,
+  indexEmbedding,
+  isRebuildingIndex,
   isStreaming,
   errorMessage,
   openSession,
+  rebuildIndex,
   regenerateLast,
   sendMessage,
   stopStreaming,
@@ -50,11 +54,18 @@ async function scrollToBottom(): Promise<void> {
 
 function ask(text: string): void {
   const value = text.trim();
-  if (!value || isStreaming.value) {
+  if (!value || isStreaming.value || indexEmbedding.value?.stale) {
     return;
   }
   draft.value = "";
   void sendMessage(value);
+}
+
+async function handleRebuildIndex(): Promise<void> {
+  const rebuilt = await rebuildIndex();
+  if (rebuilt) {
+    ElMessage.success("索引已按当前 Embedding 模型重建");
+  }
 }
 
 function handleKeydown(event: KeyboardEvent): void {
@@ -91,6 +102,26 @@ watch(
 
 <template>
   <div class="ask-panel">
+    <div v-if="indexEmbedding?.stale" class="ask-panel__stale">
+      <div>
+        <strong>索引需要重建</strong>
+        <p>
+          Embedding 模型已变更（当前 {{ indexEmbedding.current_model
+          }}<template v-if="indexEmbedding.index_model">
+            ，索引由 {{ indexEmbedding.index_model }} 构建</template
+          >）。重建完成后才能继续问答。
+        </p>
+      </div>
+      <button
+        type="button"
+        class="ask-panel__rebuild"
+        :disabled="isRebuildingIndex"
+        @click="handleRebuildIndex"
+      >
+        {{ isRebuildingIndex ? "重建中…" : "重建索引" }}
+      </button>
+    </div>
+
     <div ref="listRef" class="ask-panel__list">
       <StateBlock v-if="!ready" kind="loading" compact description="正在载入对话…" />
 
@@ -134,7 +165,10 @@ watch(
       <textarea
         v-model="draft"
         rows="2"
-        placeholder="针对本文提问，Enter 发送…"
+        :placeholder="
+          indexEmbedding?.stale ? '请先重建索引后再提问' : '针对本文提问，Enter 发送…'
+        "
+        :disabled="indexEmbedding?.stale"
         @keydown="handleKeydown"
       />
       <div class="ask-panel__actions">
@@ -159,7 +193,7 @@ watch(
           v-else
           type="button"
           class="ask-panel__send"
-          :disabled="!draft.trim()"
+          :disabled="!draft.trim() || indexEmbedding?.stale"
           @click="ask(draft)"
         >
           发送
@@ -170,6 +204,44 @@ watch(
 </template>
 
 <style scoped>
+.ask-panel__stale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 12px 0;
+  border: 1px solid var(--color-border-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  padding: 9px 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.ask-panel__stale strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.ask-panel__stale p {
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+}
+
+.ask-panel__rebuild {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  padding: 5px 10px;
+  color: var(--color-white);
+  font-size: 11px;
+}
+
+.ask-panel__rebuild:disabled {
+  opacity: 0.6;
+}
+
 .ask-panel {
   display: flex;
   min-height: 0;
@@ -269,6 +341,10 @@ watch(
   color: var(--color-text);
   font: inherit;
   font-size: 12px;
+}
+
+.ask-panel__composer textarea:disabled {
+  opacity: 0.55;
 }
 
 .ask-panel__actions {

@@ -3,6 +3,7 @@ import { onMounted } from "vue";
 
 import StateBlock from "@/shared/components/StateBlock.vue";
 import AlertSettingsSection from "@/pages/settings/AlertSettingsSection.vue";
+import ModelSettingsSection from "@/pages/settings/ModelSettingsSection.vue";
 import NotificationsSection from "@/pages/settings/NotificationsSection.vue";
 import SettingsSection from "@/pages/settings/SettingsSection.vue";
 import { useAlertSettings } from "@/pages/settings/useAlertSettings";
@@ -57,14 +58,7 @@ onMounted(() => {
             <p class="settings-hint">备份：复制 backend/data 目录即可迁移整库。</p>
           </SettingsSection>
 
-          <SettingsSection id="settings-model" title="模型服务" index="02">
-            <p>LLM 与 Embedding 由后端环境变量配置，前端不保存 API Key。</p>
-            <p>
-              需要在 backend/.env 中设置 DEEPSEEK_API_KEY；Embedding 可走本地模型或 OpenAI
-              兼容服务。
-            </p>
-            <p class="settings-hint">修改配置后重启后端生效。</p>
-          </SettingsSection>
+          <ModelSettingsSection />
 
           <AlertSettingsSection />
           <NotificationsSection />

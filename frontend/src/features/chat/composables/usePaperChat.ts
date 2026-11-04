@@ -156,6 +156,10 @@ function createPaperChat() {
     return activeSession?.title?.trim() || sessionState.displayFileName.value;
   });
 
+  const indexEmbedding = computed(
+    () => sessionState.paperSession.value?.indexEmbedding ?? null,
+  );
+
   const currentPaperHint = computed(() => {
     const firstDocument = sessionState.documents.value[0];
     if (firstDocument?.filename) {
@@ -176,6 +180,8 @@ function createPaperChat() {
     errorMessage,
     hasPaper: sessionState.hasPaper,
     indexedChunks: sessionState.indexedChunks,
+    indexEmbedding,
+    isRebuildingIndex: sessionState.isRebuildingIndex,
     isStreaming: chatStream.isStreaming,
     isUploading: sessionState.isUploading,
     messages: chatStream.messages,
@@ -189,6 +195,7 @@ function createPaperChat() {
     handleUpload,
     initializeSessions,
     openSession,
+    rebuildIndex: sessionState.rebuildIndex,
     regenerateLast,
     renameSession,
     reset,
