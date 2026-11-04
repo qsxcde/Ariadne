@@ -482,6 +482,34 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 
+### PostgreSQL 基线
+
+`DATABASE_URL` 非空时，`init_db()` 改走 PostgreSQL 分支：用 `schema_migrations` 记录版本，空库直接创建 v19 全量 schema；v1–v19 的 SQLite 增量脚本不参与。SQLite 仍使用 `PRAGMA user_version`。共享 DDL 中的浮点列声明为 `DOUBLE PRECISION`：PostgreSQL 保留 8 字节精度，SQLite 的类型亲和性仍映射为 REAL。
+
+### SQLite → PostgreSQL 数据迁移
+
+`backend/src/backend/scripts/migrate_sqlite_to_postgres.py` 把现有 SQLite 数据整体复制到 PostgreSQL：
+
+```bash
+# dry-run：只打印各表行数，不写入
+uv run --project backend python -m backend.scripts.migrate_sqlite_to_postgres \
+  --sqlite-path backend/data/ariadne.db \
+  --database-url postgresql://ariadne:ariadne_dev@127.0.0.1:5432/ariadne \
+  --dry-run
+
+# 正式导入；目标非空时必须加 --truncate
+uv run --project backend python -m backend.scripts.migrate_sqlite_to_postgres \
+  --sqlite-path backend/data/ariadne.db \
+  --database-url postgresql://ariadne:ariadne_dev@127.0.0.1:5432/ariadne \
+  --truncate
+```
+
+- 源库必须已是 v19；版本不符时先让应用对 SQLite 启动一次以执行迁移。
+- 按外键顺序导入，导入前检查源库孤儿行，导入后校验行数、逐表内容摘要与目标外键。
+- `--truncate`、清空与全部写入处于同一事务；任一步失败都会回滚到执行前状态。
+- 只迁移数据库元数据，不移动 `raw/`、`parsed/`、`index/` 文件。
+
+
 新增表/列时的推荐做法：
 
 1. 在 `schema.py` 的 `_create_schema` 里加入最新 DDL（新库路径）。

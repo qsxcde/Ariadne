@@ -169,6 +169,22 @@ uv run --project backend python -m backend.scripts.migrate_storage \
 
 逐文件移动；同名且内容不同会 `RuntimeError("Storage migration conflict")`，需人工处理后再重跑。
 
+### 4.7 迁移到 PostgreSQL
+
+先启动基础设施，并确认源 SQLite 库已升级到当前 schema 版本（对 SQLite 启动一次应用即可）：
+
+```bash
+docker compose -f docker-compose.infra.yml up -d
+uv run --project backend python -m backend.scripts.migrate_sqlite_to_postgres \
+  --sqlite-path backend/data/ariadne.db \
+  --database-url postgresql://ariadne:ariadne_dev@127.0.0.1:5432/ariadne \
+  --dry-run
+```
+
+确认行数后去掉 `--dry-run`。目标库非空时必须加 `--truncate`；清空与导入在同一事务中，失败会整体回滚。脚本会校验源库外键、导入后的行数、逐表内容摘要与目标外键。切库后把同一 `DATABASE_URL` 写入 `backend/.env`，再重启后端。
+
+> 数据库迁移不移动上传文件与索引文件，磁盘路径仍按原样读取。
+
 ## 5. 排障 FAQ
 
 | 现象 | 原因 | 处理 |
