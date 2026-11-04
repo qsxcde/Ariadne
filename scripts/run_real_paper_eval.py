@@ -11,11 +11,11 @@ from collections import Counter
 from pathlib import Path
 
 from backend import composition
-from backend.application.feed import ArxivFeedSource
-from backend.application.synthesis import compare_papers
+from backend.application.follow.feed import ArxivFeedSource
+from backend.application.synthesis.service import compare_papers
 from backend.domain.models import Chunk, ChunkMetadata
 from backend.rag.answer import AnswerPolicy, RetrievalOptions, stream_answer
-from backend.rag.indexing.vector_store import FAISSVectorStore
+from backend.adapters.vector.faiss_store import FAISSVectorStore
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import collections as collection_repo
 from backend.storage.sqlite import documents as document_repo
@@ -295,7 +295,9 @@ def main() -> None:
         collection = collection_repo.create_collection(user_id="u1", name="Real papers")
         for paper_id in paper_ids:
             collection_repo.add_paper_to_collection(collection["id"], paper_id)
-        rows = compare_papers(collection["id"], "u1", paper_ids)
+        rows = compare_papers(
+            collection["id"], "u1", paper_ids, completer=composition.text_completer()
+        )
         cited_rows = sum(
             1 for row in rows if "[Section:" in (row["method"] + row["metrics"])
         )

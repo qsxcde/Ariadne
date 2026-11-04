@@ -15,10 +15,10 @@ import httpx
 from backend import composition
 from backend.domain.models import Chunk
 from backend.rag.answer import AnswerPolicy, RetrievalOptions, stream_answer
-from backend.rag.indexing.vector_store import FAISSVectorStore
+from backend.adapters.vector.faiss_store import FAISSVectorStore
 from backend.rag.ingestion.chunking import build_chunks
 from backend.rag.ingestion.normalizer import normalize_parser_output
-from backend.rag.ingestion.text_pdf_backend import TextPDFBackend
+from backend.adapters.parsers.text_pdf_backend import TextPDFBackend
 
 CACHE = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/scipal_real_papers.json"))
 PDF_DIR = Path(os.getenv("REAL_PDF_DIR", "/tmp/scipal_pdfs"))

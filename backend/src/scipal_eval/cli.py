@@ -204,7 +204,7 @@ def _evaluate_with_scipal(
 ) -> "ChatEvaluationResult":
   """Evaluate one question against a live SciPal session with retrieval overrides."""
   from backend.rag.answer import RetrievalOptions
-  from backend.application.evaluation import evaluate_session_chat
+  from backend.application.conversation.evaluation import evaluate_session_chat
 
   retrieval_options = RetrievalOptions(
     strategy=config.strategy,
@@ -246,7 +246,7 @@ def _evaluate_retrieval_only(
 ) -> "ChatEvaluationResult":
   """Evaluate one question against a SciPal session without live generation."""
   from backend.rag.answer import RetrievalOptions
-  from backend.application.evaluation import evaluate_session_retrieval
+  from backend.application.conversation.evaluation import evaluate_session_retrieval
 
   retrieval_options = RetrievalOptions(
     strategy=config.strategy,
