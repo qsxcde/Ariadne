@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { Search, Plus } from "@element-plus/icons-vue";
 
 import type { CollectionSummary } from "@/api";
+import { PAPER_STATUS_FILTER_OPTIONS } from "@/shared/constants/paper";
 
 const props = defineProps<{
   filters: { status: string; collectionId: string; tag: string; query: string };
@@ -33,22 +34,13 @@ const tag = computed({
   set: (value: string) => emit("update:tag", value),
 });
 
-const STATUS_OPTIONS = [
-  { value: "", label: "全部" },
-  { value: "inbox", label: "待读" },
-  { value: "queued", label: "队列" },
-  { value: "skimming", label: "速读" },
-  { value: "reading", label: "在读" },
-  { value: "read", label: "已读" },
-  { value: "archived", label: "归档" },
-];
 </script>
 
 <template>
   <div class="paper-library__toolbar">
     <div class="paper-library__statuses" role="group" aria-label="阅读状态">
       <button
-        v-for="option in STATUS_OPTIONS"
+        v-for="option in PAPER_STATUS_FILTER_OPTIONS"
         :key="option.value"
         type="button"
         class="paper-library__status"

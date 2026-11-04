@@ -4,6 +4,7 @@ import { ElMessage } from "element-plus";
 import { usePapers } from "@/features/library/composables/usePapers";
 import { getLibraryStats, getWeeklyReview, saveWeeklyNote } from "@/api/papers";
 import type { LibraryStats, PaperSummary, WeeklyReview } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const { papers, loadLibrary } = usePapers();
 
@@ -63,7 +64,7 @@ async function saveNote(): Promise<void> {
     weeklyNote.value = review.value.note ?? "";
     ElMessage.success("已保存本周复盘");
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "保存复盘失败");
+    ElMessage.error(toErrorMessage(error, "保存复盘失败"));
   } finally {
     isSavingNote.value = false;
   }

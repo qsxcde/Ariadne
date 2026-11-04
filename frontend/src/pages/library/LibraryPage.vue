@@ -12,6 +12,7 @@ import PaperImportDialog from "@/features/library/components/PaperImportDialog.v
 import { usePapers } from "@/features/library/composables/usePapers";
 import { exportBibtex } from "@/api/papers";
 import { addPaperToCollection, createCollection } from "@/api/collections";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -77,7 +78,7 @@ async function downloadBibtex(): Promise<void> {
     link.click();
     URL.revokeObjectURL(url);
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "导出 BibTeX 失败");
+    ElMessage.error(toErrorMessage(error, "导出 BibTeX 失败"));
   }
 }
 
@@ -179,7 +180,7 @@ async function addCheckedToCollection(): Promise<void> {
     ElMessage.success(`已加入 ${ids.length} 篇论文`);
     clearChecked();
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "加入集合失败");
+    ElMessage.error(toErrorMessage(error, "加入集合失败"));
   } finally {
     isBulkBusy.value = false;
   }
@@ -214,7 +215,7 @@ async function createNewCollection(): Promise<void> {
         : `已创建「${collection.name}」`,
     );
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "创建集合失败");
+    ElMessage.error(toErrorMessage(error, "创建集合失败"));
   }
 }
 

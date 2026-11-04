@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, EditPen, Expand, Fold, Refresh } from "@element-plus/icons-vue";
 import type { PaperDetail } from "@/api";
+import { PAPER_STATUS_OPTIONS } from "@/shared/constants/paper";
 
 defineProps<{
   paper: PaperDetail | null;
@@ -18,15 +19,6 @@ const emit = defineEmits<{
   refresh: [];
   changeStatus: [status: string];
 }>();
-
-const STATUS_OPTIONS = [
-  { value: "inbox", label: "待读" },
-  { value: "queued", label: "队列中" },
-  { value: "skimming", label: "速读" },
-  { value: "reading", label: "在读" },
-  { value: "read", label: "已读" },
-  { value: "archived", label: "已归档" },
-];
 
 function progressPercent(value: number): number {
   return Math.round(Math.max(0, Math.min(1, value)) * 100);
@@ -64,7 +56,7 @@ function handleStatusChange(event: Event): void {
           aria-label="阅读状态"
           @change="handleStatusChange"
         >
-          <option v-for="option in STATUS_OPTIONS" :key="option.value" :value="option.value">
+          <option v-for="option in PAPER_STATUS_OPTIONS" :key="option.value" :value="option.value">
             {{ option.label }}
           </option>
         </select>

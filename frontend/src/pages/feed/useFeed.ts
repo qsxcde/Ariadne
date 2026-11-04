@@ -11,6 +11,7 @@ import {
   saveFeedItem,
 } from "@/api/feed";
 import type { FeedItemSummary, SubscriptionCreatePayload, SubscriptionSummary } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 export const KIND_OPTIONS = [
   { value: "keyword", label: "关键词" },
@@ -69,7 +70,7 @@ async function load(): Promise<void> {
     items.value = feed;
     selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, feed.length - 1));
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "读取 Feed 失败";
+    errorMessage.value = toErrorMessage(error, "读取 Feed 失败");
   } finally {
     isLoading.value = false;
   }
@@ -93,7 +94,7 @@ async function addSubscription(): Promise<void> {
     await load();
     ElMessage.success("已添加订阅");
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "添加订阅失败";
+    errorMessage.value = toErrorMessage(error, "添加订阅失败");
   }
 }
 
@@ -102,7 +103,7 @@ async function removeSubscription(subscription: SubscriptionSummary): Promise<vo
     await deleteSubscription(subscription.id);
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "删除订阅失败";
+    errorMessage.value = toErrorMessage(error, "删除订阅失败");
   }
 }
 
@@ -117,7 +118,7 @@ async function refresh(): Promise<void> {
       ElMessage.warning((result.errors ?? []).length + " 个订阅抓取失败");
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "刷新 Feed 失败";
+    errorMessage.value = toErrorMessage(error, "刷新 Feed 失败");
   } finally {
     isRefreshing.value = false;
   }
@@ -131,7 +132,7 @@ async function save(item: FeedItemSummary): Promise<string | null> {
     ElMessage.success("已存入阅读队列");
     return updated.paper_id ?? null;
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "保存失败";
+    errorMessage.value = toErrorMessage(error, "保存失败");
     return null;
   }
 }
@@ -141,7 +142,7 @@ async function ignore(item: FeedItemSummary): Promise<void> {
     await ignoreFeedItem(item.id);
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "忽略失败";
+    errorMessage.value = toErrorMessage(error, "忽略失败");
   }
 }
 

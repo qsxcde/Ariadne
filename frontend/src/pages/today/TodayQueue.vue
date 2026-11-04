@@ -2,6 +2,7 @@
 import StateBlock from "@/shared/components/StateBlock.vue";
 import { useToday } from "@/pages/today/useToday";
 import type { PaperSummary } from "@/api";
+import { paperStatusLabel } from "@/shared/constants/paper";
 
 const emit = defineEmits<{
   open: [paperId: string];
@@ -35,7 +36,7 @@ function openPaper(paper: PaperSummary): void {
         @click="openPaper(paper)"
       >
         <span class="queue-item__status">
-          {{ paper.reading_status === "queued" ? "队列" : "待读" }}
+          {{ paperStatusLabel(paper.reading_status) }}
         </span>
         <span class="queue-item__title">{{ paper.title }}</span>
         <span class="queue-item__meta">{{ authorLine(paper) }}</span>

@@ -12,6 +12,7 @@ import { useReadingClock } from "@/features/reader/composables/useReadingClock";
 import { shortcutLabel } from "@/shared/utils/platform";
 import type { AnnotationSummary, PaperDetail, PaperDocumentSummary } from "@/api";
 import type { SelectionAskMode } from "@/shared/types";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const props = defineProps<{
   paperId: string;
@@ -166,7 +167,7 @@ async function handleAsk(text: string, mode: SelectionAskMode): Promise<void> {
       confirmButtonText: "知道了",
     });
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "解释失败");
+    ElMessage.error(toErrorMessage(error, "解释失败"));
   }
 }
 

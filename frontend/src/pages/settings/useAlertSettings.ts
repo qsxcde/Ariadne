@@ -9,6 +9,7 @@ import {
   markNotificationRead,
 } from "@/api/notifications";
 import type { AlertSettings, NotificationSummary } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const alertSettings = ref<AlertSettings | null>(null);
 const notifications = ref<NotificationSummary[]>([]);
@@ -30,7 +31,7 @@ async function load(): Promise<void> {
       listNotifications("unread"),
     ]);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "读取提醒设置失败";
+    errorMessage.value = toErrorMessage(error, "读取提醒设置失败");
   }
 }
 
@@ -50,7 +51,7 @@ async function deliver(): Promise<void> {
     );
     deliverMessage.value = "已投递 " + result.delivered + " 条";
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "投递失败";
+    errorMessage.value = toErrorMessage(error, "投递失败");
   } finally {
     isDelivering.value = false;
   }
@@ -66,7 +67,7 @@ async function checkCitations(): Promise<void> {
     deliverMessage.value = `检查 ${result.checked} 篇，新增 ${result.notified} 条引用提醒${suffix}`;
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "检查引用更新失败";
+    errorMessage.value = toErrorMessage(error, "检查引用更新失败");
   } finally {
     isCheckingCitations.value = false;
   }
@@ -82,7 +83,7 @@ async function checkVersions(): Promise<void> {
     deliverMessage.value = `检查 ${result.checked} 篇，新增 ${result.notified} 条版本提醒${suffix}`;
     await load();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "检查新版本失败";
+    errorMessage.value = toErrorMessage(error, "检查新版本失败");
   } finally {
     isCheckingVersions.value = false;
   }
@@ -109,7 +110,7 @@ async function save(): Promise<void> {
       saveMessageTimer = null;
     }, 2000);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "保存提醒设置失败";
+    errorMessage.value = toErrorMessage(error, "保存提醒设置失败");
   } finally {
     isSaving.value = false;
   }

@@ -8,6 +8,7 @@ import PaperAskPanel from "@/features/reader/components/PaperAskPanel.vue";
 import PaperBriefPanel from "@/features/reader/components/PaperBriefPanel.vue";
 import PaperNotesPanel from "@/features/reader/components/PaperNotesPanel.vue";
 import type { AnnotationSummary, CitationGraph, GlossaryResponse } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 const props = defineProps<{
   paperId: string;
@@ -42,7 +43,7 @@ async function loadCitations(): Promise<void> {
   try {
     citations.value = await getCitations(props.paperId);
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "读取引用关系失败");
+    ElMessage.error(toErrorMessage(error, "读取引用关系失败"));
   } finally {
     isCitationsLoading.value = false;
   }
@@ -53,7 +54,7 @@ async function generateGlossary(): Promise<void> {
   try {
     glossary.value = await getGlossary(props.paperId);
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : "生成术语表失败");
+    ElMessage.error(toErrorMessage(error, "生成术语表失败"));
   } finally {
     isGlossaryLoading.value = false;
   }

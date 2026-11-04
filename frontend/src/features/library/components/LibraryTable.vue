@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { PaperSummary } from "@/api";
+import { paperStatusLabel } from "@/shared/constants/paper";
 import { formatUpdatedAt } from "@/shared/utils/format";
 
 const props = withDefaults(
@@ -31,19 +32,6 @@ const allChecked = computed(
 const someChecked = computed(() =>
   props.papers.some((paper) => props.checkedIds.includes(paper.id)),
 );
-
-const STATUS_LABELS: Record<string, string> = {
-  inbox: "待读",
-  queued: "队列",
-  skimming: "速读",
-  reading: "在读",
-  read: "已读",
-  archived: "归档",
-};
-
-function statusLabel(status: string): string {
-  return STATUS_LABELS[status] ?? status;
-}
 
 function progressPercent(progress: number): number {
   return Math.round(Math.max(0, Math.min(1, progress)) * 100);
@@ -115,7 +103,7 @@ function visibleTags(paper: PaperSummary): string[] {
           <td>
             <span class="library-table__status" :class="'is-' + paper.reading_status">
               <span class="library-table__dot" aria-hidden="true" />
-              {{ statusLabel(paper.reading_status) }}
+              {{ paperStatusLabel(paper.reading_status) }}
             </span>
           </td>
           <td>

@@ -10,6 +10,7 @@ import type {
   PaperComparison,
   PaperSummary,
 } from "@/api";
+import { toErrorMessage } from "@/shared/utils/error";
 
 export const SYNTHESIS_TABS = [
   { value: "ask", label: "问答" },
@@ -60,7 +61,7 @@ async function loadCollections(): Promise<void> {
       await loadPapers();
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "读取集合失败";
+    errorMessage.value = toErrorMessage(error, "读取集合失败");
   } finally {
     isLoading.value = false;
   }
@@ -77,7 +78,7 @@ async function loadPapers(): Promise<void> {
     answer.value = null;
     comparison.value = [];
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "读取集合论文失败";
+    errorMessage.value = toErrorMessage(error, "读取集合论文失败");
   }
 }
 
@@ -98,7 +99,7 @@ async function ask(): Promise<void> {
   try {
     answer.value = await askCollection(selectedCollectionId.value, question.value.trim());
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "集合问答失败";
+    errorMessage.value = toErrorMessage(error, "集合问答失败");
   } finally {
     isAsking.value = false;
   }
@@ -117,7 +118,7 @@ async function compare(): Promise<void> {
       selectedPaperIds.value,
     );
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "论文对比失败";
+    errorMessage.value = toErrorMessage(error, "论文对比失败");
   } finally {
     isComparing.value = false;
   }
