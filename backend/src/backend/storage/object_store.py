@@ -278,7 +278,11 @@ class S3ObjectStore:
 
     @staticmethod
     def _absolute_ref(ref: str) -> Path:
-        return Path(ref).expanduser().resolve()
+        resolved = Path(ref).expanduser().resolve()
+        root = config.data_dir().resolve()
+        if not resolved.is_relative_to(root):
+            raise ValueError(f"Object reference escapes the data directory: {ref}")
+        return resolved
 
     def _cache_path(self, key: str) -> Path:
         target = (self._cache_dir / key).resolve()
