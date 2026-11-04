@@ -30,10 +30,11 @@ def create_subscription(
     with transaction() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO subscriptions (
+            INSERT INTO subscriptions (
               id, user_id, kind, value, source, is_active, created_at, last_checked_at
             )
             VALUES (?, ?, ?, ?, ?, 1, ?, NULL)
+            ON CONFLICT DO NOTHING
             """,
             (resolved_id, user_id, kind, normalized, source, now_iso()),
         )

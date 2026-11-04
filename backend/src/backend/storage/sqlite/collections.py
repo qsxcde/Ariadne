@@ -89,10 +89,11 @@ def add_paper_to_collection(
     with transaction() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO collection_papers (
+            INSERT INTO collection_papers (
               collection_id, paper_id, added_at, sort_order
             )
             VALUES (?, ?, ?, ?)
+            ON CONFLICT DO NOTHING
             """,
             (collection_id, paper_id, now_iso(), sort_order),
         )

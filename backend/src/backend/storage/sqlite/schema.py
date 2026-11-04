@@ -1,5 +1,7 @@
 import threading
+from datetime import UTC, datetime
 
+from backend.storage.db import is_postgres
 from backend.storage.sqlite.migrations import migrate_schema
 from backend.storage.sqlite.uow import unit_of_work
 
@@ -11,6 +13,9 @@ _init_lock = threading.RLock()
 def init_db() -> None:
     """Thread-safe schema initialization and migration."""
     with _init_lock, unit_of_work() as conn:
+        if is_postgres():
+            _init_postgres(conn)
+            return
         current_version = conn.execute("PRAGMA user_version").fetchone()[0]
         if current_version < 1:
             # Fresh database: the initial schema already matches the current
@@ -20,6 +25,33 @@ def init_db() -> None:
         elif current_version < CURRENT_SCHEMA_VERSION:
             migrate_schema(conn, current_version)
             conn.execute(f"PRAGMA user_version = {CURRENT_SCHEMA_VERSION}")
+
+
+def _init_postgres(conn) -> None:
+    """Create the current schema on PostgreSQL; legacy migrations are SQLite-only."""
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+          version INTEGER PRIMARY KEY,
+          applied_at TEXT NOT NULL
+        )
+        """
+    )
+    row = conn.execute(
+        "SELECT COALESCE(MAX(version), 0) AS version FROM schema_migrations"
+    ).fetchone()
+    current_version = int(row["version"]) if row else 0
+    if current_version < 1:
+        _create_initial_schema(conn)
+    if current_version < CURRENT_SCHEMA_VERSION:
+        conn.execute(
+            """
+            INSERT INTO schema_migrations (version, applied_at)
+            VALUES (?, ?)
+            ON CONFLICT (version) DO NOTHING
+            """,
+            (CURRENT_SCHEMA_VERSION, datetime.now(UTC).isoformat()),
+        )
 
 
 def _create_initial_schema(conn) -> None:

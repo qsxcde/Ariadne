@@ -24,8 +24,9 @@ def get_or_create(user_id: str | None) -> UserModelSettingsRecord:
     with transaction() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO user_model_settings (id, user_id, updated_at)
+            INSERT INTO user_model_settings (id, user_id, updated_at)
             VALUES (?, ?, ?)
+            ON CONFLICT DO NOTHING
             """,
             (str(uuid.uuid4()), user_id, now_iso()),
         )

@@ -192,7 +192,7 @@ def list_papers(
         params.append(reading_status)
     if query:
         like = f"%{query.strip()}%"
-        where.append("(p.title LIKE ? OR p.authors_json LIKE ?)")
+        where.append("(LOWER(p.title) LIKE LOWER(?) OR LOWER(p.authors_json) LIKE LOWER(?))")
         params.extend([like, like])
 
     sql = f"""
@@ -244,7 +244,7 @@ def find_by_doi(user_id: str | None, doi: str) -> PaperRecord | None:
         row = conn.execute(
             """
             SELECT * FROM papers
-            WHERE user_id IS ? AND doi = ? COLLATE NOCASE
+            WHERE user_id IS ? AND LOWER(doi) = LOWER(?)
             ORDER BY created_at ASC
             LIMIT 1
             """,

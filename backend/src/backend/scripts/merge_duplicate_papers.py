@@ -2,15 +2,20 @@
 
 import argparse
 
-from backend.storage.sqlite.connection import connect, transaction
+from backend.storage.sqlite.connection import connect, is_postgres, transaction
 
 
 def find_duplicate_groups() -> list[dict[str, object]]:
+    paper_ids = (
+        "STRING_AGG(DISTINCT p.id, ',')"
+        if is_postgres()
+        else "GROUP_CONCAT(DISTINCT p.id)"
+    )
     with connect() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT p.user_id, d.file_hash,
-                   GROUP_CONCAT(DISTINCT p.id) AS paper_ids
+                   {paper_ids} AS paper_ids
             FROM documents d
             JOIN papers p ON p.id = d.paper_id
             WHERE d.file_hash IS NOT NULL
@@ -57,12 +62,13 @@ def merge_group(keeper_id: str, duplicate_ids: list[str]) -> None:
         )
         conn.execute(
             f"""
-            INSERT OR IGNORE INTO collection_papers (
+            INSERT INTO collection_papers (
               collection_id, paper_id, added_at, sort_order
             )
             SELECT collection_id, ?, added_at, sort_order
             FROM collection_papers
             WHERE paper_id IN ({placeholders})
+            ON CONFLICT DO NOTHING
             """,
             params,
         )
@@ -72,8 +78,9 @@ def merge_group(keeper_id: str, duplicate_ids: list[str]) -> None:
         )
         conn.execute(
             f"""
-            INSERT OR IGNORE INTO paper_tags (paper_id, tag)
+            INSERT INTO paper_tags (paper_id, tag)
             SELECT ?, tag FROM paper_tags WHERE paper_id IN ({placeholders})
+            ON CONFLICT DO NOTHING
             """,
             params,
         )

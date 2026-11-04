@@ -20,11 +20,12 @@ def get_or_create(user_id: str | None) -> AlertSettingsRecord:
     with transaction() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO alert_settings (
+            INSERT INTO alert_settings (
               id, user_id, new_paper, new_version, new_citation,
               digest_enabled, digest_frequency, updated_at
             )
             VALUES (?, ?, 1, 1, 0, 1, 'weekly', ?)
+            ON CONFLICT DO NOTHING
             """,
             (settings_id, user_id, now_iso()),
         )

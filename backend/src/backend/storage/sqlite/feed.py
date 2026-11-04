@@ -24,11 +24,12 @@ def upsert_feed_item(
     with transaction() as conn:
         conn.execute(
             """
-            INSERT OR IGNORE INTO feed_items (
+            INSERT INTO feed_items (
               id, user_id, source, external_id, title, authors_json, abstract,
               url, published_at, paper_id, status, relevance_reason, created_at
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'new', ?, ?)
+            ON CONFLICT DO NOTHING
             """,
             (
                 item_id,
