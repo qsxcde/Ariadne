@@ -10,10 +10,10 @@ backend/storage/sqlite/scipal.db
 .claude/
 .superpowers/
 .worktrees/
-.claude/
 .pytest_cache/
 .pytest-tmp/
 .vscode/
+.idea/
 eval_outputs/
 docker/models/
 docs/*
