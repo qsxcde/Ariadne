@@ -2,8 +2,8 @@
 
 import argparse
 import hashlib
-from pathlib import Path
 
+from backend.storage.object_store import get_object_store
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite.connection import connect
 
@@ -20,12 +20,13 @@ def _iter_missing_hashes():
 def run(*, apply: bool) -> dict[str, int]:
     updated = 0
     missing = 0
+    store = get_object_store()
     for document_id, file_path in _iter_missing_hashes():
-        path = Path(file_path)
-        if not path.is_file():
+        try:
+            digest = hashlib.sha256(store.get_bytes(file_path)).hexdigest()
+        except (OSError, ValueError):
             missing += 1
             continue
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
         if apply:
             document_repo.update_document_file_hash(document_id, digest)
         updated += 1

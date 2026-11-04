@@ -22,11 +22,12 @@ from backend.domain.exceptions import (
 )
 from backend.domain.states import DocumentStage
 from backend.domain.ports import EmbeddingRuntime
+from backend.storage.object_store import get_object_store
+from backend.storage.paths import session_artifact_prefix, session_upload_key
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import jobs as job_repo
 from backend.storage.sqlite import sessions as session_repo
-from backend.storage.paths import session_document_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -60,11 +61,13 @@ def intake_document_upload(
             f"Session not found: {session_id}", session_id=session_id
         )
     document_id = str(uuid.uuid4())
-    file_path = session_document_file_path(session_id, document_id)
+    store = get_object_store()
+    file_path = store.put_bytes(
+        session_upload_key(session_id, document_id), pdf_bytes
+    )
     document = None
     job = None
     try:
-        file_path.write_bytes(pdf_bytes)
         document = document_repo.create_document(
             session_id=session_id,
             filename=filename,
@@ -91,8 +94,8 @@ def intake_document_upload(
     except Exception:
         with suppress(RuntimeError, OSError):
             document_repo.delete_document(document_id)
-        with suppress(FileNotFoundError):
-            file_path.unlink()
+        with suppress(OSError, ValueError):
+            store.delete(file_path)
         raise
 
     session_repo.touch_session(session_id)
@@ -136,11 +139,26 @@ def get_source_chunk(session_id: str, document_id: str, chunk_index: int) -> dic
 
 
 def get_document_file(session_id: str, document_id: str) -> Path:
-    """Return the stored PDF path, refusing anything outside the data directory."""
+    """Materialize the stored PDF for download."""
     document = _get_owned_document(session_id, document_id)
-    path = Path(document["file_path"]).resolve()
-    root = data_dir().resolve()
-    if not path.is_relative_to(root) or not path.is_file():
+    ref = str(document["file_path"])
+    if Path(ref).is_absolute() and not Path(ref).resolve().is_relative_to(
+        data_dir().resolve()
+    ):
+        raise DocumentNotFoundError(
+            f"Document file not found: {document_id}",
+            session_id=session_id,
+            document_id=document_id,
+        )
+    try:
+        path = get_object_store().materialize(ref)
+    except (FileNotFoundError, ValueError) as exc:
+        raise DocumentNotFoundError(
+            f"Document file not found: {document_id}",
+            session_id=session_id,
+            document_id=document_id,
+        ) from exc
+    if not path.is_file():
         raise DocumentNotFoundError(
             f"Document file not found: {document_id}",
             session_id=session_id,
@@ -209,20 +227,12 @@ def get_block_crop(
             block_id=block_id,
         )
 
-    artifact_dir = Path(ir_path).resolve().parent
-    root = data_dir().resolve()
-    if not artifact_dir.is_relative_to(root):
-        raise BlockCropError(
-            "Parsed artifacts are outside the data directory",
-            session_id=session_id,
-            document_id=document_id,
-            block_id=block_id,
-        )
-
+    artifact_prefix = session_artifact_prefix(session_id, document_id)
+    store = get_object_store()
     scale = max(_CROP_SCALE_MIN, min(_CROP_SCALE_MAX, int(scale)))
-    cache_path = artifact_dir / "crops" / f"{block_id}-{scale}x.png"
-    if cache_path.is_file():
-        return cache_path.read_bytes()
+    cache_ref = f"{artifact_prefix}/crops/{block_id}-{scale}x.png"
+    if store.exists(cache_ref):
+        return store.get_bytes(cache_ref)
 
     pdf_path = get_document_file(session_id, document_id)
     try:
@@ -240,8 +250,7 @@ def get_block_crop(
             block_id=block_id,
         ) from exc
 
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_bytes(image)
+    store.put_bytes(cache_ref, image)
     return image
 
 
@@ -327,13 +336,10 @@ def _normalize_bbox(
 
 
 def _load_ir_payload(ir_path: str) -> dict | None:
-    path = Path(ir_path)
-    if not path.is_file():
-        return None
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        logger.warning("Unreadable parsed IR at %s", path)
+        payload = json.loads(get_object_store().get_bytes(ir_path).decode("utf-8"))
+    except (OSError, ValueError):
+        logger.warning("Unreadable parsed IR at %s", ir_path)
         return None
     return payload if isinstance(payload, dict) else None
 
@@ -384,23 +390,27 @@ def _reject_if_job_running(session_id: str) -> None:
 
 
 def _remove_document_files(document: DocumentRecord) -> None:
+    store = get_object_store()
     for raw in (
         document.get("file_path"),
         document.get("parsed_markdown_path"),
         document.get("quality_report_path"),
     ):
         if raw:
-            with suppress(OSError):
-                Path(raw).unlink()
+            with suppress(OSError, ValueError):
+                store.delete(raw)
 
-    ir_path = document.get("parsed_ir_path")
-    if not ir_path:
-        return
-    artifact_dir = Path(ir_path).parent
-    root = data_dir().resolve()
-    if artifact_dir.resolve().is_relative_to(root):
-        with suppress(OSError):
-            shutil.rmtree(artifact_dir)
+    if document.get("parsed_ir_path"):
+        with suppress(OSError, ValueError):
+            store.delete_prefix(
+                session_artifact_prefix(document["session_id"], document["id"])
+            )
+        ir_ref = str(document["parsed_ir_path"])
+        if Path(ir_ref).is_absolute():
+            artifact_dir = Path(ir_ref).resolve().parent
+            root = data_dir().resolve()
+            if artifact_dir != root and artifact_dir.is_relative_to(root):
+                shutil.rmtree(artifact_dir, ignore_errors=True)
 
 
 def list_library_documents(user_id: str | None) -> list[dict]:
@@ -510,5 +520,5 @@ def recover_orphaned_documents() -> None:
         )
         with suppress(RuntimeError, OSError):
             document_repo.delete_document(doc["id"])
-        with suppress(FileNotFoundError):
-            Path(doc["file_path"]).unlink()
+        with suppress(OSError, ValueError):
+            get_object_store().delete(doc["file_path"])

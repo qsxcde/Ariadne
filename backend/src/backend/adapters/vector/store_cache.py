@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from cachetools import LRUCache
 
+from backend.storage.object_store import get_object_store
 from backend.storage.records import SnapshotRecord
 from backend.domain.states import PROCESSING_DOCUMENT_STAGES
 from backend.rag.retrieval.filters import filter_indexable_chunks
@@ -49,9 +50,10 @@ def _load_store(
 ) -> FAISSVectorStore:
     from backend.adapters.vector.faiss_store import FAISSVectorStore
 
+    object_store = get_object_store()
     return FAISSVectorStore.load(
-        index_path=index_path,
-        chunks_path=chunks_path,
+        index_path=object_store.materialize(str(index_path)),
+        chunks_path=object_store.materialize(str(chunks_path)),
         embed_fn=embedding.embed if embedding is not None else None,
     )
 

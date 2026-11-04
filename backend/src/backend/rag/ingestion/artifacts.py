@@ -1,43 +1,45 @@
 import json
-from pathlib import Path
 
 from pydantic import BaseModel
 
 from backend.rag.ingestion.document_ir import DocumentIR, QualityReport
+from backend.storage.object_store import get_object_store
 
 
 class IngestionArtifacts(BaseModel):
-    ir_path: Path
-    markdown_path: Path
-    normalized_markdown_path: Path
-    quality_report_path: Path
+    ir_ref: str
+    markdown_ref: str
+    normalized_markdown_ref: str
+    quality_report_ref: str
 
 
 def save_ingestion_artifacts(
-    artifact_dir: Path,
+    artifact_prefix: str,
     document_ir: DocumentIR,
     raw_markdown: str,
     normalized_markdown: str,
     quality_report: QualityReport,
 ) -> IngestionArtifacts:
     """Persist parser artifacts for cache, inspection, and repeatable RAG ingestion."""
-    artifact_dir.mkdir(parents=True, exist_ok=True)
-    ir_path = artifact_dir / "document.ir.json"
-    markdown_path = artifact_dir / "document.md"
-    normalized_markdown_path = artifact_dir / "document.normalized.md"
-    quality_report_path = artifact_dir / "quality_report.json"
+    store = get_object_store()
     source_markdown = raw_markdown.strip() or normalized_markdown
-
-    ir_path.write_text(_json_dump(document_ir.model_dump(mode="json")), encoding="utf-8")
-    markdown_path.write_text(source_markdown.rstrip() + "\n", encoding="utf-8")
-    normalized_markdown_path.write_text(normalized_markdown.rstrip() + "\n", encoding="utf-8")
-    quality_report_path.write_text(_json_dump(quality_report.model_dump(mode="json")), encoding="utf-8")
-
     return IngestionArtifacts(
-        ir_path=ir_path,
-        markdown_path=markdown_path,
-        normalized_markdown_path=normalized_markdown_path,
-        quality_report_path=quality_report_path,
+        ir_ref=store.put_bytes(
+            f"{artifact_prefix}/document.ir.json",
+            _json_dump(document_ir.model_dump(mode="json")).encode("utf-8"),
+        ),
+        markdown_ref=store.put_bytes(
+            f"{artifact_prefix}/document.md",
+            (source_markdown.rstrip() + "\n").encode("utf-8"),
+        ),
+        normalized_markdown_ref=store.put_bytes(
+            f"{artifact_prefix}/document.normalized.md",
+            (normalized_markdown.rstrip() + "\n").encode("utf-8"),
+        ),
+        quality_report_ref=store.put_bytes(
+            f"{artifact_prefix}/quality_report.json",
+            _json_dump(quality_report.model_dump(mode="json")).encode("utf-8"),
+        ),
     )
 
 

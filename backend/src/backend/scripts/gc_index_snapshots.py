@@ -25,6 +25,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from backend.config import data_dir
+from backend.storage.object_store import get_object_store
 from backend.storage.sqlite import index_snapshots as snapshot_repo
 from backend.storage.sqlite.schema import init_db
 
@@ -56,24 +57,30 @@ def collect_snapshots(stale_days: int = 7, apply: bool = False) -> dict[str, int
         "rows_deleted": 0,
         "skipped_paths": 0,
     }
+    store = get_object_store()
     for snapshot in snapshots:
         for column in ("index_path", "chunks_path"):
-            raw_path = snapshot.get(column)
-            if not raw_path:
+            raw_ref = str(snapshot.get(column) or "")
+            if not raw_ref:
                 continue
-            path = Path(raw_path)
-            if not _is_inside_index_root(path, index_root):
+            if store.backend == "local" and not _is_inside_index_root(
+                Path(raw_ref), index_root
+            ):
                 logger.warning(
                     "Skip snapshot file outside data dir: snapshot_id=%s path=%s",
                     snapshot["id"],
-                    path,
+                    raw_ref,
                 )
                 summary["skipped_paths"] += 1
                 continue
-            if not path.exists():
+            try:
+                exists = store.exists(raw_ref)
+            except (OSError, ValueError):
+                exists = False
+            if not exists:
                 continue
             if apply:
-                path.unlink()
+                store.delete(raw_ref)
             summary["files_deleted"] += 1
 
         if apply and snapshot_repo.delete_snapshot(snapshot["id"]):

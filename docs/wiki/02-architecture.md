@@ -115,10 +115,12 @@
 
 | 文件 | 职责 |
 |---|---|
-| `storage/paths.py` | 会话目录布局；`remove_session_dir` 带越界校验 |
-| `storage/sqlite/connection.py` | 路径三级回退、PRAGMA、`transaction()` 上下文管理器 |
-| `storage/sqlite/schema.py` | 当前全量 DDL、`init_db()` 与 `PRAGMA user_version` 版本声明 |
-| `storage/sqlite/migrations/versions.py` | v2 → v19 的增量迁移函数，由 `schema.init_db()` 调用 |
+| `storage/paths.py` | 会话对象 key 与本地目录布局；`remove_session_dir` 删除对象前缀并清理旧目录 |
+| `storage/object_store.py` | local / S3 对象存储；`materialize()` 本地缓存、`get_bytes()`、前缀删除 |
+| `storage/db.py` | 按 `DATABASE_URL` 分发 SQLite / PostgreSQL，连接池与 SQL 方言转换 |
+| `storage/sqlite/connection.py` | 向后兼容的再导出入口（实现位于 `storage/db.py`） |
+| `storage/sqlite/schema.py` | 当前全量 DDL；SQLite 用 `PRAGMA user_version`，PostgreSQL 用 `schema_migrations` |
+| `storage/sqlite/migrations/versions.py` | v2 → v19 的 SQLite 增量迁移函数，由 `schema.init_db()` 调用 |
 | `storage/sqlite/uow.py` | `unit_of_work()`：多步存储操作的显式事务边界 |
 | `storage/sqlite/*.py` | 22 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / agent_runs / agent_steps / index_snapshots / papers / collections / annotations / feed / notifications 等 |
 

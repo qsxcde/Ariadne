@@ -1,9 +1,7 @@
 import json
 import logging
-import shutil
 import time
 from collections.abc import Callable
-from pathlib import Path
 
 from backend.application.ingestion.indexing import build_candidate_snapshot
 from backend.application.ingestion.indexing import cleanup_snapshot_files
@@ -17,7 +15,8 @@ from backend.rag.ingestion.artifacts import save_ingestion_artifacts
 from backend.domain.models import Chunk
 from backend.rag.ingestion.chunking import estimate_tokens
 from backend.rag.ingestion.pipeline import process_pdf_document
-from backend.storage.paths import raw_session_dir
+from backend.storage.object_store import get_object_store
+from backend.storage.paths import session_artifact_prefix
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import jobs as job_repo
@@ -128,22 +127,22 @@ def _do_parse_document(
     )
 
     artifacts = save_ingestion_artifacts(
-        artifact_dir=raw_session_dir(session_id) / "parsed" / document_id,
+        artifact_prefix=session_artifact_prefix(session_id, document_id),
         document_ir=ingestion_result.document_ir,
         raw_markdown=ingestion_result.raw_markdown,
         normalized_markdown=ingestion_result.markdown,
         quality_report=ingestion_result.quality_report,
     )
     logger.info(
-        "Saved ingestion artifacts session_id=%s document_id=%s ir_path=%s",
-        session_id, document_id, artifacts.ir_path,
+        "Saved ingestion artifacts session_id=%s document_id=%s ir_ref=%s",
+        session_id, document_id, artifacts.ir_ref,
     )
 
     document_repo.update_document_artifacts(
         document_id=document_id,
-        parsed_ir_path=str(artifacts.ir_path),
-        parsed_markdown_path=str(artifacts.markdown_path),
-        quality_report_path=str(artifacts.quality_report_path),
+        parsed_ir_path=artifacts.ir_ref,
+        parsed_markdown_path=artifacts.markdown_ref,
+        quality_report_path=artifacts.quality_report_ref,
         parser_name=ingestion_result.document_ir.parser_name,
         parser_version=ingestion_result.document_ir.parser_version,
         parse_quality_status=ingestion_result.quality_report.overall_status,
@@ -256,16 +255,7 @@ def _mark_failed(
 
 
 def _cleanup_parsed_artifacts(session_id: str, document_id: str) -> None:
-    artifact_dir = raw_session_dir(session_id) / "parsed" / document_id
-    if not _is_safe_parsed_artifact_dir(artifact_dir, session_id):
-        return
-    shutil.rmtree(artifact_dir, ignore_errors=True)
-
-
-def _is_safe_parsed_artifact_dir(path: Path, session_id: str) -> bool:
-    parsed_root = (raw_session_dir(session_id) / "parsed").resolve()
-    target = path.resolve()
-    return target == parsed_root / target.name and target.parent == parsed_root
+    get_object_store().delete_prefix(session_artifact_prefix(session_id, document_id))
 
 
 def _clear_document_artifacts(document_id: str) -> None:
@@ -302,7 +292,7 @@ def run_queued_ingestion_job(
         raise RuntimeError("Document not found for ingestion job")
     file_path = payload.get("file_path") or document["file_path"]
     try:
-        pdf_bytes = Path(file_path).read_bytes()
+        pdf_bytes = get_object_store().get_bytes(file_path)
     except Exception as exc:
         document_repo.update_document_status(
             document_id,

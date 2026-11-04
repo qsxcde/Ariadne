@@ -3,11 +3,14 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from contextlib import suppress
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 
 from backend.application.model_settings.service import env_embedding_fingerprint
 from backend.domain.ports import EmbeddingRuntime
+from backend.storage.object_store import get_object_store
 from backend.storage.records import IndexRecord, SnapshotRecord
 from backend.domain.exceptions import SnapshotCommitError
 
@@ -16,7 +19,7 @@ from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import index_snapshots as snapshot_repo
 from backend.storage.sqlite import indexes as index_repo
 from backend.adapters.vector.store_cache import discard_store
-from backend.storage.paths import session_indexes_dir
+from backend.storage.paths import session_snapshot_keys
 from backend.rag.retrieval.filters import filter_indexable_chunks
 
 if TYPE_CHECKING:
@@ -25,23 +28,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _snapshot_index_path(session_id: str, candidate_token: str) -> Path:
-    snapshot_dir = session_indexes_dir(session_id) / "snapshots"
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-    return snapshot_dir / f"{candidate_token}.faiss.index"
-
-
-def _snapshot_chunks_path(session_id: str, candidate_token: str) -> Path:
-    snapshot_dir = session_indexes_dir(session_id) / "snapshots"
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-    return snapshot_dir / f"{candidate_token}.chunks.json"
-
-
-def _unlink_if_exists(path: Path) -> None:
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        return
+def _save_snapshot_files(
+    session_id: str,
+    candidate_token: str,
+    vector_store: "FAISSVectorStore",
+) -> None:
+    index_key, chunks_key = session_snapshot_keys(session_id, candidate_token)
+    object_store = get_object_store()
+    with TemporaryDirectory(prefix="ariadne-index-") as work_dir:
+        index_path = Path(work_dir) / "index.faiss"
+        chunks_path = Path(work_dir) / "chunks.json"
+        vector_store.save(index_path=index_path, chunks_path=chunks_path)
+        object_store.put_file(index_key, index_path)
+        object_store.put_file(chunks_key, chunks_path)
 
 
 def build_candidate_snapshot(
@@ -60,8 +59,10 @@ def build_candidate_snapshot(
     """
     start = time.monotonic()
     candidate_token = str(uuid.uuid4())
-    index_path = _snapshot_index_path(session_id, candidate_token)
-    chunks_path = _snapshot_chunks_path(session_id, candidate_token)
+    index_key, chunks_key = session_snapshot_keys(session_id, candidate_token)
+    object_store = get_object_store()
+    index_path = object_store.ref(index_key)
+    chunks_path = object_store.ref(chunks_key)
     logger.info(
         "Building candidate index snapshot session_id=%s document_id=%s token=%s reuse_previous=%s",
         session_id, document_id, candidate_token, reuse_previous,
@@ -70,21 +71,21 @@ def build_candidate_snapshot(
     document_ids = _collect_document_ids(session_id, document_id)
     snapshot = snapshot_repo.create_building_snapshot(
         session_id=session_id,
-        index_path=str(index_path),
-        chunks_path=str(chunks_path),
+        index_path=index_path,
+        chunks_path=chunks_path,
         document_ids=document_ids,
         embedding_fingerprint=embedding.fingerprint if embedding else None,
         embedding_model=embedding.model if embedding else None,
     )
     try:
-        store = _load_or_create_store(
+        vector_store = _load_or_create_store(
             session_id,
             snapshot,
             document_ids,
             reuse_previous=reuse_previous,
             embedding=embedding,
         )
-        store.save(index_path=index_path, chunks_path=chunks_path)
+        _save_snapshot_files(session_id, candidate_token, vector_store)
     except Exception as exc:
         logger.exception(
             "Failed candidate index snapshot session_id=%s snapshot_id=%s document_id=%s",
@@ -127,10 +128,11 @@ def _load_or_create_store(
 
     embed_fn = embedding.embed if embedding else None
     embedding_dim = embedding.dim if embedding else None
+    object_store = get_object_store()
     if previous_ready is not None:
         store = FAISSVectorStore.load(
-            index_path=Path(previous_ready["index_path"]),
-            chunks_path=Path(previous_ready["chunks_path"]),
+            index_path=object_store.materialize(previous_ready["index_path"]),
+            chunks_path=object_store.materialize(previous_ready["chunks_path"]),
             embed_fn=embed_fn,
         )
         existing_doc_ids = set(previous_ready["document_ids"])
@@ -318,5 +320,7 @@ def _restore_index_publication(previous_index_metadata: IndexRecord | None, read
 def cleanup_snapshot_files(snapshot: SnapshotRecord | None) -> None:
     if snapshot is None:
         return
-    _unlink_if_exists(Path(snapshot["index_path"]))
-    _unlink_if_exists(Path(snapshot["chunks_path"]))
+    store = get_object_store()
+    for ref in (snapshot["index_path"], snapshot["chunks_path"]):
+        with suppress(OSError, ValueError):
+            store.delete(ref)

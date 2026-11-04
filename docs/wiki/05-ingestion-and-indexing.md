@@ -40,13 +40,13 @@
 `documents.intake_document_upload`：
 
 1. `_validate_upload`：`file_size` 为 `None` → 400；超过 `upload_max_bytes`（默认 50 MiB）→ 413；前 4 字节不是 `%PDF` → 400。路由传入的是 `file.size`，为空时退化为 `len(pdf_bytes)`。
-2. `paths.session_document_file_path` → `<data>/raw/<session_id>/<document_id>.pdf`。
+2. `paths.session_upload_key` → `raw/<session_id>/<document_id>.pdf`，经 `object_store.put_bytes` 落地；local 后端返回绝对路径，s3 后端返回对象 key。
 3. `documents.create_document`：硬编码 `status="uploaded"`、`chunk_count=0`、`error_message=NULL`。
 4. `jobs.create_job`：`type="document_ingestion"`、`status="queued"`、`stage="uploaded"`、`payload_json={document_id, filename, file_path}`、`attempt=0`。
 5. `sessions.touch_session`。
 6. 若会话标题仍是 `settings.msg_default_session_title`，改为文件名。
 
-写盘与建行不在同一事务中，但有显式补偿：`create_document` 或 `create_job` 抛错时，`delete_document` + `unlink` 已写文件后再抛出（`documents.py:68-73`）。`touch_session` 与"标题自动改名"在 `try` 之外，且用 `suppress` 包裹，失败只影响排序/标题，不影响上传结果。
+写存储与建行不在同一事务中，但有显式补偿：`create_document` 或 `create_job` 抛错时，`delete_document` + 删除已写入对象后再抛出。`touch_session` 与"标题自动改名"在 `try` 之外，且用 `suppress` 包裹，失败只影响排序/标题，不影响上传结果。
 
 ## 3. 任务调度
 
@@ -194,7 +194,7 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 
 ## 8. 产物文件
 
-`save_ingestion_artifacts` 写入 `<data>/raw/<session_id>/parsed/<document_id>/`：
+`save_ingestion_artifacts(artifact_prefix=...)` 通过对象存储写入 `raw/<session_id>/parsed/<document_id>/`：
 
 | 文件 | 内容 |
 |---|---|
@@ -203,7 +203,7 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 | `document.normalized.md` | `export_markdown(DocumentIR)` 结果，跳过 `header_footer` |
 | `quality_report.json` | `QualityReport` JSON |
 
-前三个中的 IR / markdown / quality 报告路径回写到 `documents` 表；`document.normalized.md` 只落盘不入库。
+前三个中的 IR / markdown / quality 报告引用回写到 `documents` 表；`document.normalized.md` 只落盘不入库。阅读器裁切图缓存也写入同一前缀的 `crops/`。
 
 ## 9. 索引构建与提交
 
@@ -214,7 +214,7 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <�
 1. `uuid4()` 生成 token，`create_building_snapshot` 写 `index_snapshots(status=building, document_ids_json=[...], embedding_fingerprint, embedding_model)`。
 2. 取目标 chunks（当前会话全部可索引块），`filter_indexable_chunks` 剔除参考文献块。
 3. 增量构建：若存在 previous ready 快照且 Embedding 指纹一致，`FAISSVectorStore.load(prev)` 后只追加"不在 `document_ids` 中"的新文档块；指纹不一致时丢弃旧快照、全量重建，避免混合不同模型的向量。
-4. `store.save(index_path, chunks_path)` 写两份文件；失败 → `SnapshotCommitError(candidate_snapshot=..., preserve_candidate_snapshot_files=False)`。
+4. `FAISSVectorStore.save` 先写临时文件，再由 `object_store.put_file` 上传/复制到 `index/<sid>/snapshots/`；失败 → `SnapshotCommitError(candidate_snapshot=..., preserve_candidate_snapshot_files=False)`。
 
 关键语义：**快照是整会话累积索引**，不是单文档索引。新文档 = 旧 ready 快照 + 新块；Embedding 变化 = 全量重建。
 

@@ -386,13 +386,15 @@ backend/data/                              # 默认数据根 = backend_project_d
 │       ├── document.ir.json
 │       ├── document.md
 │       ├── document.normalized.md
-│       └── quality_report.json
+│       ├── quality_report.json
+│       └── crops/<block_id>-<scale>x.png  # 阅读器裁切图缓存
 ├── index/<session_id>/
 │   ├── faiss.index                        # legacy 单文件布局
 │   ├── chunks.json
 │   └── snapshots/
 │       ├── <token>.faiss.index
 │       └── <token>.chunks.json
+├── object_cache/                          # S3 后端下 materialize 的本地缓存
 ├── model_cache/
 │   ├── embeddings/<模型末段名>/            # sentence-transformers 权重
 │   └── mineru/
@@ -410,6 +412,8 @@ backend/data/                              # 默认数据根 = backend_project_d
 | 数据库 | `ARIADNE_DB_PATH` → `<数据根>/ariadne.db` |
 
 > 不再回退到源码包目录：DB 与 `raw/`、`index/` 始终同源，避免 `git status` 里出现未跟踪的运行时数据库。
+
+`documents.file_path`、`parsed_ir_path` / `parsed_markdown_path` / `quality_report_path`、`index_snapshots.index_path` / `chunks_path` 存的是**存储引用**：`OBJECT_STORE_BACKEND=local` 时是数据根下的绝对路径；`s3` 时是对象 key（如 `raw/<sid>/<doc>.pdf`、`index/<sid>/snapshots/<token>.faiss.index`）。读取方统一经 `storage/object_store.py`：需要随机访问文件（FAISS、pdfium）时 `materialize()` 到本地缓存，其余用 `get_bytes()`。旧库中的绝对路径仍可直接读取。
 
 `backend/src/backend/scripts/migrate_storage.py` 提供旧布局迁移：把 `data/uploads/sessions/<sid>/{documents,parsed,indexes}` 平移到 `backend/data/{raw,parsed,index}/<sid>`；同名冲突且内容不同会 `raise RuntimeError("Storage migration conflict")`。
 
