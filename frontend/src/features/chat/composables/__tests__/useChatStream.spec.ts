@@ -46,7 +46,7 @@ describe("useChatStream", () => {
         { type: "token", value: "Hello" },
         { type: "token", value: " world" },
         { type: "sources", value: [{ section: "Intro", chunk_index: 0 }] },
-        { type: "done" },
+        { type: "done", run_id: null },
       ]),
     );
     const { chat, errors } = createChat();
@@ -66,7 +66,7 @@ describe("useChatStream", () => {
       streamOf([
         { type: "token", value: "kept" },
         { type: "unknown_future_type", value: "x" } as unknown as MessageChunk,
-        { type: "done" },
+        { type: "done", run_id: null },
       ]),
     );
     const { chat, errors } = createChat();
@@ -82,7 +82,7 @@ describe("useChatStream", () => {
       throw new Error("network down");
     });
     vi.mocked(streamChat).mockReturnValueOnce(
-      streamOf([{ type: "token", value: "recovered" }, { type: "done" }]),
+      streamOf([{ type: "token", value: "recovered" }, { type: "done", run_id: null }]),
     );
     const { chat, errors } = createChat();
 

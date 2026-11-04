@@ -85,9 +85,12 @@ export function useChatStream(options: UseChatStreamOptions) {
           assistant.text = accumulated || `生成失败：${chunk.value}`;
           return;
         case "status":
+        case "run_started":
+        case "tool_call":
+        case "tool_result":
         case "warning":
         case "done":
-          // 状态与告警只影响进度提示，正文由 token 事件驱动。
+          // 状态与轨迹由 Agent 运行层消费；当前聊天面板只渲染正文与来源。
           break;
         default: {
           // 后端新增事件类型时这里会编译失败，强制前端补齐处理。

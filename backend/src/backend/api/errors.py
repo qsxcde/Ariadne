@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from backend.domain.exceptions import (
+    AgentRunNotFoundError,
     AnnotationNotFoundError,
     BlockCropError,
     ChunkNotFoundError,
@@ -35,6 +36,15 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": str(exc) or "Paper not found"},
+        )
+
+    @app.exception_handler(AgentRunNotFoundError)
+    async def _agent_run_not_found(
+        _request: Request, exc: AgentRunNotFoundError
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc) or "Agent run not found"},
         )
 
     @app.exception_handler(CollectionNotFoundError)

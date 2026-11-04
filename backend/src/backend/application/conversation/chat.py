@@ -3,29 +3,45 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any
+from collections.abc import AsyncGenerator, AsyncIterator, Iterator
+from typing import Any, Literal
 
+from backend.application.agent.service import stream_agent_run
 from backend.application.conversation import policies
 from backend.application.conversation.events import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    RunStartedEvent,
     SourcesEvent,
     StatusEvent,
     TokenEvent,
+    ToolCallEvent,
+    ToolResultEvent,
     WarningEvent,
 )
 from backend.application.conversation.session_index import resolve_session_store
 from backend.config import settings
 from backend.domain.access import session_is_accessible
+from backend.domain.agent import (
+    AgentCompleted,
+    AgentEvent,
+    AgentFailed,
+    AgentRunner,
+    AgentStarted,
+    AgentToken,
+    AgentToolCall,
+    AgentToolResult,
+    AgentWarning,
+    ToolContext,
+)
 from backend.domain.exceptions import (
     ActiveIndexNotReadyError,
     IndexEmbeddingMismatchError,
     SessionNotFoundError,
 )
 from backend.domain.models import SourceRef
-from backend.domain.ports import EmbeddingRuntime, Reranker, TextCompleter
+from backend.domain.ports import EmbeddingRuntime, Reranker, TextCompleter, VectorStore
 from backend.rag import answer as chat_pipeline
 from backend.storage.sqlite import messages as message_repo
 from backend.storage.sqlite import sessions as session_repo
@@ -161,6 +177,8 @@ async def stream_session_chat(
     completer: TextCompleter | None = None,
     embedding: EmbeddingRuntime | None = None,
     reranker: Reranker | None = None,
+    mode: Literal["fast", "agent"] = "fast",
+    agent_runner: AgentRunner | None = None,
 ) -> AsyncIterator[ChatEvent]:
     """Serialize turns within one session.
 
@@ -178,6 +196,8 @@ async def stream_session_chat(
             completer=completer,
             embedding=embedding,
             reranker=reranker,
+            mode=mode,
+            agent_runner=agent_runner,
         )
         try:
             async for event in inner:
@@ -199,10 +219,17 @@ async def _stream_session_chat(
     completer: TextCompleter | None = None,
     embedding: EmbeddingRuntime | None = None,
     reranker: Reranker | None = None,
+    mode: Literal["fast", "agent"] = "fast",
+    agent_runner: AgentRunner | None = None,
 ) -> AsyncGenerator[ChatEvent, None]:
     session = await _to_thread(session_repo.get_session, session_id)
     if not session_is_accessible(session, user_id):
         raise SessionNotFoundError(f"Session not found: {session_id}", session_id=session_id)
+
+    if mode == "agent" and (not settings.agent_enabled or agent_runner is None):
+        yield ErrorEvent(value="Agent 模式未启用。")
+        yield DoneEvent()
+        return
 
     state = StreamCollector()
     usage: dict | None = None
@@ -235,6 +262,27 @@ async def _stream_session_chat(
         history = await _to_thread(message_repo.list_messages, session_id)
         if regenerate and history and history[-1]["role"] == "user":
             history = history[:-1]
+
+        if mode == "agent":
+            assert agent_runner is not None
+            yield StatusEvent(value="planning")
+            agent_history = (
+                history[:-1] if history and history[-1]["role"] == "user" else history
+            )
+            async for event in _stream_agent_turn(
+                session_id=session_id,
+                content=content,
+                history=agent_history,
+                user_id=user_id,
+                store=store,
+                reranker=reranker,
+                completer=completer,
+                client_message_id=client_message_id,
+                agent_runner=agent_runner,
+                replaced_answer_id=replaced_answer_id,
+            ):
+                yield event
+            return
 
         yield StatusEvent(value="retrieving")
         yield StatusEvent(value="generating")
@@ -299,14 +347,158 @@ async def _persist_and_touch(
     model: str | None = None,
     prompt_tokens: int | None = None,
     completion_tokens: int | None = None,
+    run_id: str | None = None,
 ) -> None:
     await _to_thread(
         message_repo.create_message,
         session_id=session_id, role=role, content=content,
         sources=sources, status=status, client_message_id=client_message_id,
         model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens,
+        run_id=run_id,
     )
     await _to_thread(touch_session, session_id)
+
+
+def _advance_agent_stream(gen):
+    try:
+        return (False, next(gen))
+    except StopIteration as exc:
+        return (True, exc.value)
+
+
+async def _consume_agent_events(events: Iterator[AgentEvent]) -> AsyncIterator[AgentEvent]:
+    """Drain the synchronous agent stream without blocking the event loop."""
+    loop = asyncio.get_running_loop()
+    gen = iter(events)
+    try:
+        while True:
+            done, event = await loop.run_in_executor(
+                STREAM_EXECUTOR, _advance_agent_stream, gen
+            )
+            if done:
+                break
+            yield event
+    finally:
+        close = getattr(gen, "close", None)
+        if close is not None:
+            await loop.run_in_executor(STREAM_EXECUTOR, close)
+
+
+async def _stream_agent_turn(
+    *,
+    session_id: str,
+    content: str,
+    history: list[dict],
+    user_id: str | None,
+    store: VectorStore,
+    reranker: Reranker | None,
+    completer: TextCompleter | None,
+    client_message_id: str | None,
+    agent_runner: AgentRunner,
+    replaced_answer_id: str | None,
+) -> AsyncGenerator[ChatEvent, None]:
+    model = getattr(completer, "model", None) or settings.deepseek_model
+    ctx = ToolContext(
+        session_id=session_id,
+        store=store,
+        user_id=user_id,
+        reranker=reranker,
+    )
+    events = stream_agent_run(
+        runner=agent_runner,
+        session_id=session_id,
+        question=content,
+        history=history,
+        ctx=ctx,
+        client_message_id=client_message_id,
+        model=model,
+    )
+    token_text: list[str] = []
+    answering = False
+    run_id: str | None = None
+    terminal = False
+
+    try:
+        async for event in _consume_agent_events(events):
+            if terminal:
+                continue
+            if isinstance(event, AgentStarted):
+                run_id = event.run_id
+                yield RunStartedEvent(run_id=event.run_id, max_steps=event.max_steps)
+            elif isinstance(event, AgentToken):
+                if not answering:
+                    answering = True
+                    yield StatusEvent(value="answering")
+                token_text.append(event.text)
+                yield TokenEvent(value=event.text)
+            elif isinstance(event, AgentToolCall):
+                yield StatusEvent(value="tool_running")
+                yield ToolCallEvent(
+                    run_id=event.run_id,
+                    step=event.step,
+                    tool=event.tool,
+                    arguments=event.arguments,
+                )
+            elif isinstance(event, AgentToolResult):
+                yield ToolResultEvent(
+                    run_id=event.run_id,
+                    step=event.step,
+                    tool=event.tool,
+                    status=event.status,
+                    summary=event.summary,
+                    sources=list(event.sources),
+                )
+            elif isinstance(event, AgentWarning):
+                yield WarningEvent(value=event.message)
+            elif isinstance(event, AgentCompleted):
+                sources = list(event.sources)
+                await _persist_and_touch(
+                    session_id,
+                    "assistant",
+                    event.answer,
+                    sources=sources,
+                    model=model,
+                    prompt_tokens=event.prompt_tokens,
+                    completion_tokens=event.completion_tokens,
+                    run_id=event.run_id,
+                )
+                if replaced_answer_id is not None:
+                    await _to_thread(message_repo.delete_message, replaced_answer_id)
+                yield SourcesEvent(value=sources)
+                yield DoneEvent(run_id=event.run_id)
+                terminal = True
+            elif isinstance(event, AgentFailed):
+                partial = event.partial_answer.strip()
+                if partial:
+                    await _persist_and_touch(
+                        session_id,
+                        "assistant",
+                        event.partial_answer,
+                        status="failed",
+                        model=model,
+                        run_id=event.run_id,
+                    )
+                yield ErrorEvent(value=event.message)
+                yield DoneEvent(run_id=event.run_id)
+                terminal = True
+    except (GeneratorExit, asyncio.CancelledError):
+        partial = "".join(token_text)
+        if partial.strip() and run_id is not None:
+            await asyncio.shield(
+                _persist_and_touch(
+                    session_id,
+                    "assistant",
+                    partial,
+                    status="stopped",
+                    model=model,
+                    run_id=run_id,
+                )
+            )
+        raise
+
+    if not terminal:
+        yield ErrorEvent(value="Agent 未返回结果，请重试。")
+        yield DoneEvent(run_id=run_id)
 
 
 async def _persist_interrupted_answer(session_id: str, state: StreamCollector) -> None:

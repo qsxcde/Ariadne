@@ -15,18 +15,27 @@ from backend.api.schemas.chat import (
     ChatStreamDoneEvent,
     ChatStreamErrorEvent,
     ChatStreamEvent,
+    ChatStreamRunStartedEvent,
     ChatStreamSourcesEvent,
     ChatStreamStatusEvent,
     ChatStreamTokenEvent,
+    ChatStreamToolCallEvent,
+    ChatStreamToolResultEvent,
     ChatStreamWarningEvent,
+    RunStartedValue,
+    ToolCallValue,
+    ToolResultValue,
 )
 from backend.application.conversation.events import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
+    RunStartedEvent,
     SourcesEvent,
     StatusEvent,
     TokenEvent,
+    ToolCallEvent,
+    ToolResultEvent,
     WarningEvent,
 )
 
@@ -86,6 +95,33 @@ def encode_sse_event(event: ChatEvent) -> str:
 def to_transport_event(event: ChatEvent) -> ChatStreamEvent:
     if isinstance(event, StatusEvent):
         return ChatStreamStatusEvent(type="status", value=event.value)
+    if isinstance(event, RunStartedEvent):
+        return ChatStreamRunStartedEvent(
+            type="run_started",
+            value=RunStartedValue(run_id=event.run_id, max_steps=event.max_steps),
+        )
+    if isinstance(event, ToolCallEvent):
+        return ChatStreamToolCallEvent(
+            type="tool_call",
+            value=ToolCallValue(
+                run_id=event.run_id,
+                step=event.step,
+                tool=event.tool,
+                arguments=event.arguments,
+            ),
+        )
+    if isinstance(event, ToolResultEvent):
+        return ChatStreamToolResultEvent(
+            type="tool_result",
+            value=ToolResultValue(
+                run_id=event.run_id,
+                step=event.step,
+                tool=event.tool,
+                status=event.status,
+                summary=event.summary,
+                sources=event.sources,
+            ),
+        )
     if isinstance(event, TokenEvent):
         return ChatStreamTokenEvent(type="token", value=event.value)
     if isinstance(event, SourcesEvent):
@@ -95,5 +131,5 @@ def to_transport_event(event: ChatEvent) -> ChatStreamEvent:
     if isinstance(event, ErrorEvent):
         return ChatStreamErrorEvent(type="error", value=event.value)
     if isinstance(event, DoneEvent):
-        return ChatStreamDoneEvent(type="done")
+        return ChatStreamDoneEvent(type="done", run_id=event.run_id)
     raise TypeError(f"Unsupported chat event: {type(event).__name__}")

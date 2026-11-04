@@ -1,15 +1,22 @@
 """HTTP transfer models (request/response and SSE payloads)."""
 
 from backend.api.schemas.auth import AuthRequest, AuthResponse, UserResponse
+from backend.api.schemas.agent import AgentRunDetail, AgentStepSummary
 from backend.api.schemas.chat import (
     ChatMessage,
     ChatStreamDoneEvent,
     ChatStreamErrorEvent,
     ChatStreamEvent,
+    ChatStreamRunStartedEvent,
     ChatStreamSourcesEvent,
     ChatStreamStatusEvent,
     ChatStreamTokenEvent,
+    ChatStreamToolCallEvent,
+    ChatStreamToolResultEvent,
     ChatStreamWarningEvent,
+    RunStartedValue,
+    ToolCallValue,
+    ToolResultValue,
 )
 from backend.api.schemas.document import (
     DocumentContentResponse,
@@ -95,6 +102,8 @@ from backend.api.schemas.session import (
 )
 
 __all__ = [
+    "AgentRunDetail",
+    "AgentStepSummary",
     "AnnotationCreateRequest",
     "AnnotationSummary",
     "AlertSettings",
@@ -106,10 +115,16 @@ __all__ = [
     "ChatStreamDoneEvent",
     "ChatStreamErrorEvent",
     "ChatStreamEvent",
+    "ChatStreamRunStartedEvent",
     "ChatStreamSourcesEvent",
     "ChatStreamStatusEvent",
     "ChatStreamTokenEvent",
+    "ChatStreamToolCallEvent",
+    "ChatStreamToolResultEvent",
     "ChatStreamWarningEvent",
+    "RunStartedValue",
+    "ToolCallValue",
+    "ToolResultValue",
     "CitationGraph",
     "CitationReference",
     "CollectionAskRequest",

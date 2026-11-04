@@ -357,6 +357,7 @@ docker compose -f docker-compose.app.yml up --build
 | GET | `/sessions/{session_id}/documents/{document_id}/file` | 下载/内联渲染原始 PDF（前端阅读器用）。 |
 | POST | `/sessions/{session_id}/index/rebuild` | 按当前用户的 Embedding 配置重建会话索引（同步）。 |
 | POST | `/sessions/{session_id}/messages` | 发送提问，以 text/event-stream 流式返回回答。 |
+| GET | `/sessions/{session_id}/runs/{run_id}` | 读取一次 Agent 运行的轨迹（run + steps）。 |
 | GET | `/settings/alerts` | Get Alert Settings |
 | PATCH | `/settings/alerts` | Update Alert Settings |
 | GET | `/settings/models` | Get Model Settings |

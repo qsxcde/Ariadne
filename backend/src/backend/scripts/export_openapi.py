@@ -9,6 +9,9 @@ from pathlib import Path
 
 SSE_EVENT_MODELS = (
     "ChatStreamStatusEvent",
+    "ChatStreamRunStartedEvent",
+    "ChatStreamToolCallEvent",
+    "ChatStreamToolResultEvent",
     "ChatStreamTokenEvent",
     "ChatStreamSourcesEvent",
     "ChatStreamWarningEvent",

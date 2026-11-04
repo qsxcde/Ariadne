@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from backend.api.deps import get_accessible_session, get_user_embedding
 from backend.api.schemas import (
+    AgentRunDetail,
     IndexRebuildResponse,
     SessionCreateResponse,
     SessionSnapshot,
@@ -9,8 +10,9 @@ from backend.api.schemas import (
     SessionUpdateRequest,
 )
 from backend.api.security import get_current_user
+from backend.application.agent.queries import get_agent_run_detail
 from backend.application.conversation import sessions as session_service
-from backend.domain.exceptions import SessionNotFoundError
+from backend.domain.exceptions import AgentRunNotFoundError, SessionNotFoundError
 from backend.domain.ports import EmbeddingRuntime
 
 router = APIRouter()
@@ -54,6 +56,19 @@ def update_session(
     if summary is None:
         raise SessionNotFoundError(f"Session not found: {session_id}", session_id=session_id)
     return summary
+
+
+@router.get("/sessions/{session_id}/runs/{run_id}", response_model=AgentRunDetail)
+def get_agent_run(
+    session_id: str,
+    run_id: str,
+    _session: dict = Depends(get_accessible_session),
+) -> dict:
+    """读取一次 Agent 运行的轨迹（run + steps）。"""
+    detail = get_agent_run_detail(session_id, run_id)
+    if detail is None:
+        raise AgentRunNotFoundError(f"Agent run not found: {run_id}", run_id=run_id)
+    return detail
 
 
 @router.post(

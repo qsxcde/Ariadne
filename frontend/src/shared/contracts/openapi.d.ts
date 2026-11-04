@@ -928,6 +928,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{session_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Agent Run
+         * @description 读取一次 Agent 运行的轨迹（run + steps）。
+         */
+        get: operations["get_agent_run_sessions__session_id__runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings/alerts": {
         parameters: {
             query?: never;
@@ -1003,6 +1023,86 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentRunDetail */
+        AgentRunDetail: {
+            /** Client Message Id */
+            client_message_id?: string | null;
+            /** Completion Tokens */
+            completion_tokens?: number | null;
+            /** Created At */
+            created_at: string;
+            /** Error Message */
+            error_message?: string | null;
+            /** Finished At */
+            finished_at?: string | null;
+            /** Id */
+            id: string;
+            /** Max Steps */
+            max_steps: number;
+            /** Model */
+            model?: string | null;
+            /** Prompt Tokens */
+            prompt_tokens?: number | null;
+            /** Session Id */
+            session_id: string;
+            status: components["schemas"]["AgentRunStatus"];
+            /** Step Count */
+            step_count: number;
+            /** Steps */
+            steps?: components["schemas"]["AgentStepSummary"][];
+            /** User Id */
+            user_id?: string | null;
+        };
+        /**
+         * AgentRunStatus
+         * @enum {string}
+         */
+        AgentRunStatus: "running" | "completed" | "failed" | "stopped";
+        /**
+         * AgentStepKind
+         * @enum {string}
+         */
+        AgentStepKind: "decision" | "tool";
+        /**
+         * AgentStepStatus
+         * @enum {string}
+         */
+        AgentStepStatus: "running" | "ok" | "error" | "interrupted";
+        /** AgentStepSummary */
+        AgentStepSummary: {
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            } | null;
+            /** Completion Tokens */
+            completion_tokens?: number | null;
+            /** Created At */
+            created_at: string;
+            /** Error Message */
+            error_message?: string | null;
+            /** Id */
+            id: string;
+            kind: components["schemas"]["AgentStepKind"];
+            /** Latency Ms */
+            latency_ms?: number | null;
+            /** Prompt Tokens */
+            prompt_tokens?: number | null;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Run Id */
+            run_id: string;
+            /** Sources */
+            sources?: components["schemas"]["SourceRef"][];
+            status: components["schemas"]["AgentStepStatus"];
+            /** Step Index */
+            step_index: number;
+            /** Summary */
+            summary?: string | null;
+            /** Tool Name */
+            tool_name?: string | null;
+        };
         /** AlertSettings */
         AlertSettings: {
             /**
@@ -1144,6 +1244,12 @@ export interface components {
             /** Content */
             content: string;
             /**
+             * Mode
+             * @default fast
+             * @enum {string}
+             */
+            mode: "fast" | "agent";
+            /**
              * Regenerate
              * @default false
              */
@@ -1157,6 +1263,11 @@ export interface components {
         };
         /** ChatStreamDoneEvent */
         ChatStreamDoneEvent: {
+            /**
+             * Run Id
+             * @default null
+             */
+            run_id: string | null;
             /**
              * Type
              * @constant
@@ -1174,7 +1285,16 @@ export interface components {
             value: string;
         };
         /** ChatStreamEvent */
-        ChatStreamEvent: components["schemas"]["ChatStreamStatusEvent"] | components["schemas"]["ChatStreamTokenEvent"] | components["schemas"]["ChatStreamSourcesEvent"] | components["schemas"]["ChatStreamWarningEvent"] | components["schemas"]["ChatStreamErrorEvent"] | components["schemas"]["ChatStreamDoneEvent"];
+        ChatStreamEvent: components["schemas"]["ChatStreamStatusEvent"] | components["schemas"]["ChatStreamRunStartedEvent"] | components["schemas"]["ChatStreamToolCallEvent"] | components["schemas"]["ChatStreamToolResultEvent"] | components["schemas"]["ChatStreamTokenEvent"] | components["schemas"]["ChatStreamSourcesEvent"] | components["schemas"]["ChatStreamWarningEvent"] | components["schemas"]["ChatStreamErrorEvent"] | components["schemas"]["ChatStreamDoneEvent"];
+        /** ChatStreamRunStartedEvent */
+        ChatStreamRunStartedEvent: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "run_started";
+            value: components["schemas"]["RunStartedValue"];
+        };
         /** ChatStreamSourcesEvent */
         ChatStreamSourcesEvent: {
             /**
@@ -1196,7 +1316,7 @@ export interface components {
              * Value
              * @enum {string}
              */
-            value: "waiting_for_index" | "retrieving" | "generating";
+            value: "waiting_for_index" | "retrieving" | "generating" | "planning" | "tool_running" | "answering";
         };
         /** ChatStreamTokenEvent */
         ChatStreamTokenEvent: {
@@ -1207,6 +1327,24 @@ export interface components {
             type: "token";
             /** Value */
             value: string;
+        };
+        /** ChatStreamToolCallEvent */
+        ChatStreamToolCallEvent: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "tool_call";
+            value: components["schemas"]["ToolCallValue"];
+        };
+        /** ChatStreamToolResultEvent */
+        ChatStreamToolResultEvent: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "tool_result";
+            value: components["schemas"]["ToolResultValue"];
         };
         /** ChatStreamWarningEvent */
         ChatStreamWarningEvent: {
@@ -2079,6 +2217,8 @@ export interface components {
              * @enum {string}
              */
             role: "user" | "assistant";
+            /** Run Id */
+            run_id?: string | null;
             /** Session Id */
             session_id: string;
             /** Sources */
@@ -2179,6 +2319,13 @@ export interface components {
             status: components["schemas"]["IndexSnapshotStatus"];
             /** Updated At */
             updated_at: string;
+        };
+        /** RunStartedValue */
+        RunStartedValue: {
+            /** Max Steps */
+            max_steps: number;
+            /** Run Id */
+            run_id: string;
         };
         /** SessionCreateResponse */
         SessionCreateResponse: {
@@ -2373,6 +2520,37 @@ export interface components {
             source: "arxiv" | "openalex" | "pubmed" | "rss";
             /** Value */
             value: string;
+        };
+        /** ToolCallValue */
+        ToolCallValue: {
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /** Run Id */
+            run_id: string;
+            /** Step */
+            step: number;
+            /** Tool */
+            tool: string;
+        };
+        /** ToolResultValue */
+        ToolResultValue: {
+            /** Run Id */
+            run_id: string;
+            /** Sources */
+            sources?: components["schemas"]["SourceRef"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "error";
+            /** Step */
+            step: number;
+            /** Summary */
+            summary: string;
+            /** Tool */
+            tool: string;
         };
         /** UpdateCheckResponse */
         UpdateCheckResponse: {
@@ -4201,6 +4379,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_agent_run_sessions__session_id__runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentRunDetail"];
                 };
             };
             /** @description Validation Error */

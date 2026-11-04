@@ -30,6 +30,14 @@ class SessionNotFoundError(KeyError):
         super().__init__(message)
 
 
+class AgentRunNotFoundError(Exception):
+    """Raised when a run does not exist or belongs to another session."""
+
+    def __init__(self, message: str = "", run_id: str | None = None):
+        self.run_id = run_id
+        super().__init__(message)
+
+
 class ChunkNotFoundError(Exception):
     """Raised when a citation points at a chunk that no longer exists."""
 

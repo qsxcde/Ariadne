@@ -30,6 +30,11 @@ async def chat(
     reranker: Reranker | None = Depends(get_user_reranker),
 ) -> EventSourceResponse:
     """发送提问，以 text/event-stream 流式返回回答。"""
+    runner = None
+    if message.mode == "agent":
+        from backend.composition import agent_runner
+
+        runner = agent_runner()
     events = stream_session_chat(
         session_id=session["id"],
         content=message.content,
@@ -39,5 +44,7 @@ async def chat(
         completer=completer,
         embedding=embedding,
         reranker=reranker,
+        mode=message.mode,
+        agent_runner=runner,
     )
     return build_stream_response(events, session_id=session["id"])

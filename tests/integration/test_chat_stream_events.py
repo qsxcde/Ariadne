@@ -8,7 +8,14 @@ pytest.importorskip("faiss", reason="faiss-cpu is not installed")
 pytest.importorskip("torch", reason="torch is not installed")
 
 from backend.application.conversation import chat as chat_module
+from backend.domain.agent import (
+    AgentCompleted,
+    AgentToken,
+    AgentToolCall,
+    AgentToolResult,
+)
 from backend.domain.exceptions import ActiveIndexNotReadyError, IndexEmbeddingMismatchError
+from backend.domain.models import SourceRef
 from backend.storage.sqlite import messages as message_repo
 from backend.storage.sqlite import sessions
 
@@ -307,3 +314,112 @@ async def test_cancelling_the_stream_closes_the_sync_generator():
     await stream.aclose()
 
     assert closed is True
+
+
+class StubAgentRunner:
+    def __init__(self, factory):
+        self._factory = factory
+
+    def stream(self, *, question, history, ctx, run_id):
+        yield from self._factory(run_id)
+
+
+@pytest.mark.integration
+async def test_agent_mode_streams_run_tool_and_answer(monkeypatch, session):
+    from backend.storage.sqlite import agent_runs as run_repo
+
+    # resolve_session_store is async; keep the default stub from _stub.
+    _stub(monkeypatch, None)
+    source = SourceRef(paper_id="doc-1", section="Introduction", chunk_index=0)
+
+    def _events(run_id):
+        yield AgentToolCall(run_id, 1, "search_session_chunks", {"query": "attention"})
+        yield AgentToolResult(
+            run_id, 1, "search_session_chunks", "ok", "命中 1 个片段", (source,)
+        )
+        yield AgentToken("answer")
+        yield AgentCompleted(
+            run_id,
+            "answer [Section: Introduction | Chunk: 0]",
+            (source,),
+            3,
+            4,
+        )
+
+    events = await _collect(
+        chat_module.stream_session_chat(
+            session["id"],
+            "question",
+            mode="agent",
+            agent_runner=StubAgentRunner(_events),
+        )
+    )
+
+    assert [type(event).__name__ for event in events] == [
+        "StatusEvent",
+        "RunStartedEvent",
+        "StatusEvent",
+        "ToolCallEvent",
+        "ToolResultEvent",
+        "StatusEvent",
+        "TokenEvent",
+        "SourcesEvent",
+        "DoneEvent",
+    ]
+    assert events[0].value == "planning"
+    assert events[2].value == "tool_running"
+    assert events[5].value == "answering"
+    assert events[7].value[0].section == "Introduction"
+    assert events[-1].run_id == events[1].run_id
+
+    stored = message_repo.list_messages(session["id"])
+    assert stored[-1]["run_id"] == events[1].run_id
+    assert stored[-1]["status"] == "complete"
+    run = run_repo.get_agent_run(events[1].run_id)
+    assert run is not None and run["status"] == "completed"
+    assert run["step_count"] == 1
+
+
+@pytest.mark.integration
+async def test_agent_failure_persists_partial_answer(monkeypatch, session):
+    _stub(monkeypatch, None)
+
+    def _events(run_id):
+        yield AgentToken("half")
+        raise RuntimeError("provider down")
+
+    events = await _collect(
+        chat_module.stream_session_chat(
+            session["id"],
+            "question",
+            mode="agent",
+            agent_runner=StubAgentRunner(_events),
+        )
+    )
+
+    assert any(type(event).__name__ == "ErrorEvent" for event in events)
+    stored = message_repo.list_messages(session["id"])
+    assert stored[-1]["role"] == "assistant"
+    assert stored[-1]["content"] == "half"
+    assert stored[-1]["status"] == "failed"
+    assert stored[-1]["run_id"] is not None
+
+
+@pytest.mark.integration
+async def test_agent_mode_disabled_returns_error(monkeypatch, session):
+    from backend.config import settings
+
+    monkeypatch.setattr(settings, "agent_enabled", False)
+    _stub(monkeypatch, None)
+
+    events = await _collect(
+        chat_module.stream_session_chat(
+            session["id"],
+            "question",
+            mode="agent",
+            agent_runner=StubAgentRunner(lambda _run_id: iter(())),
+        )
+    )
+
+    assert [type(event).__name__ for event in events] == ["ErrorEvent", "DoneEvent"]
+    assert message_repo.list_messages(session["id"]) == []

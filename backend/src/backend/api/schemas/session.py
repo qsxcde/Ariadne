@@ -25,6 +25,7 @@ class PersistedMessage(BaseModel):
     sources: list[SourceRef] = Field(default_factory=list)
     status: MessageStatus
     created_at: str
+    run_id: str | None = None
 
 
 class RetrievalIndexSummary(BaseModel):
