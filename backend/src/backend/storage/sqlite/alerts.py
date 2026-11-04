@@ -4,7 +4,7 @@ import uuid
 from typing import cast
 
 from backend.core.model.records import AlertSettingsRecord
-from backend.storage.sqlite.connection import connect, row_to_dict, transaction
+from backend.storage.sqlite.connection import connect, transaction
 from backend.storage.sqlite.sessions import now_iso
 
 

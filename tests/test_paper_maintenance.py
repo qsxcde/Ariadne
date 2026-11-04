@@ -74,7 +74,11 @@ def test_merge_duplicate_papers_moves_children():
     )
     collection = collection_repo.create_collection(user_id="u1", name="Reading")
     collection_repo.add_paper_to_collection(collection["id"], second["paper_id"])
-    collection_repo.add_tag(second["paper_id"], "dup")
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO paper_tags (paper_id, tag) VALUES (?, ?)",
+            (second["paper_id"], "dup"),
+        )
 
     groups = merge_duplicate_papers.find_duplicate_groups()
     assert len(groups) == 1

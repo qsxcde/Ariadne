@@ -15,17 +15,13 @@ export type SourceRef = Schemas["SourceRef"];
 export type SourceBlockBox = Schemas["SourceBlockBox"];
 export type SourceChunk = Schemas["SourceChunkResponse"];
 
-export type DocumentStatus = Schemas["DocumentStage"];
 export type PaperDocument = Schemas["DocumentSummary"];
 export type DocumentUploadResult = Schemas["DocumentIntakeResponse"];
 export type LibraryDocument = Schemas["LibraryDocumentSummary"];
 
-export type PersistedMessage = Schemas["PersistedMessage"];
-export type MessageStatus = Schemas["MessageStatus"];
 export type SessionSummary = Schemas["SessionSummary"];
 export type SessionSnapshot = Schemas["SessionSnapshot"];
 export type SessionUpdatePayload = Schemas["SessionUpdateRequest"];
-export type RetrievalIndexSummary = Schemas["RetrievalIndexSummary"];
 
 export type PaperBlock = Schemas["PaperBlock"];
 export type PaperContent = Schemas["DocumentContentResponse"];
@@ -45,11 +41,9 @@ export type UpdateCheckResult = Schemas["UpdateCheckResponse"];
 export type AlertSettings = Schemas["AlertSettings"];
 export type AlertSettingsUpdate = Schemas["AlertSettingsUpdate"];
 export type Digest = Schemas["DigestResponse"];
-export type ExplainRequest = Schemas["ExplainRequest"];
 export type ExplainResponse = Schemas["ExplainResponse"];
 export type GlossaryResponse = Schemas["GlossaryResponse"];
 export type CitationGraph = Schemas["CitationGraph"];
-export type GlossaryTerm = Schemas["GlossaryTerm"];
 export type LibraryStats = Schemas["LibraryStats"];
 export type PaperUpdatePayload = Schemas["PaperUpdateRequest"];
 export type PaperUploadResult = Schemas["PaperUploadResponse"];
@@ -58,7 +52,6 @@ export type PaperImportResult = Schemas["PaperImportResponse"];
 
 export type AnnotationSummary = Schemas["AnnotationSummary"];
 export type AnnotationCreatePayload = Schemas["AnnotationCreateRequest"];
-export type AnnotationUpdatePayload = Schemas["AnnotationUpdateRequest"];
 
 export type CollectionSummary = Schemas["CollectionSummary"];
 export type CollectionCreatePayload = Schemas["CollectionCreateRequest"];

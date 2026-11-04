@@ -2,7 +2,7 @@ import { jsonRequest, openStream } from "./client";
 import { readSseData } from "./sse";
 import type { MessageChunk } from "./types";
 
-export type StreamChatOptions = {
+type StreamChatOptions = {
   /** 复用上一条提问重新生成，不会新增 user 消息 */
   regenerate?: boolean;
   /** 同一条提问的重试必须复用同一个 id，服务端据此去重 */

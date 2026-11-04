@@ -11,7 +11,6 @@ from backend.rag.retrieval.filters import filter_indexable_chunks
 
 if TYPE_CHECKING:
     from backend.rag.indexing.vector_store import FAISSVectorStore
-from backend.storage.paths import session_indexes_dir
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import index_snapshots as snapshot_repo
@@ -28,11 +27,6 @@ def _cache_store(session_id: str, cache_key: str, store: FAISSVectorStore) -> No
     _stores.move_to_end(session_id)
     while len(_stores) > _MAX_CACHED_STORES:
         _stores.popitem(last=False)
-
-
-def index_paths(session_id: str) -> tuple[str, str]:
-    indexes_dir = session_indexes_dir(session_id)
-    return str(indexes_dir / "faiss.index"), str(indexes_dir / "chunks.json")
 
 
 def _new_store() -> FAISSVectorStore:

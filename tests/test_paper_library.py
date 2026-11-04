@@ -93,7 +93,10 @@ def test_list_papers_filters_by_user_status_text_collection_and_tag():
     ]
     assert paper_repo.list_papers("u1", collection_id="missing") == []
 
-    collection_repo.add_tag(mine["paper_id"], "nlp")
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO paper_tags (paper_id, tag) VALUES (?, ?)", (mine["paper_id"], "nlp")
+        )
     assert paper_repo.list_papers("u1", tag="nlp")[0]["id"] == mine["paper_id"]
     assert paper_repo.list_papers("u1", tag="cv") == []
 
@@ -160,12 +163,11 @@ def test_collections_and_tags_round_trip():
     collection_repo.remove_paper_from_collection(collection["id"], paper["paper_id"])
     assert collection_repo.list_collection_papers(collection["id"]) == []
 
-    collection_repo.add_tag(paper["paper_id"], "nlp")
-    collection_repo.add_tag(paper["paper_id"], "nlp")
-    collection_repo.add_tag(paper["paper_id"], "  ")
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO paper_tags (paper_id, tag) VALUES (?, ?)", (paper["paper_id"], "nlp")
+        )
     assert collection_repo.list_tags(paper["paper_id"]) == ["nlp"]
-    collection_repo.remove_tag(paper["paper_id"], "nlp")
-    assert collection_repo.list_tags(paper["paper_id"]) == []
 
 
 @pytest.mark.integration

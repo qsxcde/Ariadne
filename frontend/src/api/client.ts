@@ -7,9 +7,9 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 const TOKEN_KEY = "scipal_token";
 
-export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
+type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
 
-export type RequestOptions = {
+type RequestOptions = {
   body?: BodyInit | null;
   headers?: HeadersInit;
   method?: HttpMethod;
@@ -86,7 +86,7 @@ export async function requestForm<T>(
   return (await res.json()) as T;
 }
 
-export type JsonRequestPayload = {
+type JsonRequestPayload = {
   headers: Record<string, string>;
   body: string;
 };

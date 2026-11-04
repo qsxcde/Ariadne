@@ -4,7 +4,7 @@ import uuid
 from typing import cast
 
 from backend.core.model.records import SubscriptionRecord
-from backend.storage.sqlite.connection import connect, row_to_dict, transaction
+from backend.storage.sqlite.connection import connect, transaction
 from backend.storage.sqlite.sessions import now_iso
 
 
@@ -47,14 +47,6 @@ def create_subscription(
     if row is None:
         raise RuntimeError("创建订阅失败")
     return cast(SubscriptionRecord, dict(row))
-
-
-def get_subscription(subscription_id: str) -> SubscriptionRecord | None:
-    with connect() as conn:
-        row = conn.execute(
-            "SELECT * FROM subscriptions WHERE id = ?", (subscription_id,)
-        ).fetchone()
-        return cast(SubscriptionRecord | None, row_to_dict(row))
 
 
 def list_subscriptions(

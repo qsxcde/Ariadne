@@ -12,7 +12,7 @@ import type {
 } from "../api";
 import { toErrorMessage } from "../utils/error";
 
-export type PaperFilters = {
+type PaperFilters = {
   status: string;
   collectionId: string;
   tag: string;

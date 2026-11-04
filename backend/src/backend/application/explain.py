@@ -1,11 +1,9 @@
 """Explain, translate or simplify a selected passage."""
 
-from typing import Any, Literal
+from typing import Any
 
 from backend import composition
 from backend.application.papers import get_accessible_paper
-
-ExplainMode = Literal["explain", "translate", "simplify"]
 
 _PROMPTS: dict[str, str] = {
     "explain": "请用中文解释这段论文原文，说明它在论文中的作用、关键概念和潜在前提。不要编造原文没有的信息。",

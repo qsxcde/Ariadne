@@ -71,28 +71,6 @@ def delete_message(message_id: str) -> bool:
     return cursor.rowcount > 0
 
 
-def delete_trailing_assistant_message(session_id: str) -> bool:
-    """Delete the newest assistant answer when it is the last message.
-
-    Used by regenerate: the client re-asks the same question, so the stale
-    answer must be removed instead of accumulating duplicates.
-    """
-    with transaction() as conn:
-        row = conn.execute(
-            """
-            SELECT id, role FROM messages
-            WHERE session_id = ?
-            ORDER BY created_at DESC, rowid DESC
-            LIMIT 1
-            """,
-            (session_id,),
-        ).fetchone()
-        if row is None or row["role"] != "assistant":
-            return False
-        conn.execute("DELETE FROM messages WHERE id = ?", (row["id"],))
-        return True
-
-
 def get_message_by_client_id(client_message_id: str) -> MessageRecord | None:
     """Idempotency lookup: a retried request reuses the original message row."""
     with connect() as conn:

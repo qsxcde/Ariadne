@@ -136,25 +136,6 @@ def list_collections_for_paper(paper_id: str) -> list[CollectionRecord]:
     return [cast(CollectionRecord, dict(row)) for row in rows]
 
 
-def add_tag(paper_id: str, tag: str) -> None:
-    normalized = tag.strip()
-    if not normalized:
-        return
-    with transaction() as conn:
-        conn.execute(
-            "INSERT OR IGNORE INTO paper_tags (paper_id, tag) VALUES (?, ?)",
-            (paper_id, normalized),
-        )
-
-
-def remove_tag(paper_id: str, tag: str) -> None:
-    with transaction() as conn:
-        conn.execute(
-            "DELETE FROM paper_tags WHERE paper_id = ? AND tag = ?",
-            (paper_id, tag),
-        )
-
-
 def list_tags(paper_id: str) -> list[str]:
     with connect() as conn:
         rows = conn.execute(

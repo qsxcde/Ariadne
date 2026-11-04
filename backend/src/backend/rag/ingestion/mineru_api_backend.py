@@ -66,16 +66,6 @@ def _get_shared_client() -> MinerUClient:
     return _shared_client
 
 
-def reset_shared_client() -> None:
-    """Close and clear the process-wide client (tests / configuration reload)."""
-    global _shared_client
-    with _shared_client_lock:
-        client = _shared_client
-        _shared_client = None
-    if client is not None:
-        client.close()
-
-
 class MinerUApiBackend:
     name = "mineru_api"
     version = "1.1"

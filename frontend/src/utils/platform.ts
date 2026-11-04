@@ -4,7 +4,3 @@ const isMac = /Mac|iPhone|iPad/i.test(window.navigator.platform);
 export function shortcutLabel(key: string): string {
   return isMac ? `⌘${key}` : `Ctrl+${key}`;
 }
-
-export function modifierName(): string {
-  return isMac ? "⌘" : "Ctrl";
-}

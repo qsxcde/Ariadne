@@ -25,13 +25,3 @@ export function addPaperToCollection(
   );
 }
 
-export function removePaperFromCollection(
-  collectionId: string,
-  paperId: string,
-): Promise<void> {
-  return requestVoid(
-    `/collections/${collectionId}/papers/${paperId}`,
-    "移出集合失败",
-    { method: "DELETE" },
-  );
-}

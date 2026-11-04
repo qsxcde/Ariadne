@@ -1,4 +1,4 @@
-from backend.rag.ingestion.document_ir import BlockIR, BBox, QualityReport, QualityStatus
+from backend.rag.ingestion.document_ir import BlockIR, QualityReport, QualityStatus
 from backend.rag.ingestion.reading_order import is_page_margin_block
 
 

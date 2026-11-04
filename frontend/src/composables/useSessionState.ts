@@ -19,7 +19,7 @@ import type { PaperSession, SessionSummaryViewModel, UploadStatus } from "../typ
 import { toErrorMessage } from "../utils/error";
 import { formatFileSize } from "../utils/format";
 
-export type SessionSnapshotResult = Awaited<ReturnType<typeof getSession>>;
+type SessionSnapshotResult = Awaited<ReturnType<typeof getSession>>;
 
 type UseSessionStateOptions = {
   setErrorMessage: (message: string) => void;

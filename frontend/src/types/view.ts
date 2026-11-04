@@ -38,7 +38,7 @@ export type SessionActionTarget = {
   title: string;
 };
 
-export type UploadPhase = "idle" | "parsing" | "indexing" | "ready" | "error";
+type UploadPhase = "idle" | "parsing" | "indexing" | "ready" | "error";
 
 export type UploadStatus = {
   fileName: string;

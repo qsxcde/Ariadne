@@ -77,7 +77,10 @@ def _seed_paper_with_artifacts(tmp_path: Path, *, user_id: str | None = "u1") ->
     )
     collection = collection_repo.create_collection(user_id=user_id, name="集合")
     collection_repo.add_paper_to_collection(collection["id"], paper_id)
-    collection_repo.add_tag(paper_id, "nlp")
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO paper_tags (paper_id, tag) VALUES (?, ?)", (paper_id, "nlp")
+        )
     reading_repo.record_reading(user_id, paper_id, 60, day="2026-11-03")
 
     return {

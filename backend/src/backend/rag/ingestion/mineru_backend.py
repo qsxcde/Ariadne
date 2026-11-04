@@ -2,7 +2,6 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import shutil
 from tempfile import TemporaryDirectory
 from typing import Any, Callable
 

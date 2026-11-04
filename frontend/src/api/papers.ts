@@ -14,7 +14,7 @@ import type {
   WeeklyReview,
 } from "./types";
 
-export type PaperListFilters = {
+type PaperListFilters = {
   status?: string;
   collectionId?: string;
   tag?: string;
