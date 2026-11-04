@@ -192,10 +192,13 @@ class SessionTools:
                 f"{chunk.text[: self._preview_chars]}"
             )
         content = self._limit("\n\n".join(blocks))
+        titles = "、".join(
+            dict.fromkeys(self._title_for_document(chunk.metadata.paper_id) for chunk in chunks)
+        )
         return ToolResult(
             ok=True,
             content=content,
-            summary=f"命中 {len(chunks)} 个片段",
+            summary=f"命中 {len(chunks)} 个片段 · {titles[:80]}",
             sources=tuple(self._source(chunk) for chunk in chunks),
         )
 
@@ -226,7 +229,11 @@ class SessionTools:
         return ToolResult(
             ok=True,
             content=content,
-            summary=f"已读取 {len(chunk.text)} 字",
+            summary=(
+                f"{self._title_for_document(chunk.metadata.paper_id)}"
+                f" · {chunk.metadata.section} #{chunk.metadata.chunk_index}"
+                f" · {len(chunk.text)} 字"
+            ),
             sources=(self._source(chunk),),
         )
 

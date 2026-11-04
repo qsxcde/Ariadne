@@ -43,8 +43,8 @@ class RuntimeSettings(BaseSettings):
     llm_context_chars: int = 24000
     # Agent (P0): single-session, read-only tools.
     agent_enabled: bool = True
-    agent_max_steps: int = 6
-    agent_max_tool_calls: int = 6
+    agent_max_steps: int = 12
+    agent_max_tool_calls: int = 12
     agent_timeout_seconds: float = 120.0
     agent_tool_preview_chars: int = 300
     agent_max_evidence_chars: int = 12000

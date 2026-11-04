@@ -13,4 +13,5 @@ export * from "@/api/notifications";
 export * from "@/api/documents";
 export * from "@/api/library";
 export * from "@/api/chat";
+export * from "@/api/agent";
 export type * from "@/api/types";

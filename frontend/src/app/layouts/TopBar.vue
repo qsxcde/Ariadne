@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { Search } from "@element-plus/icons-vue";
+import RunStatusBadge from "@/features/agent/components/RunStatusBadge.vue";
+import { useAgentRuns } from "@/features/agent/composables/useAgentRuns";
 import { shortcutLabel } from "@/shared/utils/platform";
 
 withDefaults(
   defineProps<{
     section: string;
+    context?: string;
     showSearch?: boolean;
     showImport?: boolean;
   }>(),
   {
+    context: "",
     showSearch: true,
     showImport: true,
   },
@@ -20,7 +24,41 @@ const emit = defineEmits<{
   import: [];
 }>();
 
+const { runningRun, stopRun } = useAgentRuns();
+const now = ref(Date.now());
+let ticker: number | null = null;
+
+onMounted(() => {
+  ticker = window.setInterval(() => {
+    now.value = Date.now();
+  }, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (ticker !== null) {
+    window.clearInterval(ticker);
+  }
+});
+
 const searchShortcut = computed(() => shortcutLabel("K"));
+
+const runElapsed = computed(() => {
+  const run = runningRun.value;
+  if (!run) {
+    return "";
+  }
+  const seconds = Math.max(0, Math.round((now.value - run.createdAt) / 1000));
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+});
+
+function stopActiveRun(): void {
+  if (runningRun.value) {
+    stopRun(runningRun.value.localId);
+  }
+}
 </script>
 
 <template>
@@ -29,9 +67,22 @@ const searchShortcut = computed(() => shortcutLabel("K"));
       <span class="topbar__context">工作台</span>
       <span class="topbar__slash" aria-hidden="true">/</span>
       <span class="topbar__section">{{ section }}</span>
+      <template v-if="context">
+        <span class="topbar__slash" aria-hidden="true">/</span>
+        <span class="topbar__context-title" :title="context">{{ context }}</span>
+      </template>
     </div>
 
     <div class="topbar__actions">
+      <div v-if="runningRun" class="topbar__run">
+        <RunStatusBadge :status="runningRun.status" compact />
+        <span class="topbar__run-goal" :title="runningRun.goal">{{ runningRun.goal }}</span>
+        <span class="topbar__run-meta">
+          <template v-if="runningRun.steps.length">{{ runningRun.steps.length }} 步 · </template>
+          {{ runElapsed }}
+        </span>
+        <button type="button" class="topbar__run-stop" @click="stopActiveRun">停止</button>
+      </div>
       <button
         v-if="showSearch"
         type="button"
@@ -98,10 +149,57 @@ const searchShortcut = computed(() => shortcutLabel("K"));
   white-space: nowrap;
 }
 
+.topbar__context-title {
+  overflow: hidden;
+  max-width: 280px;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topbar__actions {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 10px;
+}
+
+.topbar__run {
+  display: flex;
+  max-width: 430px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-border-accent);
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  padding: 3px 4px 3px 9px;
+}
+
+.topbar__run-goal {
+  overflow: hidden;
+  max-width: 170px;
+  color: var(--color-text-soft);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__run-meta {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.topbar__run-stop {
+  border: 0;
+  border-left: 1px solid var(--color-border-accent);
+  background: transparent;
+  padding: 1px 6px;
+  color: var(--color-accent-strong);
+  font-size: 10.5px;
 }
 
 .topbar__search {
@@ -153,5 +251,11 @@ const searchShortcut = computed(() => shortcutLabel("K"));
 .topbar__action:hover {
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
+}
+
+@media (max-width: 1100px) {
+  .topbar__run-goal {
+    display: none;
+  }
 }
 </style>

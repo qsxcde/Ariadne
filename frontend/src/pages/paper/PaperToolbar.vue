@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { ArrowLeft, EditPen, Expand, Fold, Refresh, Tickets } from "@element-plus/icons-vue";
+import { ArrowLeft, ChatDotRound, EditPen, Expand, Fold, Refresh, Tickets } from "@element-plus/icons-vue";
 import type { PaperDetail } from "@/api";
 import { PAPER_STATUS_OPTIONS } from "@/shared/constants/paper";
 import { formatAuthors, progressPercent } from "@/shared/utils/format";
@@ -14,6 +14,7 @@ const props = defineProps<{
   shortcutHint: string;
   viewMode: "text" | "pdf";
   outlineVisible: boolean;
+  researchActive: boolean;
 }>();
 
 const authorsLine = computed(() =>
@@ -32,6 +33,7 @@ const emit = defineEmits<{
   changeStatus: [status: string];
   setViewMode: [mode: "text" | "pdf"];
   toggleOutline: [];
+  research: [];
 }>();
 
 function handleStatusChange(event: Event): void {
@@ -86,6 +88,18 @@ function handleStatusChange(event: Event): void {
       >
         <Tickets />
         <span class="paper-workspace__action-label">目录</span>
+      </button>
+      <button
+        v-if="paper"
+        type="button"
+        class="paper-workspace__icon-button"
+        :class="{ 'is-active': researchActive }"
+        :aria-pressed="researchActive"
+        title="研究本文"
+        @click="emit('research')"
+      >
+        <ChatDotRound />
+        <span class="paper-workspace__action-label">研究</span>
       </button>
       <label v-if="paper" class="paper-workspace__status-field">
         <span>状态</span>

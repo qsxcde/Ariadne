@@ -194,8 +194,8 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 | 变量 | 默认 | 说明 |
 |---|---|---|
 | `AGENT_ENABLED` | `True` | Agent 模式总开关；关闭后前端只保留快速问答 |
-| `AGENT_MAX_STEPS` | `6` | 单个 run 的最大图步数，同时决定 recursion limit |
-| `AGENT_MAX_TOOL_CALLS` | `6` | 单个 run 允许的工具调用次数预算 |
+| `AGENT_MAX_STEPS` | `12` | 单个 run 的最大模型调用次数，同时决定 recursion limit |
+| `AGENT_MAX_TOOL_CALLS` | `12` | 单个 run 允许的工具调用次数预算 |
 | `AGENT_TIMEOUT_SECONDS` | `120` | 单次模型调用与 run 预算的超时时间（秒） |
 | `AGENT_TOOL_PREVIEW_CHARS` | `300` | 工具结果返回给模型的单片段预览字符数 |
 | `AGENT_MAX_EVIDENCE_CHARS` | `12000` | 工具结果与最终回答可使用的证据总字符上限 |

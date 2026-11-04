@@ -15,6 +15,7 @@ function mapPersistedMessages(messages: SessionSnapshot["messages"]): ChatMessag
     role: message.role,
     text: message.content,
     sources: message.sources,
+    runId: message.run_id ?? undefined,
   }));
 }
 

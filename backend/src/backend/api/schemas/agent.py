@@ -38,4 +38,7 @@ class AgentRunDetail(BaseModel):
     error_message: str | None = None
     created_at: str
     finished_at: str | None = None
+    answer: str = ""
+    sources: list[SourceRef] = Field(default_factory=list)
+    question: str = ""
     steps: list[AgentStepSummary] = Field(default_factory=list)

@@ -51,14 +51,19 @@ def _dedupe_sources(sources: list[SourceRef]) -> tuple[SourceRef, ...]:
 
 
 def _citations_are_valid(answer: str, sources: tuple[SourceRef, ...]) -> bool:
-    valid: dict[str, set[int]] = {}
+    valid_sections: dict[str, set[int]] = {}
+    valid_indexes: set[int] = set()
     for source in sources:
-        valid.setdefault(source.section, set()).add(source.chunk_index)
+        valid_sections.setdefault(source.section, set()).add(source.chunk_index)
+        valid_indexes.add(source.chunk_index)
     citations = CITATION_PATTERN.findall(answer)
     if not citations:
         return False
     for section, chunk_index in citations:
-        indexes = valid.get(section.strip())
+        # 章节名可能被模型缩写；chunk 序号来自真实工具结果时仍可回溯。
+        if chunk_index and int(chunk_index) in valid_indexes:
+            continue
+        indexes = valid_sections.get(section.strip())
         if indexes is None:
             return False
         if chunk_index and int(chunk_index) not in indexes:

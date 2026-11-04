@@ -12,6 +12,10 @@ const props = defineProps<{
   sessionId: string;
 }>();
 
+const emit = defineEmits<{
+  viewRun: [runId: string];
+}>();
+
 const {
   messages,
   indexEmbedding,
@@ -155,6 +159,14 @@ watch(
             :sources="message.sources"
             @select="handleSource"
           />
+          <button
+            v-if="message.role === 'assistant' && message.runId"
+            type="button"
+            class="ask-message__trace"
+            @click="emit('viewRun', message.runId)"
+          >
+            查看研究过程
+          </button>
         </article>
       </template>
     </div>
@@ -314,6 +326,21 @@ watch(
 .ask-message--assistant {
   border-left: 2px solid var(--color-accent);
   padding-left: 10px;
+}
+
+.ask-message__trace {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ask-message__trace:hover {
+  color: var(--color-accent-strong);
 }
 
 .ask-panel__error {

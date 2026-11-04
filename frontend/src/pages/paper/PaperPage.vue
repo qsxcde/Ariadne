@@ -50,6 +50,13 @@ const statusFeedback = ref("");
 const viewMode = ref<"text" | "pdf">("text");
 const outlineVisible = ref(true);
 
+type InspectorTab = "brief" | "research" | "notes" | "terms" | "citations";
+const activeInspectorTab = ref<InspectorTab>("brief");
+const isResearchFocused = ref(false);
+const inspectorWidth = computed(() =>
+  activeInspectorTab.value === "research" ? (isResearchFocused.value ? 520 : 420) : 340,
+);
+
 const readerRef = ref<InstanceType<typeof PaperReader> | null>(null);
 let statusFeedbackTimer: number | null = null;
 let progressTimer: number | null = null;
@@ -151,6 +158,22 @@ function toggleInspector(): void {
     INSPECTOR_STORAGE_KEY,
     isInspectorCollapsed.value ? "1" : "0",
   );
+}
+
+function openResearch(): void {
+  activeInspectorTab.value = "research";
+  if (isInspectorCollapsed.value) {
+    isInspectorCollapsed.value = false;
+    window.localStorage.setItem(INSPECTOR_STORAGE_KEY, "0");
+  }
+}
+
+function handleResearchFocus(focused: boolean): void {
+  isResearchFocused.value = focused;
+  if (focused && isInspectorCollapsed.value) {
+    isInspectorCollapsed.value = false;
+    window.localStorage.setItem(INSPECTOR_STORAGE_KEY, "0");
+  }
 }
 
 function handleInspectorShortcut(event: KeyboardEvent): void {
@@ -302,8 +325,10 @@ onBeforeUnmount(() => {
       :shortcut-hint="inspectorShortcutHint"
       :view-mode="viewMode"
       :outline-visible="outlineVisible"
+      :research-active="activeInspectorTab === 'research'"
       @back="emit('back')"
       @toggle-inspector="toggleInspector"
+      @research="openResearch"
       @edit-metadata="isMetadataDialogOpen = true"
       @refresh="refresh"
       @change-status="changeStatus"
@@ -330,7 +355,12 @@ onBeforeUnmount(() => {
     <div
       v-if="currentPaper && documentItem && primarySessionId && isDocumentReady"
       class="paper-workspace__body"
-      :class="{ 'paper-workspace__body--collapsed': isInspectorCollapsed }"
+      :class="{
+        'paper-workspace__body--collapsed': isInspectorCollapsed,
+        'paper-workspace__body--research': activeInspectorTab === 'research',
+        'paper-workspace__body--focus': isResearchFocused,
+      }"
+      :style="{ '--inspector-width': `${inspectorWidth}px` }"
     >
       <PaperReader
         ref="readerRef"
@@ -362,10 +392,13 @@ onBeforeUnmount(() => {
         aria-label="论文检查器"
       >
         <PaperInspector
+          v-model:active-tab="activeInspectorTab"
           :paper-id="paperId"
           :session-id="primarySessionId"
+          :focused="isResearchFocused"
           @jump-section="jumpToSection"
           @locate="locateAnnotation"
+          @focus-change="handleResearchFocus"
         />
       </aside>
     </div>
@@ -426,7 +459,7 @@ onBeforeUnmount(() => {
   max-width: 1680px;
   min-height: 0;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) var(--inspector-width, 340px);
   grid-template-rows: minmax(0, 1fr);
   margin: 0 auto;
   overflow: hidden;
@@ -471,6 +504,14 @@ onBeforeUnmount(() => {
     z-index: var(--z-page-panel);
     width: min(360px, 88vw);
     box-shadow: var(--shadow-drawer);
+  }
+
+  .paper-workspace__body--research .paper-workspace__inspector {
+    width: min(440px, 94vw);
+  }
+
+  .paper-workspace__body--focus .paper-workspace__inspector {
+    width: min(560px, 100vw);
   }
 }
 </style>

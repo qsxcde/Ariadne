@@ -14,11 +14,13 @@ import TodayPage from "@/pages/today/TodayPage.vue";
 import { listCollections } from "@/api/collections";
 import type { CollectionSummary } from "@/api";
 import { useAuth } from "@/shared/composables/useAuth";
+import { usePapers } from "@/features/library/composables/usePapers";
 import { resetClientState } from "@/stores";
 
 const route = useRoute();
 const router = useRouter();
 const { logout, user } = useAuth();
+const { currentPaper } = usePapers();
 
 const collections = ref<CollectionSummary[]>([]);
 const isPaletteOpen = ref(false);
@@ -38,6 +40,9 @@ const activeSection = computed(() =>
 );
 const routePaperId = computed(() =>
   typeof route.params.paperId === "string" ? route.params.paperId : "",
+);
+const topbarContext = computed(() =>
+  route.name === "paper" ? (currentPaper.value?.title ?? "") : "",
 );
 
 async function loadCollections(): Promise<void> {
@@ -142,6 +147,7 @@ watch(
     <div class="workbench__main">
       <TopBar
         :section="section"
+        :context="topbarContext"
         :show-search="route.name !== 'library'"
         :show-import="route.name !== 'library'"
         @command="openPalette"

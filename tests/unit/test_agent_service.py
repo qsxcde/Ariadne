@@ -105,6 +105,36 @@ def test_invalid_citations_emit_warning_but_keep_answer(isolated_storage) -> Non
     assert isinstance(result[-1], AgentCompleted)
 
 
+def test_abbreviated_section_citation_is_valid_when_chunk_matches(
+    isolated_storage,
+) -> None:
+    session = session_repo.create_session("Agent", user_id="u1")
+    source = SourceRef(
+        paper_id="doc-1",
+        section="III. Methods > A. Training > 5) Joint Training Objective",
+        chunk_index=78,
+    )
+
+    def events(run_id: str):
+        yield AgentCompleted(
+            run_id,
+            "结论 [Section: III. ... > 5) Joint Training Objective | Chunk: 78]",
+            (source,),
+        )
+
+    result = list(
+        stream_agent_run(
+            runner=StubRunner(events),
+            session_id=session["id"],
+            question="q",
+            history=[],
+            ctx=_context(session["id"]),
+        )
+    )
+
+    assert not [event for event in result if isinstance(event, AgentWarning)]
+
+
 def test_tool_budget_marks_run_failed(isolated_storage, monkeypatch) -> None:
     from backend.config import settings
 

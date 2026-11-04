@@ -16,6 +16,7 @@ from langchain.agents.middleware import ModelCallLimitMiddleware
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
+from pydantic import SecretStr
 
 from backend.adapters.agent.langchain_tools import build_langchain_tools
 from backend.application.agent.tools.session_tools import SessionTools
@@ -86,16 +87,20 @@ class LangGraphAgentRunner:
     def _build_messages(
         self, question: str, history: list[dict]
     ) -> list[BaseMessage]:
+        turns = history[-self._max_history_turns * 2 :]
         messages: list[BaseMessage] = []
-        for turn in history[-self._max_history_turns * 2 :]:
+        pending_user: str | None = None
+        for turn in turns:
             role = turn.get("role")
             content = turn.get("content")
             if not isinstance(content, str) or not content:
                 continue
             if role == "user":
-                messages.append(HumanMessage(content=content))
-            elif role == "assistant":
+                pending_user = content
+            elif role == "assistant" and pending_user is not None:
+                messages.append(HumanMessage(content=pending_user))
                 messages.append(AIMessage(content=content))
+                pending_user = None
         messages.append(HumanMessage(content=question))
         return messages
 
@@ -110,12 +115,12 @@ class LangGraphAgentRunner:
         config = resolve_llm(ctx.user_id)
         model = ChatOpenAI(
             model=config.model,
-            api_key=config.api_key,
+            api_key=SecretStr(config.api_key),
             base_url=config.base_url,
             temperature=0,
             timeout=settings.agent_timeout_seconds,
             max_retries=2,
-            max_tokens=settings.llm_max_tokens,
+            max_completion_tokens=settings.llm_max_tokens,
             streaming=True,
         )
         session_tools = SessionTools(
@@ -216,7 +221,7 @@ class LangGraphAgentRunner:
                                 )
                         elif isinstance(message.content, str) and message.content.strip():
                             answer = message.content
-                            usage = message.usage_metadata or {}
+                            usage = cast(dict[str, Any], message.usage_metadata or {})
                             prompt_tokens = usage.get("input_tokens")
                             completion_tokens = usage.get("output_tokens")
                     elif isinstance(message, ToolMessage):

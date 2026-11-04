@@ -1025,6 +1025,11 @@ export interface components {
     schemas: {
         /** AgentRunDetail */
         AgentRunDetail: {
+            /**
+             * Answer
+             * @default
+             */
+            answer: string;
             /** Client Message Id */
             client_message_id?: string | null;
             /** Completion Tokens */
@@ -1043,8 +1048,15 @@ export interface components {
             model?: string | null;
             /** Prompt Tokens */
             prompt_tokens?: number | null;
+            /**
+             * Question
+             * @default
+             */
+            question: string;
             /** Session Id */
             session_id: string;
+            /** Sources */
+            sources?: components["schemas"]["SourceRef"][];
             status: components["schemas"]["AgentRunStatus"];
             /** Step Count */
             step_count: number;

@@ -162,6 +162,25 @@ def test_runner_reports_tool_errors_as_data(isolated_storage, monkeypatch) -> No
     assert "无权访问" in tool_result.summary
 
 
+def test_history_drops_unanswered_user_turns() -> None:
+    runner = runner_module.LangGraphAgentRunner(max_steps=2)
+
+    messages = runner._build_messages(
+        "current question",
+        [
+            {"role": "user", "content": "failed question"},
+            {"role": "user", "content": "answered question"},
+            {"role": "assistant", "content": "previous answer"},
+        ],
+    )
+
+    assert [message.content for message in messages] == [
+        "answered question",
+        "previous answer",
+        "current question",
+    ]
+
+
 def test_runner_enforces_model_call_limit(isolated_storage, monkeypatch) -> None:
     session = session_repo.create_session("Agent", user_id="u1")
     _install_fake_model(monkeypatch, AlwaysToolModel())

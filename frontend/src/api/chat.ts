@@ -7,9 +7,11 @@ type StreamChatOptions = {
   regenerate?: boolean;
   /** 同一条提问的重试必须复用同一个 id，服务端据此去重 */
   clientMessageId?: string;
+  /** 快速单跳问答或 Agent 多步研究 */
+  mode?: "fast" | "agent";
 };
 
-/** 流式问答：产出后端定义的 5 类事件，遇到 done 主动结束。 */
+/** 流式问答：产出后端定义的事件，遇到 done 主动结束。 */
 export async function* streamChat(
   sessionId: string,
   content: string,
@@ -22,6 +24,7 @@ export async function* streamChat(
       method: "POST",
       ...jsonRequest({
         content,
+        mode: options.mode ?? "fast",
         regenerate: options.regenerate ?? false,
         client_message_id: options.clientMessageId ?? null,
       }),

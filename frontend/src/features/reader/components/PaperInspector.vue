@@ -4,7 +4,7 @@ import { ElMessage } from "element-plus";
 
 import { getCitations, getGlossary } from "@/api/papers";
 import { usePapers } from "@/features/library/composables/usePapers";
-import PaperAskPanel from "@/features/reader/components/PaperAskPanel.vue";
+import ResearchPanel from "@/features/agent/components/ResearchPanel.vue";
 import PaperBriefPanel from "@/features/reader/components/PaperBriefPanel.vue";
 import PaperNotesPanel from "@/features/reader/components/PaperNotesPanel.vue";
 import type { AnnotationSummary, CitationGraph, GlossaryResponse } from "@/api";
@@ -13,28 +13,39 @@ import { toErrorMessage } from "@/shared/utils/error";
 const props = defineProps<{
   paperId: string;
   sessionId: string;
+  focused: boolean;
 }>();
 
 const emit = defineEmits<{
   jumpSection: [title: string];
   locate: [annotation: AnnotationSummary];
+  focusChange: [focused: boolean];
 }>();
 
 const INSPECTOR_TABS = [
   { value: "brief", label: "速读" },
-  { value: "ask", label: "问答" },
+  { value: "research", label: "研究" },
   { value: "notes", label: "笔记" },
   { value: "terms", label: "术语" },
   { value: "citations", label: "引用" },
 ] as const;
 
+type InspectorTab = (typeof INSPECTOR_TABS)[number]["value"];
+
 const { currentPaper } = usePapers();
 
-const activeTab = ref<(typeof INSPECTOR_TABS)[number]["value"]>("brief");
+const activeTab = defineModel<InspectorTab>("activeTab", { default: "brief" });
 const glossary = ref<GlossaryResponse | null>(null);
 const citations = ref<CitationGraph | null>(null);
 const isGlossaryLoading = ref(false);
 const isCitationsLoading = ref(false);
+
+function selectTab(value: InspectorTab): void {
+  activeTab.value = value;
+  if (value !== "research") {
+    emit("focusChange", false);
+  }
+}
 
 const annotations = computed<AnnotationSummary[]>(() => currentPaper.value?.annotations ?? []);
 
@@ -72,7 +83,7 @@ async function generateGlossary(): Promise<void> {
         class="paper-workspace__tab"
         :class="{ 'is-active': activeTab === tab.value }"
         :aria-selected="activeTab === tab.value"
-        @click="activeTab = tab.value"
+        @click="selectTab(tab.value)"
       >
         {{ tab.label }}
         <span v-if="tab.value === 'notes' && annotations.length" class="paper-workspace__tab-count">
@@ -83,9 +94,15 @@ async function generateGlossary(): Promise<void> {
 
     <div
       class="paper-workspace__inspector-body"
-      :class="{ 'paper-workspace__inspector-body--flush': activeTab === 'ask' }"
+      :class="{ 'paper-workspace__inspector-body--flush': activeTab === 'research' }"
     >
-      <PaperAskPanel v-if="activeTab === 'ask'" :session-id="sessionId" />
+      <ResearchPanel
+        v-if="activeTab === 'research'"
+        :session-id="sessionId"
+        :paper-id="paperId"
+        :focused="focused"
+        @focus-change="emit('focusChange', $event)"
+      />
       <PaperBriefPanel
         v-show="activeTab === 'brief'"
         :paper-id="paperId"

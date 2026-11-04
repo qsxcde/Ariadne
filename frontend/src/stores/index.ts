@@ -8,6 +8,7 @@
 export { useAuth } from "@/shared/composables/useAuth";
 export { useLibrary } from "@/features/library/composables/useLibrary";
 export { usePaperChat, resetPaperChat } from "@/features/chat/composables/usePaperChat";
+export { useAgentRuns, resetAgentRuns } from "@/features/agent/composables/useAgentRuns";
 export { usePaperReader } from "@/features/reader/composables/usePaperReader";
 export { usePapers } from "@/features/library/composables/usePapers";
 export { useSourcePreview } from "@/shared/composables/useSourcePreview";

@@ -3,6 +3,11 @@
     "schemas": {
       "AgentRunDetail": {
         "properties": {
+          "answer": {
+            "default": "",
+            "title": "Answer",
+            "type": "string"
+          },
           "client_message_id": {
             "anyOf": [
               {
@@ -81,9 +86,21 @@
             ],
             "title": "Prompt Tokens"
           },
+          "question": {
+            "default": "",
+            "title": "Question",
+            "type": "string"
+          },
           "session_id": {
             "title": "Session Id",
             "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceRef"
+            },
+            "title": "Sources",
+            "type": "array"
           },
           "status": {
             "$ref": "#/components/schemas/AgentRunStatus"

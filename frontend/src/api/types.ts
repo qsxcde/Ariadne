@@ -57,10 +57,13 @@ export type PaperImportResult = Schemas["PaperImportResponse"];
 export type AnnotationSummary = Schemas["AnnotationSummary"];
 export type AnnotationCreatePayload = Schemas["AnnotationCreateRequest"];
 
+export type AgentStep = Schemas["AgentStepSummary"];
+export type AgentRunDetail = Schemas["AgentRunDetail"];
+
 export type CollectionSummary = Schemas["CollectionSummary"];
 export type CollectionCreatePayload = Schemas["CollectionCreateRequest"];
 export type CollectionAskResult = Schemas["CollectionAskResponse"];
 export type PaperComparison = Schemas["PaperComparison"];
 
-/** SSE 事件载荷：六类事件的判别联合，同样来自 OpenAPI components。 */
+/** SSE 事件载荷：九类事件的判别联合，同样来自 OpenAPI components。 */
 export type MessageChunk = Schemas["ChatStreamEvent"];

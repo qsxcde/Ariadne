@@ -86,6 +86,20 @@ def get_message_by_client_id(client_message_id: str) -> MessageRecord | None:
     return cast(MessageRecord, message)
 
 
+def get_message_by_run_id(run_id: str) -> MessageRecord | None:
+    """The assistant answer produced by one agent run, if it was persisted."""
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM messages WHERE run_id = ? ORDER BY created_at DESC LIMIT 1",
+            (run_id,),
+        ).fetchone()
+    if not row:
+        return None
+    message = dict(row)
+    message["sources"] = _decode_sources(message.pop("sources_json"))
+    return cast(MessageRecord, message)
+
+
 def get_message(message_id: str) -> MessageRecord | None:
 
     with connect() as conn:

@@ -23,6 +23,49 @@ export type ChatMessageViewModel = {
   role: "user" | "assistant";
   text: string;
   sources?: SourceRef[];
+  /** 该回答由哪次 Agent 运行产生；用于回放过程。 */
+  runId?: string;
+};
+
+export type AgentRunStatus =
+  | "planning"
+  | "tool_running"
+  | "answering"
+  | "running"
+  | "completed"
+  | "failed"
+  | "stopped";
+
+export type AgentStepStatus = "running" | "ok" | "error" | "interrupted";
+
+export type AgentStepViewModel = {
+  step: number;
+  tool: string;
+  arguments?: Record<string, unknown>;
+  status: AgentStepStatus;
+  summary?: string;
+  sources: SourceRef[];
+  startedAt: number;
+  finishedAt?: number;
+  error?: string;
+};
+
+export type AgentRunViewModel = {
+  localId: string;
+  /** 服务端 run id；收到 run_started 前为空。 */
+  id: string;
+  sessionId: string;
+  paperId?: string;
+  goal: string;
+  status: AgentRunStatus;
+  steps: AgentStepViewModel[];
+  answer: string;
+  sources: SourceRef[];
+  warning?: string;
+  error?: string;
+  maxSteps?: number;
+  createdAt: number;
+  finishedAt?: number;
 };
 
 export type SidebarSessionItem = {
