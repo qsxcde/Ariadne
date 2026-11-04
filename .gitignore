@@ -12,6 +12,7 @@ backend/storage/sqlite/scipal.db
 .worktrees/
 .claude/
 .pytest_cache/
+.pytest-tmp/
 .vscode/
 eval_outputs/
 docker/models/
@@ -20,6 +21,7 @@ docs/*
 !docs/wiki/
 !docs/analysis/
 !docs/planning/
+!docs/adr/
 CLAUDE.md
 # SQLite runtime files, wherever they are created
 *.db

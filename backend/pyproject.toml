@@ -55,10 +55,6 @@ packages = ["src/backend", "src/scipal_eval"]
 [tool.uv]
 package = true
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-addopts = "-q"
-
 [tool.mypy]
 python_version = "3.11"
 # 源码优先于本地 editable 安装，保证本地与 CI 检查的是同一份代码
@@ -66,4 +62,4 @@ mypy_path = "src"
 ignore_missing_imports = true
 warn_unused_ignores = false
 # 存储层、内核、用例层全部纳入；接口层仍是 dict 边界，暂不纳入
-files = ["src/backend/storage", "src/backend/core", "src/backend/application"]
+files = ["src/backend/storage", "src/backend/domain", "src/backend/application"]
