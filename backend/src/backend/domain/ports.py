@@ -25,6 +25,19 @@ Embedder = Callable[[list[str]], list[list[float]]]
 
 
 @runtime_checkable
+class EmbeddingRuntime(Protocol):
+    """An embedder bound to one model, plus the signature of indexes it can serve."""
+
+    fingerprint: str
+    cache_key: str
+    mode: str
+    model: str
+    dim: int | None
+
+    def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+
+@runtime_checkable
 class VectorStore(Protocol):
     """Read/write surface the retrieval and indexing code depends on."""
 
@@ -37,3 +50,10 @@ class VectorStore(Protocol):
     ) -> list[VectorSearchHit]: ...
 
     def list_chunks(self) -> list[Chunk]: ...
+
+
+@runtime_checkable
+class Reranker(Protocol):
+    """Reorder candidate chunks by query relevance."""
+
+    def rerank(self, query: str, chunks: list[Chunk], top_k: int) -> list[Chunk]: ...

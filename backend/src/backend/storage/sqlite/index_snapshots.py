@@ -16,6 +16,9 @@ def create_building_snapshot(
     index_path: str,
     chunks_path: str,
     document_ids: list[str],
+    *,
+    embedding_fingerprint: str | None = None,
+    embedding_model: str | None = None,
 ) -> SnapshotRecord:
 
     snapshot_id = str(uuid.uuid4())
@@ -25,9 +28,10 @@ def create_building_snapshot(
             """
             INSERT INTO index_snapshots (
               id, session_id, status, index_path, chunks_path, document_ids_json,
-              error_message, created_at, updated_at
+              embedding_fingerprint, embedding_model, error_message,
+              created_at, updated_at
             )
-            VALUES (?, ?, 'building', ?, ?, ?, NULL, ?, ?)
+            VALUES (?, ?, 'building', ?, ?, ?, ?, ?, NULL, ?, ?)
             """,
             (
                 snapshot_id,
@@ -35,6 +39,8 @@ def create_building_snapshot(
                 index_path,
                 chunks_path,
                 json.dumps(document_ids, ensure_ascii=False),
+                embedding_fingerprint,
+                embedding_model,
                 timestamp,
                 timestamp,
             ),

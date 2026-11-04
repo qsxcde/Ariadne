@@ -89,6 +89,25 @@ class AlertSettingsRecord(TypedDict):
     updated_at: str
 
 
+class UserModelSettingsRecord(TypedDict):
+    id: str
+    user_id: str | None
+    llm_provider: str
+    llm_model: str | None
+    llm_api_key: str | None
+    llm_base_url: str | None
+    embedding_provider: str
+    embedding_model: str | None
+    embedding_api_key: str | None
+    embedding_base_url: str | None
+    embedding_dim: int | None
+    rerank_provider: str
+    rerank_model: str | None
+    rerank_api_key: str | None
+    rerank_base_url: str | None
+    updated_at: str
+
+
 class SubscriptionRecord(TypedDict):
     id: str
     user_id: str | None
@@ -186,6 +205,8 @@ class SnapshotRecord(TypedDict):
     index_path: str
     chunks_path: str
     document_ids: list[str]
+    embedding_fingerprint: str | None
+    embedding_model: str | None
     error_message: str | None
     created_at: str
     updated_at: str

@@ -1,15 +1,19 @@
-import asyncio
 import logging
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from sse_starlette import EventSourceResponse
 
-from backend.api.deps import get_accessible_session
+from backend.api.deps import (
+    get_accessible_session,
+    get_text_completer,
+    get_user_embedding,
+    get_user_reranker,
+)
 from backend.api.schemas import ChatMessage
 from backend.api.security import get_current_user
-from backend.api.streaming import encode_sse_event, stream_with_heartbeat
+from backend.api.streaming import build_stream_response
 from backend.application.conversation.chat import stream_session_chat
-from backend.application.conversation.events import DoneEvent, ErrorEvent
+from backend.domain.ports import EmbeddingRuntime, Reranker, TextCompleter
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -21,7 +25,10 @@ async def chat(
     message: ChatMessage,
     session: dict = Depends(get_accessible_session),
     user: dict = Depends(get_current_user),
-) -> StreamingResponse:
+    completer: TextCompleter = Depends(get_text_completer),
+    embedding: EmbeddingRuntime = Depends(get_user_embedding),
+    reranker: Reranker | None = Depends(get_user_reranker),
+) -> EventSourceResponse:
     """发送提问，以 text/event-stream 流式返回回答。"""
     events = stream_session_chat(
         session_id=session["id"],
@@ -29,26 +36,8 @@ async def chat(
         user_id=user.get("id"),
         regenerate=message.regenerate,
         client_message_id=message.client_message_id,
+        completer=completer,
+        embedding=embedding,
+        reranker=reranker,
     )
-
-    async def generate():
-        try:
-            async for frame in stream_with_heartbeat(events):
-                yield frame
-        except asyncio.CancelledError:
-            logger.info("SSE stream cancelled by client session=%s", session_id)
-            return
-        except Exception:
-            logger.exception("Unhandled error in SSE stream session=%s", session_id)
-            yield encode_sse_event(ErrorEvent(value="internal_error"))
-            yield encode_sse_event(DoneEvent())
-
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            # nginx 默认缓冲会让流式退化成「等全部生成完再吐」，必须显式关闭
-            "X-Accel-Buffering": "no",
-        },
-    )
+    return build_stream_response(events, session_id=session["id"])

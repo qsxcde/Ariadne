@@ -25,3 +25,8 @@ class LazyResource(Generic[T]):
             if self._value is None:
                 self._value = self._factory()
             return self._value
+
+    @property
+    def value(self) -> T | None:
+        """Already-built value, without triggering the factory."""
+        return self._value

@@ -1,11 +1,18 @@
 """Local alert preferences and weekly digest."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from backend.api.schemas import AlertSettings, AlertSettingsUpdate, DigestResponse
+from backend.api.schemas import (
+    AlertSettings,
+    AlertSettingsUpdate,
+    DigestResponse,
+    ModelSettingsResponse,
+    ModelSettingsUpdate,
+)
 from backend.api.security import get_current_user
 from backend.application.follow import alerts as alert_service
 from backend.application.follow import feed as feed_service
+from backend.application.model_settings import service as model_settings_service
 from backend.application.reading import review as review_service
 
 router = APIRouter()
@@ -25,6 +32,31 @@ def update_alert_settings(
     return AlertSettings(
         **alert_service.update_settings(user.get("id") or None, **fields)
     )
+
+
+@router.get("/settings/models", response_model=ModelSettingsResponse)
+def get_model_settings(
+    user: dict = Depends(get_current_user),
+) -> ModelSettingsResponse:
+    return ModelSettingsResponse(
+        **model_settings_service.get_settings(user.get("id") or None)
+    )
+
+
+@router.patch("/settings/models", response_model=ModelSettingsResponse)
+def update_model_settings(
+    payload: ModelSettingsUpdate,
+    user: dict = Depends(get_current_user),
+) -> ModelSettingsResponse:
+    try:
+        return ModelSettingsResponse(
+            **model_settings_service.update_settings(
+                user.get("id") or None,
+                payload.model_dump(exclude_unset=True),
+            )
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.get("/digest", response_model=DigestResponse)

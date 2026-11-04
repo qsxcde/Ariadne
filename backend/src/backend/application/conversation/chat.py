@@ -19,8 +19,13 @@ from backend.application.conversation.events import (
 from backend.application.conversation.session_index import resolve_session_store
 from backend.config import settings
 from backend.domain.access import session_is_accessible
-from backend.domain.exceptions import ActiveIndexNotReadyError, SessionNotFoundError
+from backend.domain.exceptions import (
+    ActiveIndexNotReadyError,
+    IndexEmbeddingMismatchError,
+    SessionNotFoundError,
+)
 from backend.domain.models import SourceRef
+from backend.domain.ports import EmbeddingRuntime, Reranker, TextCompleter
 from backend.rag import answer as chat_pipeline
 from backend.storage.sqlite import messages as message_repo
 from backend.storage.sqlite import sessions as session_repo
@@ -33,8 +38,12 @@ STREAM_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="scipal-s
 MISSING_SOURCES_EVENT_ERROR = "Stream protocol error: missing sources event from stream_answer()."
 
 
-def _read_usage() -> dict | None:
+def _read_usage(completer: TextCompleter | None = None) -> dict | None:
     """Token usage of the stream that just finished (provider-dependent)."""
+    if completer is not None:
+        usage = getattr(completer, "last_usage", None)
+        if usage is not None:
+            return usage
     from backend.adapters.llm.llm import last_usage
 
     return last_usage()
@@ -149,6 +158,9 @@ async def stream_session_chat(
     user_id: str | None = None,
     regenerate: bool = False,
     client_message_id: str | None = None,
+    completer: TextCompleter | None = None,
+    embedding: EmbeddingRuntime | None = None,
+    reranker: Reranker | None = None,
 ) -> AsyncIterator[ChatEvent]:
     """Serialize turns within one session.
 
@@ -163,6 +175,9 @@ async def stream_session_chat(
             user_id=user_id,
             regenerate=regenerate,
             client_message_id=client_message_id,
+            completer=completer,
+            embedding=embedding,
+            reranker=reranker,
         )
         try:
             async for event in inner:
@@ -181,6 +196,9 @@ async def _stream_session_chat(
     user_id: str | None = None,
     regenerate: bool = False,
     client_message_id: str | None = None,
+    completer: TextCompleter | None = None,
+    embedding: EmbeddingRuntime | None = None,
+    reranker: Reranker | None = None,
 ) -> AsyncGenerator[ChatEvent, None]:
     session = await _to_thread(session_repo.get_session, session_id)
     if not session_is_accessible(session, user_id):
@@ -196,6 +214,7 @@ async def _stream_session_chat(
             on_wait_for_index=lambda: pending_status_events.append(
                 StatusEvent(value="waiting_for_index")
             ),
+            embedding=embedding,
         )
         for status_event in pending_status_events:
             yield status_event
@@ -219,18 +238,21 @@ async def _stream_session_chat(
 
         yield StatusEvent(value="retrieving")
         yield StatusEvent(value="generating")
-        stream = chat_pipeline.stream_answer(
-            store,
-            content,
-            options=policies.retrieval_options(),
-            policy=policies.answer_policy(),
-            history=history,
-        )
+        stream_kwargs: dict[str, Any] = {
+            "options": policies.retrieval_options(),
+            "policy": policies.answer_policy(),
+            "history": history,
+        }
+        if completer is not None:
+            stream_kwargs["completer"] = completer
+        if reranker is not None:
+            stream_kwargs["reranker"] = reranker
+        stream = chat_pipeline.stream_answer(store, content, **stream_kwargs)
 
         try:
             async for token_event in state.consume_stream(stream):
                 yield token_event
-            usage = _read_usage()
+            usage = _read_usage(completer)
         except (GeneratorExit, asyncio.CancelledError):
             # 客户端中止：把已生成的部分落库，避免刷新后这一轮凭空消失
             await _persist_interrupted_answer(session_id, state)
@@ -238,6 +260,10 @@ async def _stream_session_chat(
 
     except ActiveIndexNotReadyError as exc:
         async for event in _handle_active_index_not_ready(session_id, exc, pending_status_events):
+            yield event
+        return
+    except IndexEmbeddingMismatchError as exc:
+        async for event in _handle_index_embedding_mismatch(session_id, exc):
             yield event
         return
     except Exception:
@@ -251,7 +277,7 @@ async def _stream_session_chat(
         "assistant",
         state.full_content,
         sources=state.sources,
-        model=settings.deepseek_model,
+        model=getattr(completer, "model", None) or settings.deepseek_model,
         prompt_tokens=(usage or {}).get("prompt_tokens"),
         completion_tokens=(usage or {}).get("completion_tokens"),
     )
@@ -311,6 +337,18 @@ async def _handle_active_index_not_ready(
     for status_event in pending_status_events:
         yield status_event
     error_message = str(exc) or settings.msg_index_not_ready
+    await _persist_and_touch(session_id, "assistant", error_message, status="failed")
+    yield TokenEvent(value=error_message)
+    yield SourcesEvent(value=[])
+    yield DoneEvent()
+
+
+async def _handle_index_embedding_mismatch(
+    session_id: str,
+    exc: IndexEmbeddingMismatchError,
+) -> AsyncIterator[ChatEvent]:
+    """Explain that the index must be rebuilt before retrieval can run."""
+    error_message = str(exc) or settings.msg_index_embedding_stale
     await _persist_and_touch(session_id, "assistant", error_message, status="failed")
     yield TokenEvent(value=error_message)
     yield SourcesEvent(value=[])

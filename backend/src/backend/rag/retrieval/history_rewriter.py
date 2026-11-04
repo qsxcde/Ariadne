@@ -7,6 +7,7 @@ resolving anaphora and filling in omitted references.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from functools import lru_cache
 
 from backend.composition import text_completer
@@ -86,17 +87,21 @@ def build_rewrite_prompt(
     return template.format(history=history_text, query=query)
 
 
-@lru_cache(maxsize=128)
-def _cached_rewrite(query: str, history_text: str) -> str:
-    """Call LLM to rewrite query with history context. Cached for identical inputs."""
+def _rewrite_with(query: str, history_text: str, complete: Callable[[str], str]) -> str:
     prompt = build_rewrite_prompt(query, history_text)
     try:
-        raw = text_completer().complete(prompt)
+        raw = complete(prompt)
         result = raw.strip().strip('"').strip("'")
         return result if result else query
     except Exception:
         logger.exception("history_aware_rewrite failed for query=%r", query)
         return query
+
+
+@lru_cache(maxsize=128)
+def _cached_rewrite(query: str, history_text: str) -> str:
+    """Call LLM to rewrite query with history context. Cached for identical inputs."""
+    return _rewrite_with(query, history_text, text_completer().complete)
 
 
 def history_aware_rewrite(
@@ -105,6 +110,7 @@ def history_aware_rewrite(
     max_rounds: int = 4,
     enabled: bool = True,
     min_query_length: int = 3,
+    complete: Callable[[str], str] | None = None,
 ) -> str:
     """Rewrite current query with multi-turn context awareness.
 
@@ -127,5 +133,7 @@ def history_aware_rewrite(
     history_text = _format_history(history, max_rounds)
     if not history_text:
         return current_query
+    if complete is not None:
+        return _rewrite_with(current_query, history_text, complete)
 
     return _cached_rewrite(current_query, history_text)

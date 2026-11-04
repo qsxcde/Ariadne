@@ -1,12 +1,15 @@
 """SSE framing: application events -> transport models -> ``data:`` frames.
 
-Also owns the heartbeat: a silent generator (slow LLM, index wait) would let a
-reverse proxy or the browser drop an idle connection, so a comment frame is
-emitted while nothing else is flowing.
+Keep-alive and disconnect handling are delegated to
+``sse_starlette.EventSourceResponse``; this module only owns the wire format and
+the thin transport wrapper.
 """
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator
+
+from sse_starlette import EventSourceResponse
 
 from backend.api.schemas.chat import (
     ChatStreamDoneEvent,
@@ -28,43 +31,52 @@ from backend.application.conversation.events import (
 )
 
 
-HEARTBEAT_FRAME = ": keep-alive\n\n"
+logger = logging.getLogger(__name__)
+
 HEARTBEAT_INTERVAL_SECONDS = 15.0
-_STREAM_DONE = object()
 
 
-async def _pump(source: AsyncIterator[ChatEvent], queue: "asyncio.Queue[object]") -> None:
-    """Feed the queue from the source so the reader can apply a timeout."""
-    try:
-        async for event in source:
-            await queue.put(event)
-    except Exception as exc:  # re-raised on the consuming side
-        await queue.put(exc)
-    finally:
-        await queue.put(_STREAM_DONE)
+def build_stream_response(
+    events: AsyncIterator[ChatEvent], *, session_id: str = ""
+) -> EventSourceResponse:
+    """Wrap the domain event stream in the SSE transport.
+
+    Keep-alive pings and client-disconnect detection come from
+    ``EventSourceResponse``; this wrapper only maps events and shields the
+    stream from unexpected failures.
+    """
+
+    async def frames() -> AsyncIterator[bytes]:
+        try:
+            async for frame in sse_frames(events):
+                yield frame
+        except asyncio.CancelledError:
+            logger.info("SSE stream cancelled by client session=%s", session_id)
+            return
+        except Exception:
+            logger.exception("Unhandled error in SSE stream session=%s", session_id)
+            yield encode_sse_event(ErrorEvent(value="internal_error")).encode("utf-8")
+            yield encode_sse_event(DoneEvent()).encode("utf-8")
+
+    return EventSourceResponse(
+        frames(),
+        ping=HEARTBEAT_INTERVAL_SECONDS,
+        headers={
+            "Cache-Control": "no-cache",
+            # nginx 默认缓冲会让流式退化成「等全部生成完再吐」，必须显式关闭
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
-async def stream_with_heartbeat(
-    events: AsyncIterator[ChatEvent],
-    interval: float = HEARTBEAT_INTERVAL_SECONDS,
-) -> AsyncIterator[str]:
-    """Encode frames, emitting a heartbeat comment when the stream stalls."""
-    queue: asyncio.Queue[object] = asyncio.Queue()
-    pump = asyncio.create_task(_pump(events, queue))
-    try:
-        while True:
-            try:
-                item = await asyncio.wait_for(queue.get(), timeout=interval)
-            except TimeoutError:
-                yield HEARTBEAT_FRAME
-                continue
-            if item is _STREAM_DONE:
-                return
-            if isinstance(item, Exception):
-                raise item
-            yield encode_sse_event(item)
-    finally:
-        pump.cancel()
+async def sse_frames(events: AsyncIterator[ChatEvent]) -> AsyncIterator[bytes]:
+    """Encode domain events as complete SSE frames.
+
+    Frames are emitted as ``bytes`` so the transport sends them verbatim instead
+    of re-wrapping them in another ``data:`` line.
+    """
+    async for event in events:
+        yield encode_sse_event(event).encode("utf-8")
 
 
 def encode_sse_event(event: ChatEvent) -> str:

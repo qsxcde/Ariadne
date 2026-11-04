@@ -12,17 +12,18 @@ from sentence_transformers import SentenceTransformer
 from backend import config
 from backend.domain.exceptions import EmbeddingModelUnavailableError
 from backend.adapters.embedding.limits import MAX_EMBEDDING_CHARS, MAX_EMBEDDING_WORDS
+from backend.adapters.resources import LazyResource
 
 logger = logging.getLogger(__name__)
 
 _MODEL_RETRY_BASE_INTERVAL = 60.0
 _MODEL_RETRY_MAX_INTERVAL = 600.0
 
-_model: SentenceTransformer | None = None
-_model_load_failed_at: float | None = None
-_model_load_error_message = ""
 _model_retry_interval = _MODEL_RETRY_BASE_INTERVAL
-_model_lock = threading.Lock()
+_model_load_error_message = ""
+# Monotonic deadline before which a failed load must not be retried (0 = no cooldown).
+_model_retry_after = 0.0
+_model_lock = threading.RLock()
 
 
 def embed(texts: list[str]) -> list[list[float]]:
@@ -57,52 +58,60 @@ def truncate_for_embedding(text: str) -> str:
     return text
 
 
+def _load_model() -> SentenceTransformer:
+    _configure_embedding_runtime()
+    model_source = _resolve_model_source()
+    load_start = time.monotonic()
+    logger.info(
+        "Loading embedding model source=%s device=%s local_files_only=%s",
+        model_source,
+        config.settings.embedding_device,
+        config.settings.embedding_local_files_only,
+    )
+    model = SentenceTransformer(
+        model_source,
+        local_files_only=config.settings.embedding_local_files_only,
+        device=config.settings.embedding_device,
+    )
+    logger.info(
+        "Loaded embedding model source=%s elapsed=%.2fs",
+        model_source,
+        time.monotonic() - load_start,
+    )
+    return model
+
+
+_model: LazyResource[SentenceTransformer] = LazyResource(_load_model)
+
+
 def _get_model() -> SentenceTransformer | None:
-    global _model, _model_load_failed_at, _model_load_error_message, _model_retry_interval
-    if _model is not None:
-        return _model
+    """Cached model, honouring the backoff cooldown between failed load attempts."""
+    global _model_load_error_message, _model_retry_after, _model_retry_interval
     with _model_lock:
-        if _model is not None:
-            return _model
-        if _model_load_failed_at is not None:
-            elapsed = time.monotonic() - _model_load_failed_at
-            if elapsed < _model_retry_interval:
-                return None
+        now = time.monotonic()
+        if _model_retry_after > now:
+            return None
+        if _model_retry_after:
             logger.info(
-                "Retrying model load after %.0fs (backoff: %.0fs)",
-                elapsed, _model_retry_interval,
+                "Retrying model load after cooldown (backoff: %.0fs)",
+                _model_retry_interval,
             )
-            _model_load_failed_at = None
-    try:
-        _configure_embedding_runtime()
-        model_source = _resolve_model_source()
-        load_start = time.monotonic()
-        logger.info(
-            "Loading embedding model source=%s device=%s local_files_only=%s",
-            model_source,
-            config.settings.embedding_device,
-            config.settings.embedding_local_files_only,
-        )
-        _model = SentenceTransformer(
-            model_source,
-            local_files_only=config.settings.embedding_local_files_only,
-            device=config.settings.embedding_device,
-        )
+        try:
+            model = _model.get()
+        except Exception as exc:
+            _model_load_error_message = str(exc)
+            _model_retry_interval = min(
+                _model_retry_interval * 2, _MODEL_RETRY_MAX_INTERVAL
+            )
+            _model_retry_after = time.monotonic() + _model_retry_interval
+            logger.exception(
+                "Failed to load embedding model (retry in %.0fs)", _model_retry_interval
+            )
+            return None
         _model_retry_interval = _MODEL_RETRY_BASE_INTERVAL
-        _model_load_failed_at = None
+        _model_retry_after = 0.0
         _model_load_error_message = ""
-        logger.info(
-            "Loaded embedding model source=%s elapsed=%.2fs",
-            model_source,
-            time.monotonic() - load_start,
-        )
-    except Exception as exc:
-        _model_load_failed_at = time.monotonic()
-        _model_load_error_message = str(exc)
-        _model_retry_interval = min(_model_retry_interval * 2, _MODEL_RETRY_MAX_INTERVAL)
-        logger.exception("Failed to load embedding model (retry in %.0fs)", _model_retry_interval)
-        return None
-    return _model
+        return model
 
 
 def _embedding_unavailable_message() -> str:

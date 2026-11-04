@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from backend.api.deps import get_accessible_session
+from backend.api.deps import get_accessible_session, get_user_embedding
 from backend.api.schemas import (
+    IndexRebuildResponse,
     SessionCreateResponse,
     SessionSnapshot,
     SessionSummary,
@@ -10,6 +11,7 @@ from backend.api.schemas import (
 from backend.api.security import get_current_user
 from backend.application.conversation import sessions as session_service
 from backend.domain.exceptions import SessionNotFoundError
+from backend.domain.ports import EmbeddingRuntime
 
 router = APIRouter()
 
@@ -52,6 +54,22 @@ def update_session(
     if summary is None:
         raise SessionNotFoundError(f"Session not found: {session_id}", session_id=session_id)
     return summary
+
+
+@router.post(
+    "/sessions/{session_id}/index/rebuild",
+    response_model=IndexRebuildResponse,
+)
+def rebuild_session_index(
+    session_id: str,
+    user: dict = Depends(get_current_user),
+    embedding: EmbeddingRuntime = Depends(get_user_embedding),
+) -> IndexRebuildResponse:
+    """按当前用户的 Embedding 配置重建会话索引（同步）。"""
+    result = session_service.rebuild_index(
+        session_id, user.get("id") or None, embedding=embedding
+    )
+    return IndexRebuildResponse(**result)
 
 
 @router.delete("/sessions/{session_id}")

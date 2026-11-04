@@ -4,14 +4,30 @@ from fastapi import Depends
 
 from backend.api.security import get_current_user
 from backend.application.conversation import sessions as session_service
-from backend.composition import text_completer
+from backend.composition import user_embedding, user_reranker, user_text_completer
 from backend.domain.exceptions import SessionNotFoundError
-from backend.domain.ports import TextCompleter
+from backend.domain.ports import EmbeddingRuntime, Reranker, TextCompleter
 
 
-def get_text_completer() -> TextCompleter:
-    """Wire the process-wide LLM capability at the transport edge."""
-    return text_completer()
+def get_text_completer(
+    user: dict = Depends(get_current_user),
+) -> TextCompleter:
+    """Wire the caller's LLM (user key first, env fallback) at the transport edge."""
+    return user_text_completer(user.get("id") or None)
+
+
+def get_user_embedding(
+    user: dict = Depends(get_current_user),
+) -> EmbeddingRuntime:
+    """Wire the caller's embedder at the transport edge."""
+    return user_embedding(user.get("id") or None)
+
+
+def get_user_reranker(
+    user: dict = Depends(get_current_user),
+) -> Reranker | None:
+    """Wire the caller's reranker; None means reranking is disabled."""
+    return user_reranker(user.get("id") or None)
 
 
 def get_accessible_session(

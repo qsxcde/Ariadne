@@ -7,10 +7,15 @@ import time
 from collections.abc import Callable
 
 from backend.adapters.vector import store_cache
-from backend.domain.ports import VectorStore
+from backend.application.model_settings.service import env_embedding_fingerprint
+from backend.domain.ports import EmbeddingRuntime, VectorStore
 from backend.storage.records import SnapshotRecord
 from backend.config import settings
-from backend.domain.exceptions import ActiveIndexNotReadyError, SessionNotFoundError
+from backend.domain.exceptions import (
+    ActiveIndexNotReadyError,
+    IndexEmbeddingMismatchError,
+    SessionNotFoundError,
+)
 from backend.storage.sqlite import index_snapshots as snapshot_repo
 from backend.storage.sqlite import sessions as session_repo
 
@@ -19,6 +24,7 @@ async def resolve_session_store(
     session_id: str,
     wait_timeout_seconds: float | None = None,
     on_wait_for_index: Callable[[], None] | None = None,
+    embedding: EmbeddingRuntime | None = None,
 ) -> tuple[VectorStore, bool]:
     if wait_timeout_seconds is None:
         wait_timeout_seconds = settings.index_max_wait
@@ -42,7 +48,16 @@ async def resolve_session_store(
                 "索引尚未就绪", session_id=session_id
             )
 
-    return store_cache.get_store_for_snapshot(ready_snapshot), waited_for_index
+    if embedding is not None:
+        stored = ready_snapshot.get("embedding_fingerprint")
+        if (stored or env_embedding_fingerprint()) != embedding.fingerprint:
+            raise IndexEmbeddingMismatchError(
+                settings.msg_index_embedding_stale, session_id=session_id
+            )
+
+    return store_cache.get_store_for_snapshot(
+        ready_snapshot, embedding=embedding
+    ), waited_for_index
 
 
 async def wait_for_ready_index(

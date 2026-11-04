@@ -3,6 +3,7 @@ from collections.abc import Generator
 from backend.adapters.llm.llm import stream_completion_tokens
 from backend.adapters.llm.prompt_template import build_prompt
 from backend.domain.models import Chunk, SourceRef
+from backend.domain.ports import TextCompleter
 
 DEFAULT_SOURCE_EXCERPT_MAX_CHARS = 220
 
@@ -11,17 +12,25 @@ def stream_answer(
     chunks: list[Chunk],
     question: str,
     history: list[dict] | None = None,
+    completer: TextCompleter | None = None,
 ) -> Generator[str, None, list[SourceRef]]:
     prompt = build_prompt(chunks, question, history)
-    for token in stream_completion_tokens(prompt):
+    tokens = completer.stream(prompt) if completer is not None else stream_completion_tokens(prompt)
+    for token in tokens:
         yield token
     return build_sources(chunks)
 
 
 def generate_answer(
-    chunks: list[Chunk], question: str, history: list[dict] | None = None
+    chunks: list[Chunk],
+    question: str,
+    history: list[dict] | None = None,
+    completer: TextCompleter | None = None,
 ) -> str:
-    return "".join(stream_completion_tokens(build_prompt(chunks, question, history)))
+    prompt = build_prompt(chunks, question, history)
+    if completer is not None:
+        return str(completer.complete(prompt))
+    return "".join(stream_completion_tokens(prompt))
 
 
 def build_sources(

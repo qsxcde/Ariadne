@@ -57,8 +57,19 @@ class IndexSnapshotSummary(BaseModel):
     index_path: str
     chunks_path: str
     document_ids: list[str]
+    embedding_model: str | None = None
+    embedding_fingerprint: str | None = None
     updated_at: str
     error_message: str | None = None
+
+
+class IndexEmbeddingStatus(BaseModel):
+    """Whether the active index can serve the user's current embedder."""
+
+    stale: bool = False
+    current_model: str = ""
+    current_mode: Literal["remote", "local"] = "remote"
+    index_model: str | None = None
 
 
 class SessionSummary(BaseModel):
@@ -91,8 +102,14 @@ class SessionSnapshot(BaseModel):
     indexed_chunks: int
     active_index: IndexSnapshotSummary | None = None
     retrieval_index: RetrievalIndexSummary | None = None
+    index_embedding: IndexEmbeddingStatus | None = None
 
 
 class SessionUpdateRequest(BaseModel):
     title: str | None = None
     is_pinned: bool | None = None
+
+
+class IndexRebuildResponse(BaseModel):
+    status: Literal["ready", "empty"]
+    snapshot_id: str | None = None

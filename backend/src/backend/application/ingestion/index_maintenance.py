@@ -4,15 +4,18 @@ import logging
 
 from backend.application.ingestion.indexing import rebuild_session_snapshot
 from backend.adapters.vector.store_cache import discard_store
+from backend.domain.ports import EmbeddingRuntime
 from backend.storage.sqlite import index_snapshots as snapshot_repo
 from backend.storage.sqlite import indexes as index_repo
 
 logger = logging.getLogger(__name__)
 
 
-def refresh_after_document_change(session_id: str) -> None:
+def refresh_after_document_change(
+    session_id: str, *, embedding: EmbeddingRuntime | None = None
+) -> None:
     """Rebuild the session index after a document was removed."""
-    rebuild_session_snapshot(session_id)
+    rebuild_session_snapshot(session_id, embedding=embedding)
 
 
 def invalidate_session_index(session_id: str, reason: str) -> None:

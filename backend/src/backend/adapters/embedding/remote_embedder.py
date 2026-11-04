@@ -1,5 +1,6 @@
-"""Remote embedding via OpenAI-compatible API (Gitee AI / etc.)."""
+"""Remote embedding via OpenAI-compatible API (SiliconFlow / Gitee AI / etc.)."""
 import logging
+import threading
 import time
 
 from openai import OpenAI
@@ -20,22 +21,50 @@ def _create_client() -> OpenAI:
 
 
 _client: LazyResource[OpenAI] = LazyResource(_create_client)
+_clients: dict[tuple[str, str], OpenAI] = {}
+_clients_lock = threading.Lock()
 
 
 def _get_client() -> OpenAI:
     return _client.get()
 
 
+def _client_for(base_url: str, api_key: str) -> OpenAI:
+    key = (base_url, api_key)
+    with _clients_lock:
+        client = _clients.get(key)
+        if client is None:
+            client = OpenAI(base_url=base_url, api_key=api_key, timeout=30)
+            _clients[key] = client
+        return client
+
+
 def embed(texts: list[str]) -> list[list[float]]:
     """Embed texts via remote API (OpenAI-compatible)."""
-    client = _get_client()
+    return embed_with_config(
+        texts,
+        model=settings.embedding_remote_model,
+        base_url=settings.embedding_remote_base_url,
+        api_key=settings.embedding_remote_api_key or "",
+    )
+
+
+def embed_with_config(
+    texts: list[str],
+    *,
+    model: str,
+    base_url: str,
+    api_key: str,
+) -> list[list[float]]:
+    """Embed with an explicit provider config (per-user settings)."""
+    client = _client_for(base_url, api_key)
     truncated = [truncate_for_embedding(t) for t in texts]
 
     start = time.monotonic()
-    logger.info("Encoding %d texts with remote embedding model=%s", len(texts), settings.embedding_remote_model)
+    logger.info("Encoding %d texts with remote embedding model=%s", len(texts), model)
 
     resp = client.embeddings.create(
-        model=settings.embedding_remote_model,
+        model=model,
         input=truncated,
     )
 

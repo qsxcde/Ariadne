@@ -8,6 +8,7 @@ from pathlib import Path
 from backend.application.ingestion.indexing import build_candidate_snapshot
 from backend.application.ingestion.indexing import cleanup_snapshot_files
 from backend.application.ingestion.indexing import commit_ready_snapshot
+from backend.domain.ports import EmbeddingRuntime
 from backend.storage.records import DocumentRecord, SnapshotRecord
 from backend.domain.exceptions import SnapshotCommitError
 from backend.domain.states import DocumentStage, JobStatus
@@ -21,11 +22,13 @@ from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import jobs as job_repo
 from backend.storage.sqlite import index_snapshots as snapshot_repo
+from backend.storage.sqlite import sessions as session_repo
 from backend.adapters.vector.store_cache import discard_store
 
 logger = logging.getLogger(__name__)
 
 ParserChainFactory = Callable[..., list]
+EmbeddingFactory = Callable[[str | None], EmbeddingRuntime]
 
 
 def run_document_ingestion_job(
@@ -36,6 +39,7 @@ def run_document_ingestion_job(
     resume_batch_id: str | None = None,
     on_batch_created: Callable[[str], None] | None = None,
     parser_chain_factory: ParserChainFactory | None = None,
+    embedding: EmbeddingRuntime | None = None,
 ) -> dict:
     document_id = document["id"]
     snapshot = None
@@ -48,7 +52,9 @@ def run_document_ingestion_job(
             on_batch_created=on_batch_created,
             parser_chain_factory=parser_chain_factory,
         )
-        snapshot = _do_build_and_commit_index(session_id, document_id, chunks)
+        snapshot = _do_build_and_commit_index(
+            session_id, document_id, chunks, embedding=embedding
+        )
         return {
             "snapshot": snapshot,
             "chunk_count": len(chunks),
@@ -191,7 +197,11 @@ def _log_chunk_budget(session_id: str, document_id: str, chunks: list[Chunk]) ->
 
 
 def _do_build_and_commit_index(
-    session_id: str, document_id: str, chunks: list[Chunk]
+    session_id: str,
+    document_id: str,
+    chunks: list[Chunk],
+    *,
+    embedding: EmbeddingRuntime | None = None,
 ) -> SnapshotRecord:
     logger.info(
         "Building candidate index snapshot session_id=%s document_id=%s chunk_count=%d",
@@ -202,7 +212,9 @@ def _do_build_and_commit_index(
         document_id, DocumentStage.indexing, chunk_count=len(chunks),
     )
 
-    snapshot = build_candidate_snapshot(session_id, document_id)
+    snapshot = build_candidate_snapshot(
+        session_id, document_id, embedding=embedding
+    )
     logger.info(
         "Built candidate index snapshot session_id=%s document_id=%s snapshot_id=%s",
         session_id, document_id, snapshot["id"],
@@ -269,7 +281,10 @@ def _clear_document_artifacts(document_id: str) -> None:
 
 
 def run_queued_ingestion_job(
-    job: dict, *, parser_chain_factory: ParserChainFactory | None = None
+    job: dict,
+    *,
+    parser_chain_factory: ParserChainFactory | None = None,
+    embedding_factory: EmbeddingFactory | None = None,
 ) -> None:
     """Execute one queued document_ingestion job end to end.
 
@@ -303,6 +318,13 @@ def run_queued_ingestion_job(
     def _persist_batch_id(batch_id: str) -> None:
         job_repo.update_job_payload(job["id"], {"mineru_batch_id": batch_id})
 
+    session = session_repo.get_session(job["session_id"])
+    embedding = (
+        embedding_factory(session["user_id"])
+        if embedding_factory is not None and session is not None
+        else None
+    )
+
     run_document_ingestion_job(
         session_id=job["session_id"],
         document=document,
@@ -310,5 +332,6 @@ def run_queued_ingestion_job(
         resume_batch_id=resume_batch_id,
         on_batch_created=_persist_batch_id,
         parser_chain_factory=parser_chain_factory,
+        embedding=embedding,
     )
     job_repo.mark_job_finished(job["id"], JobStatus.succeeded)

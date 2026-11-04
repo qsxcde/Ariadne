@@ -11,21 +11,23 @@ from collections.abc import Generator
 
 from backend.config import require_generation_settings
 from backend.adapters.llm.model_client import ModelClient, build_providers
+from backend.adapters.resources import LazyResource
 
 logger = logging.getLogger(__name__)
-_client: ModelClient | None = None
+
+
+def _build_client() -> ModelClient:
+    require_generation_settings()
+    client = ModelClient(build_providers())
+    logger.info("Initialized ModelClient with %d provider(s)", client.provider_count)
+    return client
+
+
+_client: LazyResource[ModelClient] = LazyResource(_build_client)
 
 
 def _get_client() -> ModelClient:
-    global _client
-    if _client is None:
-        require_generation_settings()
-        _client = ModelClient(build_providers())
-        logger.info(
-            "Initialized ModelClient with %d provider(s)",
-            _client.provider_count,
-        )
-    return _client
+    return _client.get()
 
 
 def complete_text(prompt: str) -> str:
@@ -39,5 +41,10 @@ def stream_completion_tokens(prompt: str) -> Generator[str, None, None]:
 
 
 def last_usage() -> dict | None:
-    """Token usage reported by the last completed stream, if any."""
-    return _client.last_usage if _client is not None else None
+    """Token usage reported by the last completed stream, if any.
+
+    Reads the cached client without triggering a build, so callers that only
+    report usage never initialise the LLM stack.
+    """
+    client = _client.value
+    return client.last_usage if client is not None else None

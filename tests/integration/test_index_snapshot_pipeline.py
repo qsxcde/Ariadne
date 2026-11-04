@@ -7,7 +7,9 @@ with a deterministic 8-dimensional embedder, so they stay fast and offline.
 """
 
 from pathlib import Path
+from types import SimpleNamespace
 
+import asyncio
 import pytest
 
 # These tests exercise real FAISS files. CI installs only the light dependency
@@ -74,6 +76,110 @@ def _seed(session_id: str, texts: list[str]) -> dict:
         ],
     )
     return document
+
+
+@pytest.mark.integration
+def test_snapshot_records_embedding_and_skips_incompatible_previous(monkeypatch):
+    session_id = sessions.create_session("embedding fingerprint")["id"]
+    first_document = _seed(session_id, ["alpha", "beta"])
+    runtime_a = SimpleNamespace(
+        fingerprint="remote|siliconflow|model-a|8",
+        model="model-a",
+        dim=DIM,
+        cache_key="a",
+        embed=_embed,
+    )
+    candidate = indexing.build_candidate_snapshot(
+        session_id, first_document["id"], embedding=runtime_a
+    )
+    assert candidate["embedding_fingerprint"] == "remote|siliconflow|model-a|8"
+    assert candidate["embedding_model"] == "model-a"
+    indexing.commit_ready_snapshot(
+        session_id, candidate["id"], first_document["id"], chunk_count=2
+    )
+
+    second_document = _seed(session_id, ["gamma"])
+    runtime_b = SimpleNamespace(
+        fingerprint="remote|siliconflow|model-b|8",
+        model="model-b",
+        dim=DIM,
+        cache_key="b",
+        embed=_embed,
+    )
+
+    def fail_load(cls, *args, **kwargs):
+        raise AssertionError("an incompatible snapshot must not be reused")
+
+    with monkeypatch.context() as patcher:
+        patcher.setattr(FAISSVectorStore, "load", classmethod(fail_load))
+        rebuilt = indexing.build_candidate_snapshot(
+            session_id, second_document["id"], embedding=runtime_b
+        )
+
+    assert rebuilt["embedding_fingerprint"] == "remote|siliconflow|model-b|8"
+    assert rebuilt["embedding_model"] == "model-b"
+    store = FAISSVectorStore.load(
+        index_path=Path(rebuilt["index_path"]),
+        chunks_path=Path(rebuilt["chunks_path"]),
+    )
+    assert len(store.list_chunks()) == 3
+
+
+@pytest.mark.integration
+def test_embedding_matches_treats_legacy_snapshots_as_env(monkeypatch):
+    from backend.application.ingestion import indexing
+
+    runtime = SimpleNamespace(fingerprint="remote|siliconflow|model-a|8")
+    monkeypatch.setattr(indexing, "env_embedding_fingerprint", lambda: runtime.fingerprint)
+
+    assert indexing._embedding_matches(
+        {"embedding_fingerprint": None}, runtime
+    )
+    assert not indexing._embedding_matches(
+        {"embedding_fingerprint": "remote|siliconflow|model-b|8"}, runtime
+    )
+
+
+@pytest.mark.integration
+def test_resolve_store_rejects_stale_embedding_and_rebuild_recovers():
+    from backend.application.conversation import sessions as session_service
+    from backend.application.conversation.session_index import resolve_session_store
+    from backend.domain.exceptions import IndexEmbeddingMismatchError
+
+    session_id = sessions.create_session("stale embedding")["id"]
+    document = _seed(session_id, ["alpha", "beta"])
+    runtime_a = SimpleNamespace(
+        fingerprint="remote|siliconflow|model-a|8",
+        model="model-a",
+        dim=DIM,
+        cache_key="a",
+        embed=_embed,
+    )
+    candidate = indexing.build_candidate_snapshot(
+        session_id, document["id"], embedding=runtime_a
+    )
+    indexing.commit_ready_snapshot(
+        session_id, candidate["id"], document["id"], chunk_count=2
+    )
+
+    runtime_b = SimpleNamespace(
+        fingerprint="remote|siliconflow|model-b|8",
+        model="model-b",
+        dim=DIM,
+        cache_key="b",
+        embed=_embed,
+    )
+    with pytest.raises(IndexEmbeddingMismatchError):
+        asyncio.run(resolve_session_store(session_id, embedding=runtime_b))
+
+    result = session_service.rebuild_index(session_id, None, embedding=runtime_b)
+    assert result["status"] == "ready"
+    rebuilt = snapshot_repo.get_active_ready_snapshot(session_id)
+    assert rebuilt is not None
+    assert rebuilt["embedding_fingerprint"] == runtime_b.fingerprint
+
+    store, _ = asyncio.run(resolve_session_store(session_id, embedding=runtime_b))
+    assert len(store.list_chunks()) == 2
 
 
 @pytest.mark.integration

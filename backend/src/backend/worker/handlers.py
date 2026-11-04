@@ -9,7 +9,9 @@ DOCUMENT_INGESTION_JOB = "document_ingestion"
 
 def _run_document_ingestion(job: dict) -> None:
     run_queued_ingestion_job(
-        job, parser_chain_factory=composition.parser_chain
+        job,
+        parser_chain_factory=composition.parser_chain,
+        embedding_factory=composition.user_embedding,
     )
 
 

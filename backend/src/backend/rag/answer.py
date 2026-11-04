@@ -14,11 +14,12 @@ from backend.adapters.llm.answer_generator import build_sources
 from backend.adapters.llm.answer_generator import generate_answer
 from backend.adapters.llm.answer_generator import stream_answer as stream_answer_for_chunks
 from backend.domain.models import Chunk, SourceRef
-from backend.domain.ports import VectorStore
+from backend.domain.ports import Reranker, TextCompleter, VectorStore
 from backend.rag.retrieval.context_builder import expand_context
 from backend.rag.retrieval.filters import filter_chunks_by_scope
 from backend.rag.retrieval.hybrid_retriever import HybridRetrievalOptions
 from backend.rag.retrieval.hybrid_retriever import retrieve_hybrid_context
+from backend.rag.retrieval.query_rewriter import generate_query_pack
 from backend.rag.retrieval.retriever import retrieve_seed_chunks
 
 CITATION_PATTERN = re.compile(r"\[Section:\s*(.+?)(?:\s*\|\s*Chunk:\s*(\d+))?\]")
@@ -103,6 +104,8 @@ def retrieve_context(
     include_diagnostics: Literal[False] = False,
     history: list[dict] | None = None,
     source_excerpt_max_chars: int = 220,
+    completer: TextCompleter | None = None,
+    reranker: Reranker | None = None,
 ) -> tuple[list[Chunk], list[SourceRef]]: ...
 
 
@@ -117,6 +120,8 @@ def retrieve_context(
     include_diagnostics: Literal[True],
     history: list[dict] | None = None,
     source_excerpt_max_chars: int = 220,
+    completer: TextCompleter | None = None,
+    reranker: Reranker | None = None,
 ) -> tuple[list[Chunk], list[SourceRef], RetrievalDiagnostics]: ...
 
 
@@ -129,6 +134,8 @@ def retrieve_context(
     include_diagnostics: bool = False,
     history: list[dict] | None = None,
     source_excerpt_max_chars: int = 220,
+    completer: TextCompleter | None = None,
+    reranker: Reranker | None = None,
 ) -> tuple[list[Chunk], list[SourceRef]] | tuple[list[Chunk], list[SourceRef], RetrievalDiagnostics]:
     # Backward compatibility: k is deprecated, prefer dense_top_k
     effective_top_k = dense_top_k if dense_top_k is not None else k
@@ -152,8 +159,21 @@ def retrieve_context(
             section=retrieval_options.section,
             chunk_types=retrieval_options.chunk_types,
         )
+        query_pack_factory = None
+        if completer is not None:
+            query_pack_factory = lambda q, s, t: generate_query_pack(  # noqa: E731
+                q, s, t, complete=completer.complete
+            )
         try:
-            hybrid_result = retrieve_hybrid_context(store, query, options=hybrid_opts, history=history)
+            hybrid_result = retrieve_hybrid_context(
+                store,
+                query,
+                options=hybrid_opts,
+                history=history,
+                query_pack_factory=query_pack_factory,
+                complete=completer.complete if completer is not None else None,
+                reranker=reranker,
+            )
         except TypeError:
             hybrid_result = retrieve_hybrid_context(store, query, options=hybrid_opts)
         sources = build_sources(
@@ -200,6 +220,8 @@ def stream_answer(
     policy: AnswerPolicy,
     options: RetrievalOptions | None = None,
     history: list[dict] | None = None,
+    completer: TextCompleter | None = None,
+    reranker: Reranker | None = None,
 ) -> Generator[StreamAnswerEvent, None, None]:
     chunks, sources = retrieve_context(
         store,
@@ -207,12 +229,16 @@ def stream_answer(
         options=options,
         history=history,
         source_excerpt_max_chars=policy.source_excerpt_max_chars,
+        completer=completer,
+        reranker=reranker,
     )
     if not chunks:
         yield {"type": "token", "value": policy.empty_retrieval_message}
         yield {"type": "sources", "value": []}
         return
-    token_stream = stream_answer_for_chunks(chunks, query, history=history)
+    token_stream = stream_answer_for_chunks(
+        chunks, query, history=history, completer=completer
+    )
     buffered_tokens: list[str] = []
     try:
         while True:

@@ -101,6 +101,10 @@ class ModelClient:
     def provider_count(self) -> int:
         return len(self._providers)
 
+    @property
+    def model_name(self) -> str | None:
+        return self._providers[0].model if self._providers else None
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------

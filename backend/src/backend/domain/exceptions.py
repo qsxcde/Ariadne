@@ -95,6 +95,22 @@ class DocumentNotFoundError(Exception):
         super().__init__(message)
 
 
+class BlockCropError(ValueError):
+    """Raised when a reader block cannot be cropped from the source PDF."""
+
+    def __init__(
+        self,
+        message: str = "",
+        session_id: str | None = None,
+        document_id: str | None = None,
+        block_id: str | None = None,
+    ):
+        self.session_id = session_id
+        self.document_id = document_id
+        self.block_id = block_id
+        super().__init__(message)
+
+
 class JobInProgressError(RuntimeError):
     """Raised when a destructive action races with a running ingestion job."""
 
@@ -104,6 +120,14 @@ class JobInProgressError(RuntimeError):
 
 
 class ActiveIndexNotReadyError(RuntimeError):
+    def __init__(self, message: str = "", session_id: str | None = None):
+        self.session_id = session_id
+        super().__init__(message)
+
+
+class IndexEmbeddingMismatchError(RuntimeError):
+    """Raised when the active index was built with a different embedder."""
+
     def __init__(self, message: str = "", session_id: str | None = None):
         self.session_id = session_id
         super().__init__(message)

@@ -38,8 +38,12 @@ class RuntimeSettings(BaseSettings):
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-v4-flash"
-    llm_max_tokens: int = 512
+    # 推理模型会先消耗 completion 预算做 reasoning；512 常导致正文为空。
+    llm_max_tokens: int = 3072
     llm_context_chars: int = 24000
+    # At-rest encryption for user-supplied model API keys. Falls back to
+    # JWT_SECRET_KEY when unset; production should set a dedicated value.
+    model_settings_encryption_key: str | None = None
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_model_source: str = "modelscope"
     embedding_auto_download: bool = True
@@ -99,6 +103,8 @@ class RuntimeSettings(BaseSettings):
     mineru_api_is_ocr: bool = False
     mineru_api_page_ranges: str | None = None
     mineru_model_version: Literal["pipeline", "vlm", "MinerU-HTML"] = "vlm"
+    # VLM 版式模型失败时的回退版本；空字符串表示不回退
+    mineru_model_version_fallback: Literal["", "pipeline", "vlm", "MinerU-HTML"] = "pipeline"
     mineru_language: str = "ch"
     mineru_require_cloud: bool = False
     # Remote Embedding API (SiliconFlow / OpenAI-compatible)
@@ -133,6 +139,9 @@ class RuntimeSettings(BaseSettings):
     jwt_expire_minutes: int = 10080
     # User-facing messages
     msg_index_not_ready: str = "论文仍在处理中，请稍后重试。"
+    msg_index_embedding_stale: str = (
+        "Embedding 模型已变更，当前索引需要重建后才能检索。"
+    )
     msg_empty_retrieval: str = "未在当前检索结果中找到可支持该问题的论文依据。"
     msg_no_valid_citations: str = "模型生成的回答中未引用有效论文来源，请核实。"
     msg_default_session_title: str = "新论文会话"

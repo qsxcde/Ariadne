@@ -8,7 +8,7 @@ pytest.importorskip("faiss", reason="faiss-cpu is not installed")
 pytest.importorskip("torch", reason="torch is not installed")
 
 from backend.application.conversation import chat as chat_module
-from backend.domain.exceptions import ActiveIndexNotReadyError
+from backend.domain.exceptions import ActiveIndexNotReadyError, IndexEmbeddingMismatchError
 from backend.storage.sqlite import messages as message_repo
 from backend.storage.sqlite import sessions
 
@@ -96,6 +96,25 @@ async def test_index_not_ready_reports_a_failed_turn(monkeypatch, session):
         "SourcesEvent",
         "DoneEvent",
     ]
+    assert events[1].value == []
+    assert message_repo.list_messages(session["id"])[-1]["status"] == "failed"
+
+
+@pytest.mark.integration
+async def test_stale_embedding_reports_a_rebuild_message(monkeypatch, session):
+    async def _resolve(session_id, **_kwargs):
+        raise IndexEmbeddingMismatchError("请重建索引", session_id=session_id)
+
+    _stub(monkeypatch, None, resolve=_resolve)
+
+    events = await _collect(chat_module.stream_session_chat(session["id"], "question"))
+
+    assert [type(event).__name__ for event in events] == [
+        "TokenEvent",
+        "SourcesEvent",
+        "DoneEvent",
+    ]
+    assert events[0].value == "请重建索引"
     assert events[1].value == []
     assert message_repo.list_messages(session["id"])[-1]["status"] == "failed"
 

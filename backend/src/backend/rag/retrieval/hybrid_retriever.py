@@ -7,8 +7,10 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from cachetools import LRUCache
+
 from backend.domain.models import Chunk
-from backend.domain.ports import VectorStore
+from backend.domain.ports import Reranker, VectorStore
 from backend.rag.retrieval.bm25 import BM25Retriever
 from backend.rag.retrieval.context_builder import ExpansionDebugEntry, expand_context_with_debug
 from backend.rag.retrieval.filters import chunk_matches_scope, filter_chunks_by_scope, filter_indexable_chunks
@@ -19,7 +21,11 @@ from backend.rag.retrieval.history_rewriter import history_aware_rewrite
 from backend.rag.retrieval.term_expander import term_expand, load_glossary as load_term_glossary
 
 logger = logging.getLogger(__name__)
-_bm25_cache: tuple[str, BM25Retriever] | None = None
+
+# One inverted index is already large (it holds every chunk), so keep a single
+# slot: the same policy as before, now expressed with a standard LRU cache.
+_BM25_CACHE_SIZE = 1
+_bm25_cache: "LRUCache[str, BM25Retriever]" = LRUCache(maxsize=_BM25_CACHE_SIZE)
 _bm25_cache_lock = threading.Lock()
 
 
@@ -33,14 +39,16 @@ def _bm25_fingerprint(chunks: list[Chunk]) -> str:
 
 def _get_bm25_retriever(chunks: list[Chunk]) -> BM25Retriever:
     """Get or create a cached BM25Retriever for the given chunks."""
-    fp = _bm25_fingerprint(chunks)
+    fingerprint = _bm25_fingerprint(chunks)
     with _bm25_cache_lock:
-        global _bm25_cache
-        if _bm25_cache is not None and _bm25_cache[0] == fp:
-            return _bm25_cache[1]
+        cached = _bm25_cache.get(fingerprint)
+        if cached is not None:
+            return cached
         retriever = BM25Retriever(chunks)
-        _bm25_cache = (fp, retriever)
-    logger.debug("Built new BM25Retriever fingerprint=%s chunks=%d", fp, len(chunks))
+        _bm25_cache[fingerprint] = retriever
+    logger.debug(
+        "Built new BM25Retriever fingerprint=%s chunks=%d", fingerprint, len(chunks)
+    )
     return retriever
 
 
@@ -153,11 +161,13 @@ def _rerank_if_needed(
     query: str,
     ranked_chunks: list[Chunk],
     options: HybridRetrievalOptions,
+    reranker: Reranker | None = None,
 ) -> list[Chunk]:
     """Apply cross-encoder reranker if enabled and available."""
     if options.enable_reranker and options.rerank_top_k > 0:
-        from backend.adapters.rerank import reranker as _reranker_mod
-        reranker = _reranker_mod.get_reranker()
+        if reranker is None:
+            from backend.adapters.rerank import reranker as _reranker_mod
+            reranker = _reranker_mod.get_reranker()
         if reranker is not None:
             rerank_start = time.monotonic()
             reranked = reranker.rerank(query, ranked_chunks, top_k=options.rerank_top_k)
@@ -177,6 +187,8 @@ def retrieve_hybrid_context(
     options: HybridRetrievalOptions | None = None,
     query_pack_factory: Callable[[str, str, str], QueryPack] | None = None,
     history: list[dict] | None = None,
+    complete: Callable[[str], str] | None = None,
+    reranker: Reranker | None = None,
 ) -> HybridRetrievalResult:
     retrieval_options = options or HybridRetrievalOptions()
     all_chunks = filter_indexable_chunks(store.list_chunks())
@@ -200,6 +212,7 @@ def retrieve_hybrid_context(
             max_rounds=retrieval_options.history_rewrite_max_rounds,
             enabled=retrieval_options.history_rewrite_enabled,
             min_query_length=retrieval_options.history_rewrite_min_query_length,
+            complete=complete,
         )
         if rewritten != query:
             logger.info("History rewrite: %r -> %r", query, rewritten)
@@ -214,6 +227,7 @@ def retrieve_hybrid_context(
             glossary,
             enabled=retrieval_options.term_expand_enabled,
             llm_fallback=retrieval_options.term_expand_llm_fallback,
+            complete=complete,
         )
         if extra_keywords:
             used_term_expand = True
@@ -236,7 +250,9 @@ def retrieve_hybrid_context(
         store, dense_query, bm25_query, all_chunks, retrieval_options,
     )
 
-    ranked_chunks = _rerank_if_needed(dense_query, ranked_chunks, retrieval_options)
+    ranked_chunks = _rerank_if_needed(
+        dense_query, ranked_chunks, retrieval_options, reranker
+    )
 
     prompt_chunks, expansion_debug = _expand_prompt_chunks(
         ranked_chunks,

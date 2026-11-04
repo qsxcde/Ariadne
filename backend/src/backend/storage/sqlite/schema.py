@@ -3,7 +3,7 @@ import threading
 from backend.storage.sqlite.migrations import migrate_schema
 from backend.storage.sqlite.uow import unit_of_work
 
-CURRENT_SCHEMA_VERSION = 16
+CURRENT_SCHEMA_VERSION = 18
 
 _init_lock = threading.RLock()
 
@@ -156,6 +156,8 @@ def _create_initial_schema(conn) -> None:
           index_path TEXT NOT NULL,
           chunks_path TEXT NOT NULL,
           document_ids_json TEXT NOT NULL,
+          embedding_fingerprint TEXT NULL,
+          embedding_model TEXT NULL,
           error_message TEXT NULL,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
@@ -245,6 +247,25 @@ def _create_initial_schema(conn) -> None:
           digest_frequency TEXT NOT NULL DEFAULT 'weekly',
           updated_at TEXT NOT NULL,
           CHECK (digest_frequency IN ('daily', 'weekly', 'off'))
+        );
+
+        CREATE TABLE IF NOT EXISTS user_model_settings (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL UNIQUE,
+          llm_provider TEXT NOT NULL DEFAULT 'deepseek',
+          llm_model TEXT NULL,
+          llm_api_key TEXT NULL,
+          llm_base_url TEXT NULL,
+          embedding_provider TEXT NOT NULL DEFAULT 'siliconflow',
+          embedding_model TEXT NULL,
+          embedding_api_key TEXT NULL,
+          embedding_base_url TEXT NULL,
+          embedding_dim INTEGER NULL,
+          rerank_provider TEXT NOT NULL DEFAULT 'siliconflow',
+          rerank_model TEXT NULL,
+          rerank_api_key TEXT NULL,
+          rerank_base_url TEXT NULL,
+          updated_at TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS notifications (

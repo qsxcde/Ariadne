@@ -10,6 +10,7 @@ from backend.storage.records import (
     SessionRecord,
     SnapshotRecord,
 )
+from backend.application.model_settings.service import index_embedding_status
 from backend.domain.access import session_is_accessible
 from backend.config import settings
 from backend.domain.exceptions import SessionNotFoundError
@@ -25,7 +26,7 @@ from backend.adapters.vector import store_cache
 from backend.storage.paths import remove_session_dir
 
 if TYPE_CHECKING:
-    from backend.domain.ports import VectorStore
+    from backend.domain.ports import EmbeddingRuntime, VectorStore
 
 
 def create_session(user_id: str | None = None) -> str:
@@ -78,6 +79,7 @@ def get_session_snapshot(
         retrieval_index=indexes.get_index(session_id),
         active_index=index_snapshots.get_active_ready_snapshot(session_id),
         jobs=jobs.list_jobs_for_session(session_id),
+        viewer_user_id=user_id,
     )
 
 
@@ -105,6 +107,7 @@ def _build_session_snapshot(
     retrieval_index: IndexRecord | None,
     active_index: SnapshotRecord | None,
     jobs: list[JobRecord],
+    viewer_user_id: str | None = None,
 ) -> dict[str, Any]:
     snapshot: dict[str, Any] = dict(session)
     snapshot["documents"] = documents
@@ -112,6 +115,10 @@ def _build_session_snapshot(
     snapshot["indexed_chunks"] = indexed_chunks
     snapshot["retrieval_index"] = retrieval_index
     snapshot["active_index"] = active_index
+    snapshot["index_embedding"] = index_embedding_status(
+        active_index,
+        viewer_user_id if viewer_user_id is not None else session.get("user_id"),
+    )
     snapshot["jobs"] = jobs
     snapshot["status"] = session.get("status") or _derive_session_status(documents)
     return snapshot
@@ -134,3 +141,29 @@ def destroy_session(session_id: str) -> None:
     sessions.archive_session(session_id)
     store_cache.discard_store(session_id)
     remove_session_dir(session_id)
+
+
+def rebuild_index(
+    session_id: str,
+    user_id: str | None = None,
+    *,
+    embedding: "EmbeddingRuntime | None" = None,
+) -> dict[str, Any]:
+    """Rebuild a session index with the caller's current embedding model."""
+    from backend.application.ingestion.indexing import rebuild_session_snapshot
+    from backend.domain.exceptions import JobInProgressError
+
+    session = get_accessible_session(session_id, user_id)
+    if session is None:
+        raise SessionNotFoundError(f"Session not found: {session_id}", session_id=session_id)
+    if jobs.has_running_job(session_id):
+        raise JobInProgressError(
+            "Session is still being processed, try again later.", session_id=session_id
+        )
+
+    snapshot = rebuild_session_snapshot(session_id, embedding=embedding)
+    store_cache.discard_store(session_id)
+    return {
+        "status": "ready" if snapshot is not None else "empty",
+        "snapshot_id": snapshot["id"] if snapshot is not None else None,
+    }

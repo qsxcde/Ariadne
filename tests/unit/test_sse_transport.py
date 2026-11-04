@@ -4,12 +4,11 @@ import json
 
 import pytest
 
-import asyncio
-
 from backend.api.streaming import (
-    HEARTBEAT_FRAME,
+    HEARTBEAT_INTERVAL_SECONDS,
+    build_stream_response,
     encode_sse_event,
-    stream_with_heartbeat,
+    sse_frames,
     to_transport_event,
 )
 from backend.application.conversation.events import (
@@ -63,33 +62,38 @@ def test_frame_is_valid_json_with_the_sse_data_prefix():
 
 
 @pytest.mark.unit
-async def test_heartbeat_is_emitted_while_the_stream_stalls():
-    gate = asyncio.Event()
-
-    async def _slow_events():
+async def test_frames_are_bytes_with_the_sse_data_prefix():
+    async def _events():
         yield TokenEvent(value="first")
-        await gate.wait()
         yield DoneEvent()
 
-    frames = stream_with_heartbeat(_slow_events(), interval=0.01)
+    frames = [frame async for frame in sse_frames(_events())]
 
-    first = await frames.__anext__()
-    heartbeat = await frames.__anext__()
-
-    gate.set()
-    await frames.aclose()
-
-    assert first.startswith("data: ")
-    assert heartbeat == HEARTBEAT_FRAME
+    assert len(frames) == 2
+    assert all(isinstance(frame, bytes) for frame in frames)
+    assert frames[0].startswith(b"data: ")
+    assert frames[0].endswith(b"\n\n")
+    assert json.loads(frames[0][len(b"data: "):].strip())["value"] == "first"
 
 
 @pytest.mark.unit
-async def test_heartbeat_stream_forwards_errors():
+async def test_frames_forward_upstream_errors():
     async def _failing_events():
         raise RuntimeError("upstream broke")
         yield DoneEvent()  # pragma: no cover - unreachable
 
-    frames = stream_with_heartbeat(_failing_events(), interval=0.01)
-
     with pytest.raises(RuntimeError, match="upstream broke"):
-        await frames.__anext__()
+        async for _ in sse_frames(_failing_events()):
+            pass
+
+
+@pytest.mark.unit
+def test_stream_response_delegates_keep_alive_to_the_transport():
+    async def _events():
+        yield DoneEvent()
+
+    response = build_stream_response(_events(), session_id="s1")
+
+    assert response.ping_interval == HEARTBEAT_INTERVAL_SECONDS
+    assert response.headers["cache-control"] == "no-cache"
+    assert response.headers["x-accel-buffering"] == "no"

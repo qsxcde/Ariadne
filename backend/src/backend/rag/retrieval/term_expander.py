@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 
@@ -110,12 +111,10 @@ def build_term_expand_prompt(query: str) -> str:
     return template.format(query=query)
 
 
-@lru_cache(maxsize=64)
-def _cached_llm_expand(query: str) -> list[str]:
-    """Call LLM to identify and expand academic terms. Cached for identical queries."""
+def _expand_with(query: str, complete: Callable[[str], str]) -> list[str]:
     prompt = build_term_expand_prompt(query)
     try:
-        payload = parse_json_object(text_completer().complete(prompt))
+        payload = parse_json_object(complete(prompt))
         result: list[str] = []
         for entry in payload.get("terms", []):
             result.extend(entry.get("expansions", []))
@@ -125,12 +124,19 @@ def _cached_llm_expand(query: str) -> list[str]:
         return []
 
 
+@lru_cache(maxsize=64)
+def _cached_llm_expand(query: str) -> list[str]:
+    """Call LLM to identify and expand academic terms. Cached for identical queries."""
+    return _expand_with(query, text_completer().complete)
+
+
 def term_expand(
     query: str,
     glossary: dict[str, list[str]] | None = None,
     *,
     enabled: bool = True,
     llm_fallback: bool = True,
+    complete: Callable[[str], str] | None = None,
 ) -> tuple[str, list[str], str | None]:
     """Expand query with academic term alternatives.
 
@@ -153,7 +159,9 @@ def term_expand(
     used_llm = False
 
     if _needs_llm_expansion(query, effective_glossary, llm_fallback):
-        llm_keywords = _cached_llm_expand(query)
+        llm_keywords = (
+            _expand_with(query, complete) if complete is not None else _cached_llm_expand(query)
+        )
         if llm_keywords:
             used_llm = True
             extra_keywords.extend(llm_keywords)

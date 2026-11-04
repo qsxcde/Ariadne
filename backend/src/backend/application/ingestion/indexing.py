@@ -6,6 +6,8 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from backend.application.model_settings.service import env_embedding_fingerprint
+from backend.domain.ports import EmbeddingRuntime
 from backend.storage.records import IndexRecord, SnapshotRecord
 from backend.domain.exceptions import SnapshotCommitError
 
@@ -47,11 +49,14 @@ def build_candidate_snapshot(
     document_id: str | None = None,
     *,
     reuse_previous: bool = True,
+    embedding: "EmbeddingRuntime | None" = None,
 ) -> SnapshotRecord:
     """Build and persist a candidate index snapshot without promoting it.
 
     ``reuse_previous=False`` rebuilds from scratch — required after a document
     is deleted, because vectors cannot be removed from an existing FAISS index.
+    ``embedding`` pins the vectors to one model; when it changes the previous
+    snapshot is not reused, otherwise old and new vectors would be mixed.
     """
     start = time.monotonic()
     candidate_token = str(uuid.uuid4())
@@ -68,9 +73,17 @@ def build_candidate_snapshot(
         index_path=str(index_path),
         chunks_path=str(chunks_path),
         document_ids=document_ids,
+        embedding_fingerprint=embedding.fingerprint if embedding else None,
+        embedding_model=embedding.model if embedding else None,
     )
     try:
-        store = _load_or_create_store(session_id, snapshot, document_ids, reuse_previous=reuse_previous)
+        store = _load_or_create_store(
+            session_id,
+            snapshot,
+            document_ids,
+            reuse_previous=reuse_previous,
+            embedding=embedding,
+        )
         store.save(index_path=index_path, chunks_path=chunks_path)
     except Exception as exc:
         logger.exception(
@@ -98,14 +111,27 @@ def _load_or_create_store(
     document_ids: list[str],
     *,
     reuse_previous: bool = True,
-) -> FAISSVectorStore:
+    embedding: "EmbeddingRuntime | None" = None,
+) -> "FAISSVectorStore":
     from backend.adapters.vector.faiss_store import FAISSVectorStore
 
     previous_ready = snapshot_repo.get_active_ready_snapshot(session_id) if reuse_previous else None
+    if previous_ready is not None and not _embedding_matches(previous_ready, embedding):
+        logger.info(
+            "Embedding changed for session=%s (index=%s current=%s); rebuilding from scratch",
+            session_id,
+            previous_ready.get("embedding_fingerprint") or "legacy-env",
+            embedding.fingerprint if embedding else "legacy-env",
+        )
+        previous_ready = None
+
+    embed_fn = embedding.embed if embedding else None
+    embedding_dim = embedding.dim if embedding else None
     if previous_ready is not None:
         store = FAISSVectorStore.load(
             index_path=Path(previous_ready["index_path"]),
             chunks_path=Path(previous_ready["chunks_path"]),
+            embed_fn=embed_fn,
         )
         existing_doc_ids = set(previous_ready["document_ids"])
         all_chunks = chunk_repo.list_chunks_for_documents(session_id, document_ids)
@@ -116,7 +142,7 @@ def _load_or_create_store(
             previous_ready["id"], session_id, len(indexable_new),
         )
     else:
-        store = FAISSVectorStore()
+        store = FAISSVectorStore(embed_fn=embed_fn, embedding_dim=embedding_dim)
         all_chunks = chunk_repo.list_chunks_for_documents(session_id, document_ids)
         indexable_new = filter_indexable_chunks(all_chunks)
         logger.info(
@@ -125,6 +151,16 @@ def _load_or_create_store(
         )
     store.add_chunks(indexable_new)
     return store
+
+
+def _embedding_matches(
+    previous: SnapshotRecord | None, embedding: "EmbeddingRuntime | None"
+) -> bool:
+    """Legacy NULL fingerprints are assumed to match the env-built index."""
+    if previous is None or embedding is None:
+        return True
+    stored = previous.get("embedding_fingerprint")
+    return (stored or env_embedding_fingerprint()) == embedding.fingerprint
 
 
 def commit_ready_snapshot(
@@ -205,11 +241,13 @@ def _promote_snapshot(session_id: str, snapshot_id: str) -> SnapshotRecord:
     return ready_snapshot
 
 
-def rebuild_session_snapshot(session_id: str) -> SnapshotRecord | None:
+def rebuild_session_snapshot(
+    session_id: str, *, embedding: "EmbeddingRuntime | None" = None
+) -> SnapshotRecord | None:
     """Rebuild the whole session index from surviving chunks.
 
-    Used after a document is deleted: FAISS cannot delete vectors in place, so
-    the index is regenerated and the previous snapshot is retired.
+    Used after a document is deleted (FAISS cannot delete vectors in place)
+    and when the user's embedding model changed.
     """
     chunks = chunk_repo.list_chunks(session_id)
     previous = snapshot_repo.get_active_ready_snapshot(session_id)
@@ -222,7 +260,9 @@ def rebuild_session_snapshot(session_id: str) -> SnapshotRecord | None:
         discard_store(session_id)
         return None
 
-    snapshot = build_candidate_snapshot(session_id, None, reuse_previous=False)
+    snapshot = build_candidate_snapshot(
+        session_id, None, reuse_previous=False, embedding=embedding
+    )
     ready_snapshot = _promote_snapshot(session_id, snapshot["id"])
     _publish_index_metadata(ready_snapshot)
     if previous is not None:

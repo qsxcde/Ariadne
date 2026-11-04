@@ -1,4 +1,4 @@
-"""Incremental SQLite schema migrations (v2 to v16)."""
+"""Incremental SQLite schema migrations (v2 to v18)."""
 
 
 def migrate_schema(conn, from_version: int) -> None:
@@ -56,6 +56,10 @@ def migrate_schema(conn, from_version: int) -> None:
         _migrate_add_arxiv_updated(conn)
     if from_version < 16:
         _migrate_add_subscription_source(conn)
+    if from_version < 17:
+        _migrate_add_user_model_settings(conn)
+    if from_version < 18:
+        _migrate_add_snapshot_embedding(conn)
 
 
 def _migrate_add_users_table(conn) -> None:
@@ -575,6 +579,45 @@ def _migrate_add_subscription_source(conn) -> None:
     if "source" not in columns:
         conn.execute(
             "ALTER TABLE subscriptions ADD COLUMN source TEXT NOT NULL DEFAULT 'arxiv'"
+        )
+
+
+def _migrate_add_user_model_settings(conn) -> None:
+    """Per-user LLM/embedding/rerank provider settings with encrypted keys (v17)."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS user_model_settings (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NULL UNIQUE,
+          llm_provider TEXT NOT NULL DEFAULT 'deepseek',
+          llm_model TEXT NULL,
+          llm_api_key TEXT NULL,
+          llm_base_url TEXT NULL,
+          embedding_provider TEXT NOT NULL DEFAULT 'siliconflow',
+          embedding_model TEXT NULL,
+          embedding_api_key TEXT NULL,
+          embedding_base_url TEXT NULL,
+          embedding_dim INTEGER NULL,
+          rerank_provider TEXT NOT NULL DEFAULT 'siliconflow',
+          rerank_model TEXT NULL,
+          rerank_api_key TEXT NULL,
+          rerank_base_url TEXT NULL,
+          updated_at TEXT NOT NULL
+        );
+        """
+    )
+
+
+def _migrate_add_snapshot_embedding(conn) -> None:
+    """Record which embedder produced each index snapshot (v18)."""
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(index_snapshots)")}
+    if "embedding_fingerprint" not in columns:
+        conn.execute(
+            "ALTER TABLE index_snapshots ADD COLUMN embedding_fingerprint TEXT NULL"
+        )
+    if "embedding_model" not in columns:
+        conn.execute(
+            "ALTER TABLE index_snapshots ADD COLUMN embedding_model TEXT NULL"
         )
 
 
