@@ -1,5 +1,7 @@
 """Startup recovery: interrupted jobs must be re-queued, not lost."""
 
+import json
+
 import pytest
 
 from backend.domain.states import DocumentStage, JobStatus
@@ -26,6 +28,26 @@ def test_running_job_is_requeued_and_attempt_is_preserved():
     assert stored["started_at"] is None
     assert stored["finished_at"] is None
     assert stored["error_message"] is None
+
+
+@pytest.mark.unit
+def test_job_payload_update_merges_fields_for_recovery():
+    session = sessions.create_session("payload merge")
+    job = jobs.create_job(
+        session_id=session["id"],
+        document_id=None,
+        job_type="document_ingestion",
+        stage=DocumentStage.uploaded,
+        payload_json=json.dumps({"document_id": "doc-1"}),
+    )
+
+    assert jobs.update_job_payload(job["id"], {"mineru_batch_id": "batch-1"}) is True
+
+    stored = jobs.get_job(job["id"])
+    assert json.loads(stored["payload_json"]) == {
+        "document_id": "doc-1",
+        "mineru_batch_id": "batch-1",
+    }
 
 
 @pytest.mark.unit

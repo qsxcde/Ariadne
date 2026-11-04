@@ -39,18 +39,30 @@ def _try_parsers(
 ) -> tuple[RawParserResult, ParserBackend]:
     """Try each parser backend sequentially, returning the first success."""
     first_error: Exception | None = None
+    failures: list[str] = []
     for backend in backends:
         logger.info("Trying parser backend: %s", backend.name)
         try:
             raw: RawParserResult = backend.parse(pdf_bytes, filename=filename)
             logger.info("Parser backend succeeded: %s", backend.name)
+            if failures:
+                raw.metadata = {
+                    **raw.metadata,
+                    "fallback_reason": "; ".join(failures)[:1000],
+                }
             return raw, backend
         except Exception as exc:
+            failure = f"{backend.name}: {exc}"
+            failures.append(failure)
             logger.warning("Parser backend %s failed: %s", backend.name, exc)
             if first_error is None:
                 first_error = exc
+            if backend.name == "mineru_api" and settings.mineru_require_cloud:
+                raise PaperParseError(
+                    f"MinerU cloud parsing is required but failed: {exc}"
+                ) from exc
             continue
-    msg = str(first_error) if first_error else "all parsers failed"
+    msg = "; ".join(failures) if failures else "all parsers failed"
     raise PaperParseError(f"Failed to parse PDF: {msg}") from first_error
 
 

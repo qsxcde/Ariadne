@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Literal, cast
 
@@ -165,6 +166,28 @@ def get_job(job_id: str) -> JobRecord | None:
     with connect() as conn:
         row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         return cast(JobRecord | None, row_to_dict(row))
+
+
+def update_job_payload(job_id: str, updates: dict[str, object]) -> bool:
+    """Merge keys into a job's payload without replacing unrelated fields."""
+    with transaction() as conn:
+        row = conn.execute(
+            "SELECT payload_json FROM jobs WHERE id = ?", (job_id,)
+        ).fetchone()
+        if row is None:
+            return False
+        try:
+            payload = json.loads(row["payload_json"] or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        if not isinstance(payload, dict):
+            payload = {}
+        payload.update(updates)
+        conn.execute(
+            "UPDATE jobs SET payload_json = ? WHERE id = ?",
+            (json.dumps(payload, ensure_ascii=False), job_id),
+        )
+    return True
 
 
 def has_running_job(session_id: str) -> bool:

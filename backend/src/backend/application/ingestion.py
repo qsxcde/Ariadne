@@ -2,6 +2,7 @@ import json
 import logging
 import shutil
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from backend import composition
@@ -30,11 +31,20 @@ def run_document_ingestion_job(
     session_id: str,
     document: DocumentRecord,
     pdf_bytes: bytes,
+    *,
+    resume_batch_id: str | None = None,
+    on_batch_created: Callable[[str], None] | None = None,
 ) -> dict:
     document_id = document["id"]
     snapshot = None
     try:
-        chunks = _do_parse_document(session_id, document, pdf_bytes)
+        chunks = _do_parse_document(
+            session_id,
+            document,
+            pdf_bytes,
+            resume_batch_id=resume_batch_id,
+            on_batch_created=on_batch_created,
+        )
         snapshot = _do_build_and_commit_index(session_id, document_id, chunks)
         return {
             "snapshot": snapshot,
@@ -65,7 +75,12 @@ def run_document_ingestion_job(
 
 
 def _do_parse_document(
-    session_id: str, document: DocumentRecord, pdf_bytes: bytes
+    session_id: str,
+    document: DocumentRecord,
+    pdf_bytes: bytes,
+    *,
+    resume_batch_id: str | None = None,
+    on_batch_created: Callable[[str], None] | None = None,
 ) -> list[Chunk]:
     document_id = document["id"]
     logger.info(
@@ -79,7 +94,11 @@ def _do_parse_document(
         pdf_bytes=pdf_bytes,
         paper_id=document_id,
         filename=document["filename"],
-        parser_chain=composition.parser_chain(),
+        parser_chain=composition.parser_chain(
+            document_id=document_id,
+            resume_batch_id=resume_batch_id,
+            on_batch_created=on_batch_created,
+        ),
     )
     logger.info(
         "Completed document parsing session_id=%s document_id=%s parser=%s version=%s "
@@ -266,9 +285,18 @@ def run_queued_ingestion_job(job: dict) -> None:
             error_message=str(exc),
         )
         raise
+    resume_batch_id = payload.get("mineru_batch_id")
+    if resume_batch_id is not None:
+        resume_batch_id = str(resume_batch_id)
+
+    def _persist_batch_id(batch_id: str) -> None:
+        job_repo.update_job_payload(job["id"], {"mineru_batch_id": batch_id})
+
     run_document_ingestion_job(
         session_id=job["session_id"],
         document=document,
         pdf_bytes=pdf_bytes,
+        resume_batch_id=resume_batch_id,
+        on_batch_created=_persist_batch_id,
     )
     job_repo.mark_job_finished(job["id"], JobStatus.succeeded)

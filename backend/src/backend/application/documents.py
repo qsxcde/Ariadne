@@ -167,6 +167,7 @@ def _resolve_block_boxes(ir_path: str | None, block_ids: list[str]) -> list[dict
 
     wanted = set(block_ids)
     pages = {page.get("page_number"): page for page in payload.get("pages") or []}
+    bbox_unit = str(payload.get("bbox_unit") or "points")
     boxes: list[dict] = []
     for block in _iter_ir_blocks(payload):
         if block.get("id") not in wanted:
@@ -176,26 +177,42 @@ def _resolve_block_boxes(ir_path: str | None, block_ids: list[str]) -> list[dict
             {
                 "id": block["id"],
                 "page_number": page_number,
-                "bbox": _normalize_bbox(block.get("bbox"), pages.get(page_number)),
+                "bbox": _normalize_bbox(
+                    block.get("bbox"),
+                    pages.get(page_number),
+                    bbox_unit,
+                ),
             }
         )
     return boxes
 
 
-def _normalize_bbox(bbox: object, page: dict | None) -> dict[str, float] | None:
-    if not isinstance(bbox, dict) or page is None:
-        return None
-    width = float(page.get("width") or 0)
-    height = float(page.get("height") or 0)
-    if width <= 0 or height <= 0:
+def _normalize_bbox(
+    bbox: object,
+    page: dict | None,
+    bbox_unit: str = "points",
+) -> dict[str, float] | None:
+    if not isinstance(bbox, dict):
         return None
     try:
-        x0 = float(bbox.get("x0", 0.0)) / width
-        y0 = float(bbox.get("y0", 0.0)) / height
-        x1 = float(bbox.get("x1", 0.0)) / width
-        y1 = float(bbox.get("y1", 0.0)) / height
+        x0 = float(bbox.get("x0", 0.0))
+        y0 = float(bbox.get("y0", 0.0))
+        x1 = float(bbox.get("x1", 0.0))
+        y1 = float(bbox.get("y1", 0.0))
     except (TypeError, ValueError):
         return None
+
+    if bbox_unit == "normalized_1000":
+        x0, y0, x1, y1 = x0 / 1000.0, y0 / 1000.0, x1 / 1000.0, y1 / 1000.0
+    elif bbox_unit != "normalized_1":
+        if page is None:
+            return None
+        width = float(page.get("width") or 0)
+        height = float(page.get("height") or 0)
+        if width <= 0 or height <= 0:
+            return None
+        x0, y0, x1, y1 = x0 / width, y0 / height, x1 / width, y1 / height
+
     return {
         "x0": max(0.0, min(1.0, x0)),
         "y0": max(0.0, min(1.0, y0)),

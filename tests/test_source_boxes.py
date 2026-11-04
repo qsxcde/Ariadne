@@ -44,7 +44,10 @@ IR_PAYLOAD = {
 }
 
 
-def _seed(tmp_path: Path) -> tuple[str, str, Path]:
+def _seed(
+    tmp_path: Path,
+    payload: dict | None = None,
+) -> tuple[str, str, Path]:
     session = session_repo.create_session("坐标测试")
     pdf_path = tmp_path / "data" / "raw" / session["id"] / "doc.pdf"
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,7 +63,7 @@ def _seed(tmp_path: Path) -> tuple[str, str, Path]:
     artifact_dir = tmp_path / "data" / "parsed" / session["id"] / document["id"]
     artifact_dir.mkdir(parents=True, exist_ok=True)
     ir_path = artifact_dir / "document.ir.json"
-    ir_path.write_text(json.dumps(IR_PAYLOAD), encoding="utf-8")
+    ir_path.write_text(json.dumps(payload or IR_PAYLOAD), encoding="utf-8")
 
     document_repo.update_document_artifacts(
         document_id=document["id"],
@@ -102,6 +105,28 @@ def test_source_chunk_exposes_normalized_boxes(tmp_path):
     assert [box["id"] for box in boxes] == ["b-1"]
     assert boxes[0]["page_number"] == 1
     assert boxes[0]["bbox"] == {"x0": 0.1, "y0": 0.1, "x1": 0.5, "y1": 0.2}
+
+
+@pytest.mark.integration
+def test_source_chunk_accepts_cloud_normalized_bbox(tmp_path):
+    payload = json.loads(json.dumps(IR_PAYLOAD))
+    payload["bbox_unit"] = "normalized_1000"
+    payload["pages"][0]["blocks"][0]["bbox"] = {
+        "x0": 100.0,
+        "y0": 100.0,
+        "x1": 500.0,
+        "y1": 200.0,
+    }
+    session_id, document_id, _ = _seed(tmp_path, payload)
+
+    result = get_source_chunk(session_id, document_id, 0)
+
+    assert result["blocks"][0]["bbox"] == {
+        "x0": 0.1,
+        "y0": 0.1,
+        "x1": 0.5,
+        "y1": 0.2,
+    }
 
 
 @pytest.mark.integration

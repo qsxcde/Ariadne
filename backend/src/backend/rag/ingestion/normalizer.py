@@ -1,7 +1,7 @@
 import logging
 from typing import cast
 
-from backend.rag.ingestion.document_ir import BBox, BlockIR, BlockType, DocumentIR, PageIR
+from backend.rag.ingestion.document_ir import BBox, BBoxUnit, BlockIR, BlockType, DocumentIR, PageIR
 from backend.rag.ingestion.document_ir import BlockLink
 from backend.rag.ingestion.block_classifier import clean_heading, confidence_for_type, detect_block_type
 from backend.rag.ingestion.linker import attach_caption_links
@@ -25,9 +25,12 @@ def normalize_parser_output(
     current_section: list[str] = ["Abstract"]
     in_references = False
     reading_order = 0
-    repeated_header_footer_texts = find_repeated_header_footer_texts(raw.pages, _bbox_model)
+    canonical_pages, bbox_unit = _canonicalize_pages(raw.pages, raw.bbox_unit)
+    repeated_header_footer_texts = find_repeated_header_footer_texts(
+        canonical_pages, _bbox_model
+    )
 
-    for page_data in raw.pages:
+    for page_data in canonical_pages:
         page_number = int(page_data.get("page_number", len(pages) + 1))
         page_width = float(page_data.get("width", 0.0))
         page_height = float(page_data.get("height", 0.0))
@@ -101,11 +104,13 @@ def normalize_parser_output(
             )
         )
 
+    fallback_reason = raw.metadata.get("fallback_reason")
     quality_report = build_quality_report(
         parser_backend=parser_backend,
         page_count=raw.page_count,
         blocks=all_blocks,
         parser_warnings=raw.warnings,
+        fallback_reason=str(fallback_reason) if fallback_reason else None,
     )
     return DocumentIR(
         document_id=paper_id,
@@ -117,7 +122,52 @@ def normalize_parser_output(
         blocks=all_blocks,
         outline=outline_from_blocks(all_blocks),
         quality_report=quality_report,
+        bbox_unit=bbox_unit,
     )
+
+
+def _canonicalize_pages(
+    pages: list[dict],
+    bbox_unit: BBoxUnit,
+) -> tuple[list[dict], BBoxUnit]:
+    """Put every parser output on one coordinate system before normalization.
+
+    Cloud ``content_list`` bboxes are 0-1000 normalized, while pypdf reports
+    PDF points. Reading-order and margin heuristics need consistent page units,
+    so normalized inputs are converted to 0-1 together with page dimensions.
+    """
+    if bbox_unit == "points":
+        return pages, "points"
+
+    scale = 1000.0 if bbox_unit == "normalized_1000" else 1.0
+    canonical: list[dict] = []
+    for page in pages:
+        page_copy = dict(page)
+        page_copy["width"] = 1.0
+        page_copy["height"] = 1.0
+        blocks: list[dict] = []
+        for block in page.get("blocks", []) or []:
+            block_copy = dict(block)
+            bbox = block.get("bbox")
+            if isinstance(bbox, dict):
+                block_copy["bbox"] = {
+                    key: _scale_bbox_value(value, scale) for key, value in bbox.items()
+                }
+            elif isinstance(bbox, (list, tuple)):
+                block_copy["bbox"] = [
+                    _scale_bbox_value(value, scale) for value in bbox[:4]
+                ]
+            blocks.append(block_copy)
+        page_copy["blocks"] = blocks
+        canonical.append(page_copy)
+    return canonical, "normalized_1"
+
+
+def _scale_bbox_value(value: object, scale: float) -> float:
+    try:
+        return float(value) / scale
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _bbox_model(value: object) -> BBox:

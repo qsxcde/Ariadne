@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -90,7 +91,16 @@ class RuntimeSettings(BaseSettings):
     mineru_api_key: str | None = None
     mineru_api_timeout: int = 300
     mineru_api_poll_interval: float = 2.0
+    mineru_api_poll_max_interval: float = 10.0
     mineru_api_max_poll_time: int = 600
+    mineru_api_max_retries: int = 3
+    mineru_api_retry_base_delay: float = 1.0
+    mineru_api_retry_max_delay: float = 30.0
+    mineru_api_is_ocr: bool = False
+    mineru_api_page_ranges: str | None = None
+    mineru_model_version: Literal["pipeline", "vlm", "MinerU-HTML"] = "vlm"
+    mineru_language: str = "ch"
+    mineru_require_cloud: bool = False
     # Remote Embedding API (SiliconFlow / OpenAI-compatible)
     embedding_remote_api_key: str | None = None
     embedding_remote_model: str = "Qwen/Qwen3-VL-Embedding-8B"

@@ -59,9 +59,9 @@
 | 领取 | `mark_job_running` CAS：`WHERE id=? AND status='queued'`，`attempt+1`，清 `error_message`，置 `started_at` |
 | 串行 | 每 `session_id` 一把 `threading.Lock`，同会话任务不并发 |
 | 分发 | `worker/runner.py` 按 `jobs.type` 查 handler 注册表；未注册的类型直接失败，新增任务类型不需要改 runner |
-| 执行 | `worker/handlers.ingest_document`：要求 `stage=uploaded`；读 `payload_json` → 读 PDF 字节 → `application.ingestion.run_document_ingestion_job` |
+| 执行 | `worker/handlers.ingest_document`：要求 `stage=uploaded`；读 `payload_json` → 读 PDF 字节 → `application.ingestion.run_document_ingestion_job`；若 payload 含 `mineru_batch_id` 则先查询该批次，命中即复用结果，避免重复提交计费 |
 | 收尾 | 成功 `mark_job_finished("succeeded")`；异常 `mark_job_finished("failed", str(exc))` |
-| 恢复 | 启动时 `recover_interrupted_jobs`：`running` / `interrupted` → `queued`，清时间戳与错误 |
+| 恢复 | 启动时 `recover_interrupted_jobs`：`running` / `interrupted` → `queued`，清时间戳与错误；MinerU 批次号保留在 payload 中供续跑 |
 
 单线程 + 单条领取意味着多文档上传是**排队**处理，吞吐取决于单个 PDF 的解析耗时。
 
@@ -73,7 +73,8 @@
 [mineru_api（仅当配置 MINERU_API_KEY）] → mineru（本地 CLI） → text_pdf（pypdf 兜底）
 ```
 
-全部失败 → `PaperParseError("Failed to parse PDF: <第一个后端的错误>")`。
+全部失败 → `PaperParseError`，错误信息聚合每个后端的失败原因；成功降级时把原因写入 `metadata["fallback_reason"]`，最终进入 `QualityReport.fallback_reason` 并追加 `PARSER_FALLBACK: ...` warning。
+配置 `MINERU_REQUIRE_CLOUD=true` 且云解析失败时直接抛错，不再静默降级。
 传 `parser_backend=` 参数时只使用指定后端（测试/评测用）。
 
 `ParserBackend` 协议（`parser_backend.py`）：
@@ -91,11 +92,12 @@ class RawParserResult(BaseModel):
     metadata: dict = {}
     source_parser: str | None = None
     warnings: list[str] = []
+    bbox_unit: BBoxUnit = "points"   # points | normalized_1000 | normalized_1
 ```
 
 | 后端 | name / version | 布局信息 | 关键行为与限制 |
 |---|---|---|---|
-| `MinerUApiBackend` | `mineru_api` / `1.0` | 有（按页分组 blocks） | MinerU 云 API v4：申请签名 URL → PUT 上传 → 轮询 `extract-results/batch` → 下载结果 ZIP；`model_version="vlm"`，强制 formula/table；单文件 ≤ 200 MiB；`mineru_api_timeout=300`、轮询 `2.0s`、总轮询上限 `600s`；结果优先级 `*content_list_v2.json` → `*content_list.json` → `content.json`；`image/chart` 只保留 caption，无 caption 则丢块 |
+| `MinerUApiBackend` | `mineru_api` / `1.1` | 有（按页分组 blocks） | MinerU 云 API v4：`POST file-urls/batch` 申请签名 URL → 无鉴权 `PUT` 上传 → 轮询 `extract-results/batch/{batch_id}` → 下载结果 ZIP；单文件 ≤ 200 MiB；`data_id` 由 document id / PDF SHA-256 生成，`batch_id` 持久化到 job payload，任务恢复时先查询已有批次避免重复提交；`model_version`（`pipeline`/`vlm`/`MinerU-HTML`）、`language`、`is_ocr`、`page_ranges`、formula/table 均由配置控制；结果优先级 `*_content_list_v2.json` → `*_content_list.json` → `content.json`；table 块拼接 `table_caption + table_body + table_footnote`，`image/chart` 只保留 caption；`content_list` 的 bbox 按 0–1000 归一化上报（`bbox_unit="normalized_1000"`） |
 | `MinerUBackend` | `mineru` / `unknown` | 无（`pages=[]`，只有 `full.md`） | 子进程 `mineru -p ... -o ... -b pipeline`，超时硬编码 600s；模型缓存不完整直接抛错；注入 `MINERU_MODEL_HOME/SOURCE/DEVICE_MODE/MODELSCOPE_CACHE/TABLE/FORMULA/DISABLE_OCR`；`mps` 失败且错误含 mps/metal 时自动重试一次 `cpu` |
 | `TextPDFBackend` | `pypdf-text` / `unknown` | 有（整页单栏） | `pypdf` 抽文本，空页跳过；每页按词数切块 `clamp(max_chunk_tokens//3, 80~180)`；bbox 为整页、`type="paragraph"`、`confidence=0.5`；加密 PDF 抛 `RuntimeError` |
 
@@ -103,6 +105,7 @@ class RawParserResult(BaseModel):
 
 输入 `RawParserResult`，输出 `DocumentIR`：
 
+0. bbox 归一化：按 `bbox_unit` 统一到 `normalized_1`——`points` 保留原值；`normalized_1000` 的 bbox 除以 1000 且页宽高置 1.0；`normalized_1` 页宽高置 1.0。页眉页脚检测与阅读顺序均基于归一化后的页面。
 1. 扫描页边缘重复文本 → 判为页眉页脚（同一文本出现在 ≥2 页的页边区域）。
 2. 逐页阅读顺序排序：双栏检测（≥4 块、左右各 ≥2 块、左列最右 < 右列最左，列缝 > 页宽 5%）→ 栏内按 `(y0, x0)`。
 3. 丢弃空文本块（`formula` 例外）；空文本且 bbox 全 0 的块告警跳过。
@@ -146,7 +149,8 @@ class RawParserResult(BaseModel):
 - 无 blocks 或 `heading_count == 0` → `poor`
 - 否则 `good`；若同时存在 warning → `usable_with_warnings`
 
-warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`。
+warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`、`PARSER_FALLBACK: <原因>`。
+解析器降级原因同时存入 `QualityReport.fallback_reason`；归一化后的坐标单位写入 `DocumentIR.bbox_unit`（随 parsed IR JSON 落盘），供 `application/documents._resolve_block_boxes` 还原为 0–1 坐标。
 
 结果随文档落库为 `parse_quality_status`，并写入 `quality_report.json`。
 
@@ -266,6 +270,12 @@ warning 例：`NO_HEADINGS_DETECTED`、`LOW_TEXT_DENSITY`。
 | `mineru_table_enable` / `mineru_formula_enable` | `True` / `True` | 同上 |
 | `mineru_api_key` | `None`（为空则不启用云解析） | 同上 |
 | `mineru_api_timeout` / `mineru_api_poll_interval` / `mineru_api_max_poll_time` | 300 / 2.0 / 600 | 同上 |
+| `mineru_api_poll_max_interval` | 10.0（轮询退避上限） | 同上 |
+| `mineru_api_max_retries` / `mineru_api_retry_base_delay` / `mineru_api_retry_max_delay` | 3 / 1.0 / 30.0 | 同上 |
+| `mineru_model_version` | `vlm`（可选 `pipeline` / `MinerU-HTML`） | 同上 |
+| `mineru_language` | `ch` | 同上 |
+| `mineru_api_is_ocr` / `mineru_api_page_ranges` | `False` / `None` | 同上 |
+| `mineru_require_cloud` | `False`（true 时云解析失败不降级） | 同上 |
 | `runner_idle_poll_interval` | 0.05 | 同上 |
 | MinerU 本地子进程超时 | 600s（硬编码） | `ingestion/mineru_backend.py` |
 | MinerU API 单文件上限 | 200 MiB（硬编码） | `ingestion/mineru_api_backend.py` |

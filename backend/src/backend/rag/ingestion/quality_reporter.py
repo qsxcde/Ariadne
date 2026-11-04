@@ -7,8 +7,11 @@ def build_quality_report(
     page_count: int,
     blocks: list[BlockIR],
     parser_warnings: list[str] | None = None,
+    fallback_reason: str | None = None,
 ) -> QualityReport:
     warnings: list[str] = list(parser_warnings or [])
+    if fallback_reason:
+        warnings.append(f"PARSER_FALLBACK: {fallback_reason}")
     heading_count = sum(1 for block in blocks if block.type in {"heading", "title"})
     low_confidence_count = sum(1 for block in blocks if block.confidence < 0.5)
     filtered_header_footer_count = sum(1 for block in blocks if block.type == "header_footer")
@@ -39,6 +42,7 @@ def build_quality_report(
         low_confidence_block_count=low_confidence_count,
         warnings=warnings,
         overall_status=status,
+        fallback_reason=fallback_reason,
     )
 
 

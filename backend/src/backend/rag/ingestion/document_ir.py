@@ -3,6 +3,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+BBoxUnit = Literal["points", "normalized_1000", "normalized_1"]
+
+
 BlockType = Literal[
     "title",
     "heading",
@@ -66,6 +69,7 @@ class QualityReport(BaseModel):
     low_confidence_block_count: int = 0
     warnings: list[str] = Field(default_factory=list)
     overall_status: QualityStatus = "good"
+    fallback_reason: str | None = None
 
 
 class DocumentIR(BaseModel):
@@ -78,3 +82,5 @@ class DocumentIR(BaseModel):
     blocks: list[BlockIR] = Field(default_factory=list)
     outline: list[str] = Field(default_factory=list)
     quality_report: QualityReport
+    # Canonical unit after normalization: ``normalized_1`` or ``points``.
+    bbox_unit: BBoxUnit = "points"

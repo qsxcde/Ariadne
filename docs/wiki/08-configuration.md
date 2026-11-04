@@ -81,14 +81,23 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 |---|---|---|
 | `MINERU_API_KEY` | `None` | 配置后启用云解析（优先级最高） |
 | `MINERU_API_BASE_URL` | `https://mineru.net` | |
-| `MINERU_API_TIMEOUT` | `300` | 秒 |
-| `MINERU_API_POLL_INTERVAL` | `2.0` | 秒 |
-| `MINERU_API_MAX_POLL_TIME` | `600` | 秒 |
+| `MINERU_API_TIMEOUT` | `300` | 单次 HTTP 请求超时（秒） |
+| `MINERU_API_POLL_INTERVAL` | `2.0` | 首次轮询间隔（秒） |
+| `MINERU_API_POLL_MAX_INTERVAL` | `10.0` | 轮询退避上限（秒） |
+| `MINERU_API_MAX_POLL_TIME` | `600` | 单批次总等待上限（秒） |
+| `MINERU_API_MAX_RETRIES` | `3` | 429/5xx/网络错误重试次数 |
+| `MINERU_API_RETRY_BASE_DELAY` | `1.0` | 指数退避基数（秒） |
+| `MINERU_API_RETRY_MAX_DELAY` | `30.0` | 单次重试等待上限（秒） |
+| `MINERU_API_IS_OCR` | `False` | 云 API `files[].is_ocr`；本地 OCR 用 `MINERU_DISABLE_OCR` |
+| `MINERU_API_PAGE_RANGES` | `None` | 云 API 页范围，如 `1-50`；为空表示全部 |
+| `MINERU_MODEL_VERSION` | `vlm` | `pipeline` / `vlm` / `MinerU-HTML` |
+| `MINERU_LANGUAGE` | `ch` | 云 API 文档语言 |
+| `MINERU_REQUIRE_CLOUD` | `False` | 为 `True` 时云解析失败不再降级到本地/pypdf |
 | `MINERU_TORCH_DEVICE` | `cpu` | 本地 CLI 设备 |
-| `MINERU_DISABLE_OCR` | `True` | |
-| `MINERU_TABLE_ENABLE` | `True` | |
-| `MINERU_FORMULA_ENABLE` | `True` | |
-| `MINERU_SHOW_DOWNLOAD_PROGRESS` | `False` | |
+| `MINERU_DISABLE_OCR` | `True` | 仅本地 MinerU |
+| `MINERU_TABLE_ENABLE` | `True` | 云端/本地表格识别 |
+| `MINERU_FORMULA_ENABLE` | `True` | 云端/本地公式识别 |
+| `MINERU_SHOW_DOWNLOAD_PROGRESS` | `False` | 本地子进程输出透传 |
 
 ### 2.7 索引与任务轮询
 

@@ -54,6 +54,7 @@ class TextPDFBackend:
             pages=pages,
             metadata={"filename": filename or ""},
             source_parser=self.name,
+            bbox_unit="points",
         )
 
 
