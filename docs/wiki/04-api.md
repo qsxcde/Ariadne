@@ -13,7 +13,7 @@ backend/src/backend/api/schemas/*.py        ← 唯一定义处
 contracts/openapi.json                       ← 提交进仓库
         │  cd frontend && npm run gen
         ▼
-frontend/src/contracts/openapi.d.ts          ← 生成的 TS 类型，禁止手改
+frontend/src/shared/contracts/openapi.d.ts   ← 生成的 TS 类型，禁止手改
 ```
 
 - `frontend/src/api/types.ts` 只做 `Schemas["Xxx"]` 的别名映射，不再手写字段。

@@ -18,34 +18,51 @@
 运行时依赖：`vue ^3.5`、`vue-router ^4.6`、`element-plus ^2.12`、`@element-plus/icons-vue`、`markdown-it ^14.2`。
 开发依赖：`vite ^8`、`@vitejs/plugin-vue`、`typescript ~6.0`、`vue-tsc`、`eslint`、`typescript-eslint`、`eslint-plugin-vue`。
 
-`vite.config.ts` 注册 Vue 插件、dev server 代理（`/auth`、`/sessions`、`/health` → `VITE_DEV_PROXY_TARGET`，默认 `http://127.0.0.1:8000`）与 `manualChunks` 分包；没有路径别名。
+`vite.config.ts` 注册 Vue 插件、dev server 代理（`/auth`、`/sessions`、`/health` → `VITE_DEV_PROXY_TARGET`，默认 `http://127.0.0.1:8000`）与 `manualChunks` 分包；`@` 别名指向 `src/`，`vitest.config.ts` 同步注册，源码内一律使用 `@/...` 绝对导入。
 
 ## 2. 目录结构
 
 ```
 frontend/
 ├── index.html
-├── vite.config.ts
+├── vite.config.ts               # Vue 插件、dev 代理、@ → src 别名、manualChunks
+├── vitest.config.ts             # 单测配置（同样注册 @ 别名）
 ├── package.json
 ├── .env.example                 # VITE_API_BASE_URL=http://127.0.0.1:8000
 ├── prototypes/                  # 静态 HTML + 截图设计稿，不参与构建
 └── src/
     ├── main.ts                  # 注册 Element Plus + router，mount #app
     ├── App.vue                  # 三态：loading / 未登录 / 主界面
-    ├── layouts/AppShell.vue     # 页面级编排，唯一调用 usePaperChat()
-    ├── contracts/openapi.d.ts   # 由 contracts/openapi.json 生成，禁止手改
-    ├── api/                     # client / sse / auth / chat / documents / library / ...
+    ├── app/
+    │   ├── router/index.ts      # hash 路由表
+    │   └── layouts/             # AppShell / WorkbenchShell / TopBar / WorkbenchRail
+    ├── pages/                   # 路由页面：每页一个目录，页内区块与页面状态就近放置
+    │   ├── LoginPage.vue
+    │   ├── today/               # TodayPage + Header/Reading/Week/Queue + useToday
+    │   ├── library/             # LibraryPage + Header/Toolbar/BulkBar
+    │   ├── synthesis/           # SynthesisPage + Header/AskPanel/MatrixPanel + useSynthesis
+    │   ├── feed/                # FeedPage + Header/Subscriptions/Inbox + useFeed
+    │   ├── settings/            # SettingsPage + Section/Alert/Notifications + useAlertSettings
+    │   └── paper/               # PaperPage + PaperToolbar
+    ├── features/                # 可复用业务域，不得依赖 app/ 与 pages/
+    │   ├── chat/                # components + composables（useChatStream / usePaperChat）
+    │   ├── library/             # components（LibraryTable / PaperImportDialog）+ usePapers / useLibrary
+    │   ├── reader/              # components（PaperReader / Inspector / TextView…）+ 阅读器 composables
+    │   └── sessions/            # components + useSessionState
+    ├── shared/                  # 跨域复用层
+    │   ├── components/          # StateBlock / MarkdownContent / SourceDrawer / SourceCitationList…
+    │   ├── composables/         # useAuth / useSourcePreview
+    │   ├── constants/           # app / chat / upload
+    │   ├── contracts/           # openapi.d.ts，由 contracts/openapi.json 生成，禁止手改
+    │   ├── types/               # view.ts 视图模型、index.ts 汇总
+    │   ├── utils/               # markdown / section / format / platform / prompt / error
+    │   └── styles/              # variables / base / layout / element-plus
+    ├── api/                     # HTTP 层：client / sse / auth / chat / documents / library / ...
     │   └── types.ts             # 后端契约别名映射（Schemas["Xxx"]）
-    ├── types/                   # view.ts 视图模型、index.ts 汇总
-    ├── router/index.ts          # hash 路由表，已在 main.ts 注册
-    ├── utils/markdown.ts        # markdown-it token → MarkdownNode 树
-    ├── styles/                  # variables / base / layout / element-plus
-    ├── views/LoginView.vue
-    ├── constants/               # app / chat / upload
-    ├── composables/             # useAuth useSessionState useChatStream usePaperChat
-    │                            # useLibrary usePaperReader useSourcePreview useClientReset
-    └── components/              # 22 个 SFC（待 P5 按域拆分）
+    └── stores/                  # 跨域状态出口与 resetClientState
 ```
+
+依赖方向：`pages → features → shared/api`，`features` 之间只允许共享状态（composables），不得互相引用组件；`app/` 只做装配。
 
 ## 3. 组件树
 
@@ -181,21 +198,21 @@ handleUpload(file)
 
 | 路由 | 组件 | 用途 |
 |---|---|---|
-| `/today` | `views/TodayView.vue` | 编辑式两栏：继续阅读 / 本周复盘；底部横向队列 |
-| `/synthesis` | `views/SynthesisView.vue` | 矩阵优先：集合选择、论文选择器、问答/对比表/综述矩阵三 Tab |
-| `/feed` | `views/FeedView.vue` | 收件箱列表：订阅管理、来源徽标、J/K/S/X/Enter 键盘操作 |
-| `/library` | `features/library/components/PaperLibrary.vue` | 表格化论文列表、状态/集合/标签筛选、批量上传、按标识导入；J/K/Enter/S 键盘操作 |
-| `/papers/:paperId` | `features/reader/components/PaperWorkspace.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·问答·笔记·术语·引用）；`⌘ + \` 收起面板 |
+| `/today` | `pages/today/TodayPage.vue` | 编辑式两栏：继续阅读 / 本周复盘；底部横向队列 |
+| `/synthesis` | `pages/synthesis/SynthesisPage.vue` | 矩阵优先：集合选择、论文选择器、问答/对比表/综述矩阵三 Tab |
+| `/feed` | `pages/feed/FeedPage.vue` | 收件箱列表：订阅管理、来源徽标、J/K/S/X/Enter 键盘操作 |
+| `/library` | `pages/library/LibraryPage.vue` | 表格化论文列表、状态/集合/标签筛选、批量上传、按标识导入；J/K/Enter/S 键盘操作 |
+| `/papers/:paperId` | `pages/paper/PaperPage.vue` | 三栏工作台：大纲 / 正文或 PDF / Inspector（速读·问答·笔记·术语·引用）；`⌘ + \` 收起面板 |
 | `/sessions/:sessionId/reader` | `features/reader/components/PaperReader.vue` | legacy 会话阅读器 |
-| `/settings` | `views/SettingsView.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
+| `/settings` | `pages/settings/SettingsPage.vue` | 数据/隐私/模型说明；提醒与 Digest 设置 |
 | `/` | redirect | 默认进入 `/today`；任意页面 `⌘K` 打开命令面板 |
 | `/chat` | `ChatWorkspace` | 旧对话入口（兼容保留） |
 
 状态与 API：
 
-- `composables/usePapers.ts`：文献库、当前论文、筛选、阅读状态、笔记；通过 `stores/index.ts` 导出。
+- `features/library/composables/usePapers.ts`：文献库、当前论文、筛选、阅读状态、笔记；通过 `stores/index.ts` 导出。
 - `api/papers.ts`：list / get / upload / import / update；`api/annotations.ts`、`api/collections.ts` 对应批注与集合。
-- 进度：`PaperReader` 滚动时 emit `progress`，`PaperWorkspace` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
+- 进度：`PaperTextView` 滚动时 emit `progress`，`pages/paper/PaperPage.vue` 1.2s 节流后 `PATCH /papers/{id}`；重开时用 `initial-progress` 恢复滚动位置。
 - 笔记：选中正文点「记笔记」emit `note`，保存为 highlight；右侧栏可新增 note、删除批注。
 - 速读卡：右侧栏「生成速读卡」调用 POST /papers/{id}/brief，展示 TL;DR/贡献/方法/实验/局限/要点；章节摘要列表点击后经 `findBlockBySection` 定位并高亮正文块。
 - 术语表/引用：右侧栏可生成术语表、查询 OpenAlex 引用关系。
