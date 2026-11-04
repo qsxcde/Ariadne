@@ -5,9 +5,9 @@ import logging
 import time
 from typing import Any
 
-from backend import composition
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 from backend.domain.models import Chunk
+from backend.domain.ports import TextCompleter
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import papers as paper_repo
@@ -184,7 +184,7 @@ def generate_paper_brief(
     paper_id: str,
     user_id: str | None,
     *,
-    completer: Any | None = None,
+    completer: TextCompleter,
     force: bool = False,
 ) -> dict[str, Any]:
     paper = get_accessible_paper(paper_id, user_id)
@@ -225,7 +225,7 @@ def generate_paper_brief(
         seen.add(title)
         sections.append(item)
 
-    runner = completer or composition.text_completer()
+    runner = completer
     started = time.perf_counter()
     raw = runner.complete(_BRIEF_PROMPT.replace("{sections}", digest))
     _log_generation(paper_id, (time.perf_counter() - started) * 1000)

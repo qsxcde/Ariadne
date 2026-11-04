@@ -7,8 +7,8 @@ import time
 from collections.abc import Callable
 
 from backend.adapters.vector import store_cache
-from backend.core.contracts.ports import VectorStore
-from backend.core.model.records import SnapshotRecord
+from backend.domain.ports import VectorStore
+from backend.storage.records import SnapshotRecord
 from backend.config import settings
 from backend.domain.exceptions import ActiveIndexNotReadyError, SessionNotFoundError
 from backend.storage.sqlite import index_snapshots as snapshot_repo

@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 
 import httpx
 
-from backend.application.papers import import_paper_upload, serialize_authors
+from backend.application.library.papers import import_paper_upload, serialize_authors
 from backend.domain.exceptions import (
     DuplicatePaperError,
     ImportFetchError,

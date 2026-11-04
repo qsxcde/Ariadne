@@ -1,9 +1,7 @@
 """Explain, translate or simplify a selected passage."""
 
-from typing import Any
-
-from backend import composition
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
+from backend.domain.ports import TextCompleter
 
 _PROMPTS: dict[str, str] = {
     "explain": "请用中文解释这段论文原文，说明它在论文中的作用、关键概念和潜在前提。不要编造原文没有的信息。",
@@ -18,7 +16,7 @@ def explain_selection(
     *,
     text: str,
     mode: str,
-    completer: Any | None = None,
+    completer: TextCompleter,
 ) -> str:
     get_accessible_paper(paper_id, user_id)
     if mode not in _PROMPTS:
@@ -26,9 +24,9 @@ def explain_selection(
     quote = text.strip()
     if not quote:
         raise ValueError("Selected text is empty")
-    from backend.application.generation_log import generation_timer
+    from backend.application.reading.generation_log import generation_timer
 
-    runner = completer or composition.text_completer()
+    runner = completer
     prompt = f"{_PROMPTS[mode]}\n\n原文：\n{quote[:2000]}"
     with generation_timer("explain", paper_id=paper_id):
         return str(runner.complete(prompt)).strip()

@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from backend.core.model.records import IndexRecord, SnapshotRecord
+from backend.storage.records import IndexRecord, SnapshotRecord
 from backend.domain.exceptions import SnapshotCommitError
 
 from backend.storage.sqlite import chunks as chunk_repo
@@ -18,7 +18,7 @@ from backend.storage.paths import session_indexes_dir
 from backend.rag.retrieval.filters import filter_indexable_chunks
 
 if TYPE_CHECKING:
-    from backend.rag.indexing.vector_store import FAISSVectorStore
+    from backend.adapters.vector.faiss_store import FAISSVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def _load_or_create_store(
     *,
     reuse_previous: bool = True,
 ) -> FAISSVectorStore:
-    from backend.rag.indexing.vector_store import FAISSVectorStore
+    from backend.adapters.vector.faiss_store import FAISSVectorStore
 
     previous_ready = snapshot_repo.get_active_ready_snapshot(session_id) if reuse_previous else None
     if previous_ready is not None:

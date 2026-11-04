@@ -6,8 +6,8 @@ import logging
 from typing import Any
 
 from backend.adapters.vector import store_cache
-from backend.application.documents import intake_document_upload
-from backend.core.model.records import PaperRecord
+from backend.application.ingestion.documents import intake_document_upload
+from backend.storage.records import PaperRecord
 from backend.domain.access import paper_is_accessible
 from backend.domain.exceptions import (
     DuplicatePaperError,

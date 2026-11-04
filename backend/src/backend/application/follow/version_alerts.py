@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from backend.application import notifications as notification_service
-from backend.application.paper_import import fetch_arxiv_updated
+from backend.application.follow import notifications as notification_service
+from backend.application.library.paper_import import fetch_arxiv_updated
 from backend.storage.sqlite import alerts as alert_repo
 from backend.storage.sqlite import papers as paper_repo
 

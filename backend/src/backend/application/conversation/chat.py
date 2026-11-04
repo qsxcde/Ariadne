@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from collections.abc import AsyncGenerator, AsyncIterator
 from typing import Any
 
-from backend.application import policies
-from backend.application.events import (
+from backend.application.conversation import policies
+from backend.application.conversation.events import (
     ChatEvent,
     DoneEvent,
     ErrorEvent,
@@ -16,7 +16,7 @@ from backend.application.events import (
     TokenEvent,
     WarningEvent,
 )
-from backend.application.session_index import resolve_session_store
+from backend.application.conversation.session_index import resolve_session_store
 from backend.config import settings
 from backend.domain.access import session_is_accessible
 from backend.domain.exceptions import ActiveIndexNotReadyError, SessionNotFoundError

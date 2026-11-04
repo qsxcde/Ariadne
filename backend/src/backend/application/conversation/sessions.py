@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from backend.core.model.records import (
+from backend.storage.records import (
     DocumentRecord,
     IndexRecord,
     JobRecord,
@@ -25,7 +25,7 @@ from backend.adapters.vector import store_cache
 from backend.storage.paths import remove_session_dir
 
 if TYPE_CHECKING:
-    from backend.rag.indexing.vector_store import AbstractVectorStore
+    from backend.domain.ports import VectorStore
 
 
 def create_session(user_id: str | None = None) -> str:
@@ -117,7 +117,7 @@ def _build_session_snapshot(
     return snapshot
 
 
-def get_store(session_id: str) -> AbstractVectorStore:
+def get_store(session_id: str) -> VectorStore:
     session = sessions.get_session(session_id)
     if session is None or session["is_archived"]:
         raise SessionNotFoundError(f"Session not found: {session_id}")

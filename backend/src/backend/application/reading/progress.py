@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite import reading as reading_repo
 

@@ -2,8 +2,8 @@
 
 import asyncio
 
-from backend.application import policies
-from backend.application.session_index import resolve_session_store
+from backend.application.conversation import policies
+from backend.application.conversation.session_index import resolve_session_store
 from backend.rag.answer import ChatEvaluationResult, RetrievalOptions
 from backend.rag import answer as chat_pipeline
 

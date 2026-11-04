@@ -4,7 +4,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 from backend.domain.exceptions import AnnotationNotFoundError
 from backend.storage.sqlite import annotations as annotation_repo
 

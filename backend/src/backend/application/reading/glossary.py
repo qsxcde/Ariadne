@@ -3,9 +3,9 @@
 import json
 from typing import Any
 
-from backend import composition
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 from backend.domain.models import Chunk
+from backend.domain.ports import TextCompleter
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import documents as document_repo
 from backend.storage.sqlite import sessions as session_repo
@@ -61,7 +61,7 @@ def generate_glossary(
     paper_id: str,
     user_id: str | None,
     *,
-    completer: Any | None = None,
+    completer: TextCompleter,
 ) -> dict[str, Any]:
     paper = get_accessible_paper(paper_id, user_id)
     sessions = session_repo.list_sessions_for_paper(paper_id)
@@ -73,9 +73,9 @@ def generate_glossary(
     )
     if not chunks:
         raise ValueError("Paper is not indexed yet")
-    from backend.application.generation_log import generation_timer
+    from backend.application.reading.generation_log import generation_timer
 
-    runner = completer or composition.text_completer()
+    runner = completer
     with generation_timer("glossary", paper_id=paper_id):
         raw = runner.complete(_PROMPT.replace("{digest}", _digest(chunks)))
     return {

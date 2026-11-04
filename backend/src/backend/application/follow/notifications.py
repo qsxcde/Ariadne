@@ -7,7 +7,7 @@ from typing import Any, Protocol
 import httpx
 
 from backend.config import settings
-from backend.core.model.records import NotificationRecord
+from backend.storage.records import NotificationRecord
 from backend.storage.sqlite import notifications as notification_repo
 
 

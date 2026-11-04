@@ -3,11 +3,11 @@
 import json
 from typing import Any
 
-from backend import composition
 from backend.adapters.llm.prompt_template import build_prompt
-from backend.application.collections import get_accessible_collection
-from backend.application.papers import get_accessible_paper
-from backend.domain.models import Chunk
+from backend.application.library.collections import get_accessible_collection
+from backend.application.library.papers import get_accessible_paper
+from backend.domain.models import Chunk, VectorSearchHit
+from backend.domain.ports import TextCompleter
 from backend.rag.answer import RetrievalOptions, retrieve_context
 from backend.storage.sqlite import chunks as chunk_repo
 from backend.storage.sqlite import collections as collection_repo
@@ -43,6 +43,11 @@ class _StaticChunkStore:
     def search(self, _query: str, _k: int = 5) -> list[Chunk]:
         return []
 
+    def search_with_ranks(
+        self, _query: str, _k: int = 5
+    ) -> list[VectorSearchHit]:
+        return []
+
 
 def _collection_chunks_and_map(
     collection_id: str, user_id: str | None
@@ -71,7 +76,7 @@ def answer_collection(
     user_id: str | None,
     question: str,
     *,
-    completer: Any | None = None,
+    completer: TextCompleter,
 ) -> dict[str, Any]:
     if not question.strip():
         raise ValueError("Question is empty")
@@ -95,9 +100,9 @@ def answer_collection(
     context_chunks, sources = retrieve_context(store, question, options=options)
     if not context_chunks:
         raise ValueError("No relevant chunks found in collection")
-    from backend.application.generation_log import generation_timer
+    from backend.application.reading.generation_log import generation_timer
 
-    runner = completer or composition.text_completer()
+    runner = completer
     with generation_timer("collection_ask", paper_id=collection_id):
         answer = str(runner.complete(build_prompt(context_chunks, question))).strip()
     return {
@@ -118,14 +123,14 @@ def compare_papers(
     user_id: str | None,
     paper_ids: list[str],
     *,
-    completer: Any | None = None,
+    completer: TextCompleter,
 ) -> list[dict[str, Any]]:
     get_accessible_collection(collection_id, user_id)
     if not paper_ids:
         raise ValueError("paper_ids is empty")
-    from backend.application.generation_log import generation_timer
+    from backend.application.reading.generation_log import generation_timer
 
-    runner = completer or composition.text_completer()
+    runner = completer
     results: list[dict[str, Any]] = []
     for paper_id in paper_ids:
         paper = get_accessible_paper(paper_id, user_id)

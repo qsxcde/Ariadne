@@ -5,9 +5,9 @@ import uuid
 from contextlib import suppress
 from pathlib import Path
 
-from backend.application import index_maintenance
+from backend.application.ingestion import index_maintenance
 from backend.config import data_dir, settings
-from backend.core.model.records import DocumentRecord
+from backend.storage.records import DocumentRecord
 from backend.domain.exceptions import (
     ChunkNotFoundError,
     JobInProgressError,

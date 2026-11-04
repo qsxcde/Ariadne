@@ -7,8 +7,8 @@ from xml.etree import ElementTree
 
 import httpx
 
-from backend.application import notifications as notification_service
-from backend.core.model.records import FeedItemRecord, SubscriptionRecord
+from backend.application.follow import notifications as notification_service
+from backend.storage.records import FeedItemRecord, SubscriptionRecord
 from backend.storage.sqlite import feed as feed_repo
 from backend.storage.sqlite import papers as paper_repo
 from backend.storage.sqlite import subscriptions as subscription_repo

@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from backend.application import notifications as notification_service
-from backend.application.citations import get_citation_graph
+from backend.application.follow import notifications as notification_service
+from backend.application.library.citations import get_citation_graph
 from backend.storage.sqlite import alerts as alert_repo
 from backend.storage.sqlite import papers as paper_repo
 

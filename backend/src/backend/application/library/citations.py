@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 import httpx
 
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 
 _BASE = "https://api.openalex.org/works"
 _ARXIV_VERSION = re.compile(r"v\d+$")

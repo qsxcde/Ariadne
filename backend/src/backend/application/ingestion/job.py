@@ -5,11 +5,10 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from backend import composition
-from backend.application.indexing import build_candidate_snapshot
-from backend.application.indexing import cleanup_snapshot_files
-from backend.application.indexing import commit_ready_snapshot
-from backend.core.model.records import DocumentRecord, SnapshotRecord
+from backend.application.ingestion.indexing import build_candidate_snapshot
+from backend.application.ingestion.indexing import cleanup_snapshot_files
+from backend.application.ingestion.indexing import commit_ready_snapshot
+from backend.storage.records import DocumentRecord, SnapshotRecord
 from backend.domain.exceptions import SnapshotCommitError
 from backend.domain.states import DocumentStage, JobStatus
 from backend.adapters.embedding.limits import MAX_EMBEDDING_CHARS
@@ -26,6 +25,8 @@ from backend.adapters.vector.store_cache import discard_store
 
 logger = logging.getLogger(__name__)
 
+ParserChainFactory = Callable[..., list]
+
 
 def run_document_ingestion_job(
     session_id: str,
@@ -34,6 +35,7 @@ def run_document_ingestion_job(
     *,
     resume_batch_id: str | None = None,
     on_batch_created: Callable[[str], None] | None = None,
+    parser_chain_factory: ParserChainFactory | None = None,
 ) -> dict:
     document_id = document["id"]
     snapshot = None
@@ -44,6 +46,7 @@ def run_document_ingestion_job(
             pdf_bytes,
             resume_batch_id=resume_batch_id,
             on_batch_created=on_batch_created,
+            parser_chain_factory=parser_chain_factory,
         )
         snapshot = _do_build_and_commit_index(session_id, document_id, chunks)
         return {
@@ -81,6 +84,7 @@ def _do_parse_document(
     *,
     resume_batch_id: str | None = None,
     on_batch_created: Callable[[str], None] | None = None,
+    parser_chain_factory: ParserChainFactory | None = None,
 ) -> list[Chunk]:
     document_id = document["id"]
     logger.info(
@@ -90,15 +94,20 @@ def _do_parse_document(
 
     document_repo.update_document_status(document_id, DocumentStage.parsing)
     parse_start = time.monotonic()
+    parser_chain = (
+        parser_chain_factory(
+            document_id=document_id,
+            resume_batch_id=resume_batch_id,
+            on_batch_created=on_batch_created,
+        )
+        if parser_chain_factory is not None
+        else None
+    )
     ingestion_result = process_pdf_document(
         pdf_bytes=pdf_bytes,
         paper_id=document_id,
         filename=document["filename"],
-        parser_chain=composition.parser_chain(
-            document_id=document_id,
-            resume_batch_id=resume_batch_id,
-            on_batch_created=on_batch_created,
-        ),
+        parser_chain=parser_chain,
     )
     logger.info(
         "Completed document parsing session_id=%s document_id=%s parser=%s version=%s "
@@ -259,7 +268,9 @@ def _clear_document_artifacts(document_id: str) -> None:
     )
 
 
-def run_queued_ingestion_job(job: dict) -> None:
+def run_queued_ingestion_job(
+    job: dict, *, parser_chain_factory: ParserChainFactory | None = None
+) -> None:
     """Execute one queued document_ingestion job end to end.
 
     The worker layer only knows that a job exists; reading the upload, updating
@@ -298,5 +309,6 @@ def run_queued_ingestion_job(job: dict) -> None:
         pdf_bytes=pdf_bytes,
         resume_batch_id=resume_batch_id,
         on_batch_created=_persist_batch_id,
+        parser_chain_factory=parser_chain_factory,
     )
     job_repo.mark_job_finished(job["id"], JobStatus.succeeded)

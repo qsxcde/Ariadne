@@ -2,7 +2,7 @@
 
 import logging
 
-from backend.application.indexing import rebuild_session_snapshot
+from backend.application.ingestion.indexing import rebuild_session_snapshot
 from backend.adapters.vector.store_cache import discard_store
 from backend.storage.sqlite import index_snapshots as snapshot_repo
 from backend.storage.sqlite import indexes as index_repo

@@ -3,7 +3,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-from backend.application.papers import get_accessible_paper
+from backend.application.library.papers import get_accessible_paper
 from backend.domain.exceptions import CollectionNotFoundError
 from backend.storage.sqlite import collections as collection_repo
 
