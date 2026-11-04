@@ -87,7 +87,7 @@ def test_merge_duplicate_papers_moves_children():
     merge_duplicate_papers.merge_group(first["paper_id"], [second["paper_id"]])
 
     with connect() as conn:
-        assert conn.execute("SELECT COUNT(*) FROM papers").fetchone()[0] == 1
+        assert conn.execute("SELECT COUNT(*) AS total FROM papers").fetchone()["total"] == 1
         assert conn.execute(
             "SELECT paper_id FROM documents WHERE id = ?", (second["document_id"],)
         ).fetchone()["paper_id"] == first["paper_id"]
