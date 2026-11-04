@@ -60,7 +60,7 @@ def test_bibtex_export_contains_metadata():
     assert csl[0]["DOI"] == "10.1000/test"
 
     markdown = export_markdown("u1")
-    assert "# SciPal Library" in markdown
+    assert "# Ariadne Library" in markdown
     assert "Attention Is All You Need" in markdown
 
 

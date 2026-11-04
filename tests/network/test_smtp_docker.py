@@ -12,7 +12,7 @@ from backend.config import settings
 pytestmark = [
     pytest.mark.smtp_docker,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_SMTP_DOCKER") != "1",
+        os.getenv("ARIADNE_SMTP_DOCKER") != "1",
         reason="run scripts/run_smtp_test.sh",
     ),
 ]
@@ -21,14 +21,14 @@ pytestmark = [
 def test_smtp_delivery_reaches_mailhog(monkeypatch):
     monkeypatch.setattr(settings, "smtp_host", "127.0.0.1")
     monkeypatch.setattr(settings, "smtp_port", 1025)
-    monkeypatch.setattr(settings, "smtp_from", "scipal@example.com")
+    monkeypatch.setattr(settings, "smtp_from", "ariadne@example.com")
     monkeypatch.setattr(settings, "smtp_username", None)
     monkeypatch.setattr(settings, "smtp_starttls", False)
 
     notification = create_notification(
         "u1",
         kind="feed",
-        title="SciPal test notification",
+        title="Ariadne test notification",
         body="hello from smtp test",
     )
     result = deliver_pending(
@@ -48,6 +48,6 @@ def test_smtp_delivery_reaches_mailhog(monkeypatch):
 
     assert messages
     headers = messages[0]["Content"]["Headers"]
-    assert headers["Subject"][0] == "SciPal test notification"
+    assert headers["Subject"][0] == "Ariadne test notification"
     assert "reader@example.com" in str(headers.get("To", []))
     assert notification["id"]

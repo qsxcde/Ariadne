@@ -6,7 +6,6 @@ __pycache__/
 .env
 data/
 backend/data/
-backend/storage/sqlite/scipal.db
 .claude/
 .superpowers/
 .worktrees/

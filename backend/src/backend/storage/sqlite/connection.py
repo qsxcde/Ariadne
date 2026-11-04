@@ -13,9 +13,9 @@ def get_db_path() -> Path:
     a database under backend/src is untracked runtime state that shows up in
     git status and can be committed by accident.
     """
-    if config.settings.scipal_db_path:
-        return Path(config.settings.scipal_db_path).expanduser()
-    return config.data_dir() / "scipal.db"
+    if config.settings.ariadne_db_path:
+        return Path(config.settings.ariadne_db_path).expanduser()
+    return config.data_dir() / "ariadne.db"
 
 
 def connect() -> sqlite3.Connection:

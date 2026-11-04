@@ -12,12 +12,12 @@ from backend.storage.sqlite import connection
 
 @pytest.mark.unit
 def test_default_db_path_is_inside_the_data_dir(monkeypatch):
-    monkeypatch.setattr(config.settings, "scipal_db_path", None)
-    monkeypatch.setattr(config.settings, "scipal_data_dir", None)
+    monkeypatch.setattr(config.settings, "ariadne_db_path", None)
+    monkeypatch.setattr(config.settings, "ariadne_data_dir", None)
 
     path = connection.get_db_path()
 
-    assert path == config.default_data_dir() / "scipal.db"
+    assert path == config.default_data_dir() / "ariadne.db"
     assert path.parent.name == "data"
     assert "src" not in path.parts
 
@@ -25,6 +25,6 @@ def test_default_db_path_is_inside_the_data_dir(monkeypatch):
 @pytest.mark.unit
 def test_explicit_db_path_wins(monkeypatch, tmp_path):
     target = tmp_path / "custom.db"
-    monkeypatch.setattr(config.settings, "scipal_db_path", str(target))
+    monkeypatch.setattr(config.settings, "ariadne_db_path", str(target))
 
     assert connection.get_db_path() == target

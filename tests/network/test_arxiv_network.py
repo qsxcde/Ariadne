@@ -1,4 +1,4 @@
-"""Optional real arXiv smoke test; enable with SCIPAL_NETWORK_TESTS=1."""
+"""Optional real arXiv smoke test; enable with ARIADNE_NETWORK_TESTS=1."""
 
 import os
 
@@ -10,8 +10,8 @@ from backend.application.library.paper_import import fetch_arxiv_reference
 pytestmark = [
     pytest.mark.network,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_NETWORK_TESTS") != "1",
-        reason="set SCIPAL_NETWORK_TESTS=1 to call the real arXiv API",
+        os.getenv("ARIADNE_NETWORK_TESTS") != "1",
+        reason="set ARIADNE_NETWORK_TESTS=1 to call the real arXiv API",
     ),
 ]
 

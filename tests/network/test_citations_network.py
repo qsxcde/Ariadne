@@ -12,8 +12,8 @@ from backend.storage.sqlite import sessions as session_repo
 pytestmark = [
     pytest.mark.network,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_NETWORK_TESTS") != "1",
-        reason="set SCIPAL_NETWORK_TESTS=1 to call OpenAlex",
+        os.getenv("ARIADNE_NETWORK_TESTS") != "1",
+        reason="set ARIADNE_NETWORK_TESTS=1 to call OpenAlex",
     ),
 ]
 

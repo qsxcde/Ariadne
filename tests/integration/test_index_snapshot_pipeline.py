@@ -1,6 +1,6 @@
 """Full index snapshot pipeline: build, promote, load and roll back.
 
-The snapshot model is the most load-bearing design in SciPal: FAISS cannot
+The snapshot model is the most load-bearing design in Ariadne: FAISS cannot
 delete vectors in place, so every change rebuilds a candidate index and either
 promotes it atomically or rolls back. These tests exercise the real FAISS files
 with a deterministic 8-dimensional embedder, so they stay fast and offline.

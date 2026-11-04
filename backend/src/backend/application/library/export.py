@@ -91,7 +91,7 @@ def export_csl_json(user_id: str | None) -> list[dict[str, Any]]:
 
 def export_markdown(user_id: str | None) -> str:
     papers = paper_repo.list_papers(user_id, limit=1000)
-    lines = ["# SciPal Library", ""]
+    lines = ["# Ariadne Library", ""]
     for paper in papers:
         lines.append(f"## {paper['title']}")
         authors = _authors(paper["authors_json"])

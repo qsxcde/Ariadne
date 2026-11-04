@@ -93,7 +93,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         runner.stop()
 
 
-app = FastAPI(title="SciPal API", lifespan=lifespan)
+app = FastAPI(title="Ariadne API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -131,7 +131,7 @@ def health():
 
 
 def main() -> None:
-    """Entry point for the ``scipal-backend`` console script."""
+    """Entry point for the ``ariadne-backend`` console script."""
     import uvicorn
 
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000)

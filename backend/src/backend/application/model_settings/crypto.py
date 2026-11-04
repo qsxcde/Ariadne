@@ -13,7 +13,7 @@ from backend.config import settings
 logger = logging.getLogger(__name__)
 
 _PREFIX = "enc:v1:"
-_DEV_FALLBACK_SECRET = "scipal-local-dev-model-settings"
+_DEV_FALLBACK_SECRET = "ariadne-local-dev-model-settings"
 
 
 def _fernet() -> Fernet:

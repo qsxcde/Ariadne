@@ -12,5 +12,5 @@ for _ in $(seq 1 20); do
   sleep 0.5
 done
 
-export SCIPAL_SMTP_DOCKER=1
+export ARIADNE_SMTP_DOCKER=1
 uv run --project backend pytest -m smtp_docker "$@"

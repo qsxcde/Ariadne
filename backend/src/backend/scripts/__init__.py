@@ -1,1 +1,1 @@
-"""Command-line helpers for SciPal maintenance operations."""
+"""Command-line helpers for Ariadne maintenance operations."""

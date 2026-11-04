@@ -95,7 +95,7 @@ def build_generation_prompt(chunk: Chunk, question_type: str) -> str:
         "chunk_text": chunk.text[:1800],
     }
     return (
-        "你是 SciPal RAG 评测数据集生成器。"
+        "你是 Ariadne RAG 评测数据集生成器。"
         "请基于给定论文片段生成一条中文评测 draft 样本。"
         "只输出 JSON，不要输出 Markdown。JSON 字段必须包含："
         "question, reference_answer, answer_requirements, negative_requirements, difficulty, requires_abstention。"

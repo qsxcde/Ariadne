@@ -37,7 +37,7 @@ def _keywords(text: str, start: int, end: int) -> list[str]:
     return top[start:end] or top[:4]
 
 
-CACHE_PATH = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/scipal_real_papers.json"))
+CACHE_PATH = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/ariadne_real_papers.json"))
 
 
 def _fetch_real_items(count: int) -> list[dict]:
@@ -136,11 +136,11 @@ def _seed_real_papers(count: int = 10, cases_per_paper: int = 5):
 
 
 def main() -> None:
-    db_path = "/tmp/scipal_real_paper_eval.db"
+    db_path = "/tmp/ariadne_real_paper_eval.db"
     if os.path.exists(db_path):
         os.remove(db_path)
     from backend import config
-    config.settings.scipal_db_path = db_path
+    config.settings.ariadne_db_path = db_path
     init_db()
 
     cases_per_paper = int(os.getenv("REAL_CASES_PER_PAPER", "5"))

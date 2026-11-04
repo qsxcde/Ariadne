@@ -9,12 +9,12 @@ from typing import TYPE_CHECKING, TypeVar
 
 _T = TypeVar("_T")
 
-from scipal_eval.configs import get_config_set
-from scipal_eval.dataset import dataset_fingerprint, load_dataset
-from scipal_eval.metrics import score_ragas_metrics
-from scipal_eval.models import EvalSample, RetrievalConfig, RunMetadata
-from scipal_eval.pipeline import run_pipeline
-from scipal_eval.reporting import compare_baseline, save_baseline, write_run_outputs
+from ariadne_eval.configs import get_config_set
+from ariadne_eval.dataset import dataset_fingerprint, load_dataset
+from ariadne_eval.metrics import score_ragas_metrics
+from ariadne_eval.models import EvalSample, RetrievalConfig, RunMetadata
+from ariadne_eval.pipeline import run_pipeline
+from ariadne_eval.reporting import compare_baseline, save_baseline, write_run_outputs
 
 if TYPE_CHECKING:
   from backend.rag.answer import ChatEvaluationResult
@@ -74,8 +74,8 @@ def main(argv: list[str] | None = None) -> None:
   elif args.command == "baseline-save":
     save_baseline(args.run_dir, args.output)
   elif args.command == "generate-draft":
-    from scipal_eval.draft_generator import generate_draft_dataset
-    from scipal_eval.draft_generator import parse_question_types
+    from ariadne_eval.draft_generator import generate_draft_dataset
+    from ariadne_eval.draft_generator import parse_question_types
 
     count = generate_draft_dataset(
       args.session_id,
@@ -98,7 +98,7 @@ def _run_command(args: argparse.Namespace) -> None:
     fail_on_regression=args.fail_on_regression,
   )
   fingerprint = dataset_fingerprint(samples)
-  evaluator = _evaluate_with_scipal if args.with_generation else _evaluate_retrieval_only
+  evaluator = _evaluate_with_ariadne if args.with_generation else _evaluate_retrieval_only
   ragas_requested = args.with_ragas or args.profile == "full"
   judge_requested = args.with_judge or args.profile in {"judge", "full"}
   reproducibility_manifest = _build_reproducibility_manifest(
@@ -146,11 +146,11 @@ def _run_command(args: argparse.Namespace) -> None:
     results=scored_results,
   )
   if args.fail_on_regression:
-    from scipal_eval.thresholds import evaluate_thresholds
-    from scipal_eval.thresholds import load_thresholds
+    from ariadne_eval.thresholds import evaluate_thresholds
+    from ariadne_eval.thresholds import load_thresholds
 
     threshold_path = args.thresholds or (
-        importlib.resources.files("scipal_eval") / "configs" / "eval_thresholds.yaml"
+        importlib.resources.files("ariadne_eval") / "configs" / "eval_thresholds.yaml"
     )
     summary_path = run_dir / "summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -192,17 +192,17 @@ def score_judge_metrics(
   *,
   judge_model: str,
 ) -> list[object]:
-  from scipal_eval.judge import score_judge_metrics as score_with_judge
+  from ariadne_eval.judge import score_judge_metrics as score_with_judge
 
   return score_with_judge(samples, results, judge_model=judge_model)
 
 
-def _evaluate_with_scipal(
+def _evaluate_with_ariadne(
   session_id: str,
   question: str,
   config: RetrievalConfig,
 ) -> "ChatEvaluationResult":
-  """Evaluate one question against a live SciPal session with retrieval overrides."""
+  """Evaluate one question against a live Ariadne session with retrieval overrides."""
   from backend.rag.answer import RetrievalOptions
   from backend.application.conversation.evaluation import evaluate_session_chat
 
@@ -244,7 +244,7 @@ def _evaluate_retrieval_only(
   question: str,
   config: RetrievalConfig,
 ) -> "ChatEvaluationResult":
-  """Evaluate one question against a SciPal session without live generation."""
+  """Evaluate one question against a Ariadne session without live generation."""
   from backend.rag.answer import RetrievalOptions
   from backend.application.conversation.evaluation import evaluate_session_retrieval
 

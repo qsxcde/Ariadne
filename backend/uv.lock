@@ -4073,7 +4073,7 @@ wheels = [
 ]
 
 [[package]]
-name = "scipal-backend"
+name = "ariadne-backend"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

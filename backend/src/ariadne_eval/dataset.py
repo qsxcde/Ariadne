@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from scipal_eval.models import EvalSample
+from ariadne_eval.models import EvalSample
 
 
 def load_dataset(path: Path, *, allow_draft: bool = False) -> list[EvalSample]:

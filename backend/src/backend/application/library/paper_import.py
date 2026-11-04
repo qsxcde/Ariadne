@@ -20,7 +20,7 @@ from backend.storage.sqlite import papers as paper_repo
 
 ARXIV_API_URL = "https://export.arxiv.org/api/query"
 CROSSREF_API_URL = "https://api.crossref.org/works"
-USER_AGENT = "SciPal/0.1 (paper import)"
+USER_AGENT = "Ariadne/0.1 (paper import)"
 MAX_PDF_BYTES = 40 * 1024 * 1024
 
 _ATOM = "{http://www.w3.org/2005/Atom}"

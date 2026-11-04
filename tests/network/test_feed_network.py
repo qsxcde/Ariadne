@@ -1,4 +1,4 @@
-"""Optional real feed-source smoke tests; enable with SCIPAL_NETWORK_TESTS=1."""
+"""Optional real feed-source smoke tests; enable with ARIADNE_NETWORK_TESTS=1."""
 
 import os
 
@@ -9,8 +9,8 @@ from backend.application.follow import feed
 pytestmark = [
     pytest.mark.network,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_NETWORK_TESTS") != "1",
-        reason="set SCIPAL_NETWORK_TESTS=1 to call real feed APIs",
+        os.getenv("ARIADNE_NETWORK_TESTS") != "1",
+        reason="set ARIADNE_NETWORK_TESTS=1 to call real feed APIs",
     ),
 ]
 

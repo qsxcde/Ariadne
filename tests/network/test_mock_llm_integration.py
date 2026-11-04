@@ -14,8 +14,8 @@ from backend.storage.sqlite import sessions as session_repo
 pytestmark = [
     pytest.mark.mock_llm,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_MOCK_LLM") != "1",
-        reason="set SCIPAL_MOCK_LLM=1 and start docker-compose.test.yml",
+        os.getenv("ARIADNE_MOCK_LLM") != "1",
+        reason="set ARIADNE_MOCK_LLM=1 and start docker-compose.test.yml",
     ),
 ]
 

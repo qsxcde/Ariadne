@@ -17,7 +17,7 @@ from backend.storage.sqlite import sessions as session_repo
 pytestmark = [
     pytest.mark.local_llm,
     pytest.mark.skipif(
-        os.getenv("SCIPAL_LOCAL_LLM") != "1",
+        os.getenv("ARIADNE_LOCAL_LLM") != "1",
         reason="run scripts/run_local_llm_eval.sh",
     ),
 ]

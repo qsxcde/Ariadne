@@ -29,7 +29,7 @@ def repo_env_file_warning() -> str | None:
     if not stray.is_file():
         return None
     return (
-        f"Ignoring {stray}: SciPal only loads {env_file_path()}. "
+        f"Ignoring {stray}: Ariadne only loads {env_file_path()}. "
         "Move the file or copy the values there."
     )
 
@@ -55,9 +55,9 @@ class RuntimeSettings(BaseSettings):
     retrieval_top_k: int = 5
     upload_max_bytes: int = 50 * 1024 * 1024
     app_env: str = "development"
-    scipal_data_dir: str | None = None
-    scipal_model_dir: str | None = None
-    scipal_db_path: str | None = None
+    ariadne_data_dir: str | None = None
+    ariadne_model_dir: str | None = None
+    ariadne_db_path: str | None = None
     mineru_torch_device: str = "cpu"
     mineru_disable_ocr: bool = True
     mineru_table_enable: bool = True
@@ -177,7 +177,7 @@ def default_data_dir() -> Path:
 
 def data_dir() -> Path:
     """Get data directory, creating it if needed."""
-    configured = settings.scipal_data_dir
+    configured = settings.ariadne_data_dir
     path = Path(configured).expanduser() if configured else default_data_dir()
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -188,7 +188,7 @@ def default_model_dir() -> Path:
 
 
 def model_dir() -> Path:
-    configured = settings.scipal_model_dir
+    configured = settings.ariadne_model_dir
     path = Path(configured).expanduser() if configured else default_model_dir()
     path.mkdir(parents=True, exist_ok=True)
     return path

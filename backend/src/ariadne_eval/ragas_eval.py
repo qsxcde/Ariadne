@@ -1,11 +1,11 @@
-from scipal_eval.models import EvalSample, EvalSampleResult
+from ariadne_eval.models import EvalSample, EvalSampleResult
 
 
 def build_single_turn_samples(
   samples_by_id: dict[str, EvalSample],
   results: list[EvalSampleResult],
 ) -> list[object]:
-  """Build RAGAS SingleTurnSample objects for complete SciPal results."""
+  """Build RAGAS SingleTurnSample objects for complete Ariadne results."""
   from ragas.dataset_schema import SingleTurnSample
 
   ragas_samples: list[object] = []

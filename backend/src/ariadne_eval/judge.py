@@ -5,9 +5,9 @@ from langchain_openai import ChatOpenAI
 
 from backend.config import settings
 from backend.rag.llm_output import strip_markdown_fence
-from scipal_eval.models import EvalSample
-from scipal_eval.models import EvalSampleResult
-from scipal_eval.models import JudgeMetricBundle
+from ariadne_eval.models import EvalSample
+from ariadne_eval.models import EvalSampleResult
+from ariadne_eval.models import JudgeMetricBundle
 
 
 def build_judge_client(judge_model: str = "deepseek-v4-pro") -> ChatOpenAI:
@@ -15,7 +15,7 @@ def build_judge_client(judge_model: str = "deepseek-v4-pro") -> ChatOpenAI:
   if not api_key:
     raise RuntimeError("LLM-Judge requires DEEPSEEK_API_KEY to be configured.")
   base_url = os.environ.get("DEEPSEEK_BASE_URL") or settings.deepseek_base_url
-  model = os.environ.get("SCIPAL_EVAL_JUDGE_MODEL") or judge_model
+  model = os.environ.get("ARIADNE_EVAL_JUDGE_MODEL") or judge_model
   return ChatOpenAI(
     model=model,
     temperature=0,
@@ -37,7 +37,7 @@ def build_judge_prompt(sample: EvalSample, result: EvalSampleResult) -> str:
     "requires_abstention": sample.requires_abstention,
   }
   return (
-    "你是 SciPal RAG 回归评测的严格裁判。"
+    "你是 Ariadne RAG 回归评测的严格裁判。"
     "请根据给定问题、参考答案、检索上下文、模型回答和来源，评估回答质量。"
     "只输出 JSON，不要输出 Markdown。JSON 字段必须包含："
     "completeness, citation_accuracy, hallucination_rate, task_success_rate, "

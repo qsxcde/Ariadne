@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from scipal_eval.models import EvalSample, EvalSampleResult, RunMetadata
+from ariadne_eval.models import EvalSample, EvalSampleResult, RunMetadata
 
 
 def write_run_outputs(

@@ -1,8 +1,8 @@
 services:
   ollama:
     image: ollama/ollama:latest
-    container_name: scipal-ollama
+    container_name: ariadne-ollama
     ports:
       - "11434:11434"
     volumes:
-      - "${SCIPAL_MODEL_DIR:-./docker/models}:/models"
+      - "${ARIADNE_MODEL_DIR:-./docker/models}:/models"

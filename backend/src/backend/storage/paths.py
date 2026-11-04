@@ -1,4 +1,4 @@
-"""Safe paths for session artifacts in the target SciPal data layout."""
+"""Safe paths for session artifacts in the target Ariadne data layout."""
 
 import shutil
 from pathlib import Path

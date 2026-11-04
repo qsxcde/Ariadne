@@ -50,7 +50,7 @@ def _move_tree(source: Path, destination: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Migrate legacy SciPal session storage")
+    parser = argparse.ArgumentParser(description="Migrate legacy session storage")
     parser.add_argument("--source-data-dir", type=Path, default=Path("data"))
     parser.add_argument("--target-data-dir", type=Path, default=Path("backend/data"))
     args = parser.parse_args()

@@ -44,7 +44,7 @@ def test_ordered_blocks_sorts_by_page_order_index():
 
 @pytest.mark.unit
 def test_render_block_handles_structure_types():
-    assert render_block(_block("title", "SciPal")) == "# SciPal"
+    assert render_block(_block("title", "Ariadne")) == "# Ariadne"
     assert render_block(_block("heading", "Intro")) == "## Intro"
     assert render_block(_block("table", "| a |")) == "[Table on page 1]\n| a |"
     assert render_block(_block("table", "")) == "[Table on page 1]"
@@ -73,7 +73,7 @@ def test_chunk_text_and_markdown_agree_on_rendering():
     from backend.rag.ingestion.chunking import build_chunks
 
     blocks = [
-        _block("title", "SciPal", order=0),
+        _block("title", "Ariadne", order=0),
         _block("paragraph", "First paragraph.", order=1, index=1, section_path=["1"]),
         _block("table", "| a | b |", order=2, index=2, section_path=["2"]),
     ]
@@ -82,4 +82,4 @@ def test_chunk_text_and_markdown_agree_on_rendering():
     chunk_text = "\n\n".join(chunk.text for chunk in build_chunks(document, "", "doc-1"))
 
     assert "[Table on page 1]\n| a | b |" in chunk_text
-    assert "# SciPal" not in chunk_text  # titles are skipped by chunking, not mangled
+    assert "# Ariadne" not in chunk_text  # titles are skipped by chunking, not mangled

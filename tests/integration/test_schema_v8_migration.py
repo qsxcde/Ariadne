@@ -182,7 +182,7 @@ def _row(path, sql: str, params: tuple = ()):
 def test_v7_database_migrates_to_papers(tmp_path, monkeypatch):
     db_path = tmp_path / "v7.db"
     _create_v7_db(db_path)
-    monkeypatch.setattr(config.settings, "scipal_db_path", str(db_path))
+    monkeypatch.setattr(config.settings, "ariadne_db_path", str(db_path))
 
     init_db()
 
@@ -219,7 +219,7 @@ def test_v7_database_migrates_to_papers(tmp_path, monkeypatch):
 def test_v8_migration_is_idempotent(tmp_path, monkeypatch):
     db_path = tmp_path / "v7.db"
     _create_v7_db(db_path)
-    monkeypatch.setattr(config.settings, "scipal_db_path", str(db_path))
+    monkeypatch.setattr(config.settings, "ariadne_db_path", str(db_path))
 
     init_db()
     init_db()
@@ -232,7 +232,7 @@ def test_v8_migration_is_idempotent(tmp_path, monkeypatch):
 @pytest.mark.unit
 def test_new_document_creates_paper_and_propagates_it(tmp_path, monkeypatch):
     db_path = tmp_path / "fresh.db"
-    monkeypatch.setattr(config.settings, "scipal_db_path", str(db_path))
+    monkeypatch.setattr(config.settings, "ariadne_db_path", str(db_path))
     init_db()
 
     session = session_repo.create_session("New paper", user_id="u1")

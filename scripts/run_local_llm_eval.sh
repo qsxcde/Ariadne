@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-MODEL_DIR="${SCIPAL_MODEL_DIR:-docker/models}"
+MODEL_DIR="${ARIADNE_MODEL_DIR:-docker/models}"
 mkdir -p "$MODEL_DIR"
 
 download() {
@@ -24,10 +24,10 @@ docker compose -f docker-compose.local-llm.yml up -d
 trap 'docker compose -f docker-compose.local-llm.yml down' EXIT
 sleep 5
 
-docker exec scipal-ollama sh -c 'printf "FROM /models/qwen2.5-3b.gguf\n" > /tmp/Modelfile.qwen && ollama create qwen3 -f /tmp/Modelfile.qwen'
-docker exec scipal-ollama sh -c 'printf "FROM /models/nomic-embed.gguf\n" > /tmp/Modelfile.embed && ollama create nomic-embed -f /tmp/Modelfile.embed'
+docker exec ariadne-ollama sh -c 'printf "FROM /models/qwen2.5-3b.gguf\n" > /tmp/Modelfile.qwen && ollama create qwen3 -f /tmp/Modelfile.qwen'
+docker exec ariadne-ollama sh -c 'printf "FROM /models/nomic-embed.gguf\n" > /tmp/Modelfile.embed && ollama create nomic-embed -f /tmp/Modelfile.embed'
 
-export SCIPAL_LOCAL_LLM=1
+export ARIADNE_LOCAL_LLM=1
 export DEEPSEEK_BASE_URL=http://127.0.0.1:11434/v1
 export DEEPSEEK_API_KEY=ollama
 export DEEPSEEK_MODEL=qwen3

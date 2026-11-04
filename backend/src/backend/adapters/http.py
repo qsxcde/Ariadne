@@ -22,7 +22,7 @@ from backend.adapters.resources import LazyResource
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 20.0
-DEFAULT_USER_AGENT = "SciPal/0.1"
+DEFAULT_USER_AGENT = "Ariadne/0.1"
 MAX_ATTEMPTS = 3
 _BACKOFF_MULTIPLIER = 0.5
 _BACKOFF_MAX = 10.0

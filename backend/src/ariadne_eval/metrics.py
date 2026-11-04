@@ -5,13 +5,13 @@ from typing import TypeVar
 from langchain_openai import ChatOpenAI
 
 from backend.config import settings
-from scipal_eval.models import (
+from ariadne_eval.models import (
   EvalSample,
   EvalSampleResult,
   RagasMetricBundle,
   RetrievalMetricBundle,
 )
-from scipal_eval.ragas_eval import build_single_turn_samples
+from ariadne_eval.ragas_eval import build_single_turn_samples
 
 
 T = TypeVar("T")
@@ -216,7 +216,7 @@ def _build_evaluator_llm(judge_model: str = "deepseek-v4-pro") -> object:
   if not api_key:
     raise RuntimeError("RAGAS evaluation requires DEEPSEEK_API_KEY to be configured.")
   base_url = os.environ.get("DEEPSEEK_BASE_URL") or settings.deepseek_base_url
-  model = os.environ.get("SCIPAL_EVAL_JUDGE_MODEL") or judge_model
+  model = os.environ.get("ARIADNE_EVAL_JUDGE_MODEL") or judge_model
 
   return LangchainLLMWrapper(
     ChatOpenAI(

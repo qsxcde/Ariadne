@@ -45,7 +45,7 @@ class InProcessJobRunner:
         self._pool = (
             ThreadPoolExecutor(
                 max_workers=self._max_workers,
-                thread_name_prefix="scipal-job",
+                thread_name_prefix="ariadne-job",
             )
             if self._max_workers > 1
             else None
@@ -60,7 +60,7 @@ class InProcessJobRunner:
         self._stop_event.clear()
         self._thread = threading.Thread(
             target=self._run_forever,
-            name="scipal-job-runner",
+            name="ariadne-job-runner",
             daemon=True,
         )
         self._thread.start()

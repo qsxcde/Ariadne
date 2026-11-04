@@ -20,8 +20,8 @@ from backend.rag.ingestion.chunking import build_chunks
 from backend.rag.ingestion.normalizer import normalize_parser_output
 from backend.adapters.parsers.text_pdf_backend import TextPDFBackend
 
-CACHE = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/scipal_real_papers.json"))
-PDF_DIR = Path(os.getenv("REAL_PDF_DIR", "/tmp/scipal_pdfs"))
+CACHE = Path(os.getenv("REAL_PAPER_CACHE", "/tmp/ariadne_real_papers.json"))
+PDF_DIR = Path(os.getenv("REAL_PDF_DIR", "/tmp/ariadne_pdfs"))
 PAPERS = int(os.getenv("REAL_PDF_PAPERS", "3"))
 
 
@@ -34,7 +34,7 @@ def _download(arxiv_id: str) -> bytes:
         f"https://arxiv.org/pdf/{arxiv_id}",
         timeout=60,
         follow_redirects=True,
-        headers={"User-Agent": "SciPal/0.1 (full pdf eval)"},
+        headers={"User-Agent": "Ariadne/0.1 (full pdf eval)"},
     )
     response.raise_for_status()
     target.write_bytes(response.content)

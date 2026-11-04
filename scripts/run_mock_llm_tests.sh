@@ -12,7 +12,7 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-export SCIPAL_MOCK_LLM=1
+export ARIADNE_MOCK_LLM=1
 export DEEPSEEK_BASE_URL=http://127.0.0.1:18080/v1
 export DEEPSEEK_API_KEY=mock
 export DEEPSEEK_MODEL=mock-model

@@ -6,7 +6,7 @@ services:
     env_file:
       - backend/.env
     environment:
-      SCIPAL_DATA_DIR: /app/backend/data
+      ARIADNE_DATA_DIR: /app/backend/data
     ports:
       - "8000:8000"
     volumes:

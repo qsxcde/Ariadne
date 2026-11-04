@@ -38,7 +38,7 @@ def _get(
         url,
         params=params,
         timeout=timeout,
-        user_agent="SciPal/0.1 (feed)",
+        user_agent="Ariadne/0.1 (feed)",
     )
 
 

@@ -69,7 +69,7 @@ def test_smtp_channel_sends_email(monkeypatch):
             sent.append(message)
 
     monkeypatch.setattr(settings, "smtp_host", "smtp.example.com")
-    monkeypatch.setattr(settings, "smtp_from", "scipal@example.com")
+    monkeypatch.setattr(settings, "smtp_from", "ariadne@example.com")
     monkeypatch.setattr("backend.application.follow.notifications.smtplib.SMTP", FakeSmtp)
     notification = create_notification(
         "u1", kind="feed", title="New paper", body="body"

@@ -1,4 +1,4 @@
-"""SQLite persistence repositories for SciPal."""
+"""SQLite persistence repositories for Ariadne."""
 __all__ = [
     "chunks",
     "connection",

@@ -33,7 +33,7 @@ from backend.storage.sqlite.sessions import touch_session
 
 logger = logging.getLogger(__name__)
 
-STREAM_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="scipal-stream")
+STREAM_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="ariadne-stream")
 
 MISSING_SOURCES_EVENT_ERROR = "Stream protocol error: missing sources event from stream_answer()."
 
