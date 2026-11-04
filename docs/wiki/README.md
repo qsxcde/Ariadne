@@ -1,10 +1,10 @@
-# SciPal 项目 Wiki
+# Ariadne 项目 Wiki
 
-面向 SciPal 仓库的工程知识库。所有结论均以当前代码为准，正文中标注了对应的源码路径，便于随时回查验证。
+面向 Ariadne 仓库的工程知识库。所有结论均以当前代码为准，正文中标注了对应的源码路径，便于随时回查验证。
 
 - 事实基线：`main` 分支当前工作副本，SQLite schema `user_version = 16`
 - 最后核对：2026-11-03
-- 覆盖范围：`backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`
+- 覆盖范围：`backend/src/backend`、`backend/src/ariadne_eval`、`frontend/src`
 
 ## 文档目录
 
@@ -18,7 +18,7 @@
 | [06 检索与问答](06-retrieval-and-chat.md) | 改写、BM25+Dense 混合召回、RRF、重排、上下文、生成与引用校验 | 后端 / 算法 |
 | [07 前端](07-frontend.md) | 组件树、composables、SSE 消费、上传轮询、已知问题 | 前端 |
 | [08 配置参考](08-configuration.md) | 全部 `RuntimeSettings` 字段、环境变量、路径解析、鉴权开关 | 运维 / 后端 |
-| [09 离线评测](09-evaluation.md) | `scipal_eval` CLI、数据集格式、指标、阈值、产物结构 | 算法 / 评测 |
+| [09 离线评测](09-evaluation.md) | `ariadne_eval` CLI、数据集格式、指标、阈值、产物结构 | 算法 / 评测 |
 | [10 开发与运维](10-development.md) | 环境搭建、测试约定、常见改动 how-to、排障 FAQ、已知缺口 | 所有人 |
 
 > 本目录只放**工程事实基线**。审计、现状、能力缺口、产品规划、M0 设计、功能清单、界面清单与 RAG 策略已移至：
@@ -42,7 +42,7 @@
    ▼
 FastAPI (backend.main)
    │  路由 → 服务层（模块级函数直调，无 DI 容器）
-   ├── SQLite（20 表，WAL，backend/data/scipal.db 或 SCIPAL_DB_PATH）
+   ├── SQLite（20 表，WAL，backend/data/ariadne.db 或 ARIADNE_DB_PATH）
    ├── 本地文件（raw/ 解析产物 / index/ FAISS 快照）
    ├── InProcessJobRunner（daemon 线程，进程内 FIFO 任务队列）
    └── RAG（MinerU/pypdf 解析 → 切块 → Embedding → FAISS → 混合检索 → LLM 流式生成）

@@ -2,7 +2,7 @@
 
 ## 1. 定位
 
-SciPal 是一个**单会话内、面向学术论文阅读的 RAG 问答系统**：用户上传 PDF 后，系统在后台完成解析与索引，然后基于论文内容用中文流式作答，并附带来源片段。
+Ariadne 是一个**单会话内、面向学术论文阅读的 RAG 问答系统**：用户上传 PDF 后，系统在后台完成解析与索引，然后基于论文内容用中文流式作答，并附带来源片段。
 
 设计上强调三件事：
 
@@ -82,11 +82,11 @@ POST /sessions/{id}/messages  {role: "user", content: "..."}
 ## 5. 仓库结构
 
 ```
-SciPal/
+Ariadne/
 ├── README.md                     # 面向使用者的快速上手
 ├── pytest.ini                    # pytest 标记注册（unit/integration/import_isolation/slow）
 ├── backend/
-│   ├── pyproject.toml            # 包名 scipal-backend，含 dev / eval 依赖组
+│   ├── pyproject.toml            # 包名 ariadne-backend，含 dev / eval 依赖组
 │   └── src/
 │       ├── backend/
 │       │   ├── main.py           # 装配根：CORS、异常映射、router、job runner
@@ -99,7 +99,7 @@ SciPal/
 │       │   ├── worker/           # runner（handler 注册表）+ handlers（job → 用例）
 │       │   ├── prompts/          # prompts.toml（回答/改写/术语扩展）
 │       │   └── scripts/          # 旧数据目录迁移脚本
-│       └── scipal_eval/          # 离线评测 CLI（检索/生成/RAGAS/Judge）
+│       └── ariadne_eval/          # 离线评测 CLI（检索/生成/RAGAS/Judge）
 ├── frontend/
 │   ├── src/                      # Vue 3 应用（views / components / composables / api.ts）
 │   └── prototypes/               # 静态 HTML 设计稿，不参与构建

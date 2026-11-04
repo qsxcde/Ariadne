@@ -9,7 +9,7 @@
 >
 > 当前真实待办以 [整改计划](../planning/remediation-plan.md) 的「执行进度」表为准。
 
-# SciPal 能力缺口分析
+# Ariadne 能力缺口分析
 
 > 视角：以"智能论文助手"的产品标准评估当前实现，而非以 RAG demo 的标准。
 > 结论均可在代码中复核，证据以 `路径:行号` 标注。
@@ -18,9 +18,9 @@
 
 | 项 | 内容 |
 |---|---|
-| 评估对象 | SciPal 当前工作副本（`main`，SQLite `user_version = 5`） |
+| 评估对象 | Ariadne 当前工作副本（`main`，SQLite `user_version = 5`） |
 | 核对日期 | 2026-10-25 |
-| 评估范围 | `backend/src/backend`、`backend/src/scipal_eval`、`frontend/src`、`.github/workflows` |
+| 评估范围 | `backend/src/backend`、`backend/src/ariadne_eval`、`frontend/src`、`.github/workflows` |
 | 评估方法 | 静态阅读 + 调用链核对；未执行端到端实测与压测 |
 | 结构基线 | 分层重构后（`api` / `application` / `worker` / `rag` / `storage`），提交 `e7325d2` |
 | 关联文档 | [Wiki 目录](../wiki/README.md)（工程事实基线）、[README](../../README.md)（使用入口） |
@@ -63,7 +63,7 @@
 | 跨语言检索改写 | `backend/src/backend/rag/retrieval/query_rewriter.py` | 中英查询包生成，术语扩展 |
 | 多 provider 降级 | `backend/src/backend/rag/generation/model_client.py` | DeepSeek → GLM/Qwen → Ollama |
 | SSE 流式协议 | `backend/src/backend/api/routes/chat.py`、`application/chat.py` | `status` / `token` / `warning` / `sources` / `done` |
-| 离线评测 CLI | `backend/src/scipal_eval/` | 检索指标、RAGAS、LLM Judge、阈值门禁 |
+| 离线评测 CLI | `backend/src/ariadne_eval/` | 检索指标、RAGAS、LLM Judge、阈值门禁 |
 | 用户隔离 | `backend/src/backend/domain/access.py` | 会话级归属校验，越权按 404 处理 |
 
 ## 3. P0 缺口（阻塞"可信"，建议优先处理）

@@ -2,7 +2,7 @@
 
 ## 1. 环境搭建
 
-依赖管理用 [uv](https://github.com/astral-sh/uv)，后端配置在 `backend/pyproject.toml`（包名 `scipal-backend`，`requires-python >= 3.11`）。
+依赖管理用 [uv](https://github.com/astral-sh/uv)，后端配置在 `backend/pyproject.toml`（包名 `ariadne-backend`，`requires-python >= 3.11`）。
 
 ```bash
 # 1. 配置（仓库根目录，不是 backend/）
@@ -28,9 +28,9 @@ cd frontend && npm install && npm run dev
 | `dev` | `[project.optional-dependencies].dev` | pytest, pytest-asyncio, pytest-cov, pytest-mock |
 | `eval` | `[dependency-groups].eval` | langchain-openai, pandas, pyyaml, ragas |
 
-`eval` 是 dependency-group，**必须** `--group eval`；漏加会导致 `scipal_eval` 导入 `langchain_openai` 失败。
+`eval` 是 dependency-group，**必须** `--group eval`；漏加会导致 `ariadne_eval` 导入 `langchain_openai` 失败。
 
-控制台入口：`scipal-backend = backend.main:main`、`scipal-eval = scipal_eval.cli:main`。
+控制台入口：`ariadne-backend = backend.main:main`、`ariadne-eval = ariadne_eval.cli:main`。
 
 ## 2. 测试
 
@@ -173,9 +173,9 @@ uv run --project backend python -m backend.scripts.migrate_storage \
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 登录返回 400 `Auth not configured` | `JWT_SECRET_KEY` 为空 | 设置 `JWT_SECRET_KEY` 后重启；或本地用 `localStorage.setItem("scipal_token","dev")` 绕过前端登录页 |
+| 登录返回 400 `Auth not configured` | `JWT_SECRET_KEY` 为空 | 设置 `JWT_SECRET_KEY` 后重启；或本地用 `localStorage.setItem("ariadne_token","dev")` 绕过前端登录页 |
 | 所有请求 503 `Authentication is not configured` | `APP_ENV=production` 但没配 `JWT_SECRET_KEY` | 配置密钥；本地开发把 `APP_ENV` 设为 `development` |
-| 所有请求 401 `Not authenticated` | 已启用鉴权但没带 token | 前端重新登录；`api.ts` 从 `localStorage["scipal_token"]` 取 |
+| 所有请求 401 `Not authenticated` | 已启用鉴权但没带 token | 前端重新登录；`api.ts` 从 `localStorage["ariadne_token"]` 取 |
 | 会话读写返回 404 但数据明明存在 | 会话归属其他用户 | 用创建该会话的账号访问；`user_id IS NULL` 的历史会话不受限 |
 | 上传 413 | 超过 `UPLOAD_MAX_BYTES`（50 MiB） | 调大配置或压缩 PDF |
 | 上传 400 `not a valid PDF` | 前 4 字节不是 `%PDF` | 确认文件确为 PDF |
@@ -188,7 +188,7 @@ uv run --project backend python -m backend.scripts.migrate_storage \
 | `Embedding dimension mismatch` | `EMBEDDING_DIM` 与模型输出不一致 | 改正维度并对已有文档重建索引 |
 | 模型下载失败 / 启动时卡在加载权重 | 网络不通或 `EMBEDDING_MODEL_SOURCE` 选错 | 预下载权重到 `model_cache/embeddings/` 并设 `EMBEDDING_LOCAL_FILES_ONLY=true`；本地 embedder 失败后会退避 60s→600s 再重试 |
 | 前端请求被 CORS 拦 | 用非 localhost 访问 | 调整 `CORS_ORIGIN_REGEX`，或改 `VITE_API_BASE_URL` 同源部署 |
-| 数据库"消失" | 默认 DB 落在源码包或 `SCIPAL_DATA_DIR` 被改 | 查 `SCIPAL_DB_PATH` / `SCIPAL_DATA_DIR`，见 08 章第 3 节 |
+| 数据库"消失" | 默认 DB 落在源码包或 `ARIADNE_DATA_DIR` 被改 | 查 `ARIADNE_DB_PATH` / `ARIADNE_DATA_DIR`，见 08 章第 3 节 |
 
 ## 6. 运行与运维要点
 

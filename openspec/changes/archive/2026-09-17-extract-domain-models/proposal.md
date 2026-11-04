@@ -44,7 +44,7 @@
 | `storage/sqlite` | 2 | `chunks`、`messages` |
 | `rag/indexing` | 1 | `vector_store` |
 | `rag/pipeline` | 1 | `online_pipeline` |
-| `scipal_eval` | 1 | `draft_generator` |
+| `ariadne_eval` | 1 | `draft_generator` |
 
 **解除的依赖**：`storage → rag` 的 4 处反向依赖中解除 **2 处**（`chunks.py`、`messages.py`）。剩余 2 处在 `storage/vector_db/registry.py:6-7`（依赖 `rag.indexing.vector_store` 与 `rag.retrieval.filters`），涉及"向量库归属哪一层"的架构决策，本变更不处理。
 

@@ -1,6 +1,6 @@
 # 04 API 参考
 
-服务入口：`backend/src/backend/main.py` → `app = FastAPI(title="SciPal API")`
+服务入口：`backend/src/backend/main.py` → `app = FastAPI(title="Ariadne API")`
 本地地址：`http://127.0.0.1:8000`，OpenAPI 文档 `http://127.0.0.1:8000/docs`
 契约定义：`backend/src/backend/api/schemas/`（全部 snake_case，无 alias）
 
@@ -115,7 +115,7 @@ frontend/src/shared/contracts/openapi.d.ts   ← 生成的 TS 类型，禁止手
 ```json
 {
   "status": "ok",
-  "job_runner": {"running": true, "thread_name": "scipal-job-runner", "stop_requested": false}
+  "job_runner": {"running": true, "thread_name": "ariadne-job-runner", "stop_requested": false}
 }
 ```
 
@@ -482,7 +482,7 @@ while (true) {
 
 ## 5. 未暴露 HTTP 的能力
 
-`evaluation.evaluate_session_chat` / `evaluation.evaluate_session_retrieval` **没有对应路由**，仅供 `scipal_eval` CLI 在进程内调用（见 [09 离线评测](09-evaluation.md)）。
+`evaluation.evaluate_session_chat` / `evaluation.evaluate_session_retrieval` **没有对应路由**，仅供 `ariadne_eval` CLI 在进程内调用（见 [09 离线评测](09-evaluation.md)）。
 
 ## 6. 联调注意点
 

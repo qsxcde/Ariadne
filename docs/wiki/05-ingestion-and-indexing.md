@@ -54,7 +54,7 @@
 
 | 行为 | 实现 |
 |---|---|
-| 线程 | daemon 线程 `scipal-job-runner`，`runner_idle_poll_interval=0.05s` 空转 |
+| 线程 | daemon 线程 `ariadne-job-runner`，`runner_idle_poll_interval=0.05s` 空转 |
 | 取任务 | `list_runnable_jobs(limit=1)`：`status='queued' ORDER BY created_at ASC` |
 | 领取 | `mark_job_running` CAS：`WHERE id=? AND status='queued'`，`attempt+1`，清 `error_message`，置 `started_at` |
 | 串行 | 每 `session_id` 一把 `threading.Lock`，同会话任务不并发 |

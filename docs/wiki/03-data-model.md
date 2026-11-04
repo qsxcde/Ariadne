@@ -332,16 +332,16 @@ backend/data/                              # 默认数据根 = backend_project_d
 │   └── mineru/
 │       └── modelscope/                    # MinerU 本地模型缓存
 ├── mineru.json                            # 每次本地解析前重写
-└── scipal.db                              # 仅当显式设置 SCIPAL_DATA_DIR 时落在这里
+└── ariadne.db                              # 仅当显式设置 ARIADNE_DATA_DIR 时落在这里
 ```
 
 路径解析优先级：
 
 | 目标 | 顺序 |
 |---|---|
-| 数据根 | `SCIPAL_DATA_DIR` → `backend/data` |
-| 模型缓存 | `SCIPAL_MODEL_DIR` → `<数据根>/model_cache` |
-| 数据库 | `SCIPAL_DB_PATH` → `<数据根>/scipal.db` |
+| 数据根 | `ARIADNE_DATA_DIR` → `backend/data` |
+| 模型缓存 | `ARIADNE_MODEL_DIR` → `<数据根>/model_cache` |
+| 数据库 | `ARIADNE_DB_PATH` → `<数据根>/ariadne.db` |
 
 > 不再回退到源码包目录：DB 与 `raw/`、`index/` 始终同源，避免 `git status` 里出现未跟踪的运行时数据库。
 

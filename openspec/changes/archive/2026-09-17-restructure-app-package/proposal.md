@@ -48,8 +48,8 @@
 
 **不受影响**：
 
-- `scipal_eval/cli.py` 确实引用了 `app.services`，但目标是 `chat_service` 的评测函数，而 `chat_service` 本变更不移动
-- `pyproject.toml` 的入口点 `scipal-backend = "backend.app.main:main"` 与 README 的 `uvicorn backend.app.main:app` 均不涉及被移动文件（`main.py` 位置不变）
+- `ariadne_eval/cli.py` 确实引用了 `app.services`，但目标是 `chat_service` 的评测函数，而 `chat_service` 本变更不移动
+- `pyproject.toml` 的入口点 `ariadne-backend = "backend.app.main:main"` 与 README 的 `uvicorn backend.app.main:app` 均不涉及被移动文件（`main.py` 位置不变）
 - 无 API 变更、无依赖变更、无配置变更、不触及数据库与数据目录
 
 **验证方式**：全模块遍历导入（当前 94 个模块，期望 0 失败）+ `uv build` 打包 + `app.openapi()` 路由清单比对。

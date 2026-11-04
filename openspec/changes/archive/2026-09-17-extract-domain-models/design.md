@@ -5,7 +5,7 @@
 **当前状态**
 
 - `rag/ingestion/metadata.py` 共 37 行，定义三个 Pydantic 模型：`ChunkMetadata`、`Chunk`、`SourceRef`
-- 被 20 个源文件引用，分布：`rag/retrieval` 8、`app` 3、`rag/ingestion` 2、`rag/generation` 2、`storage/sqlite` 2、`rag/indexing` 1、`rag/pipeline` 1、`scipal_eval` 1
+- 被 20 个源文件引用，分布：`rag/retrieval` 8、`app` 3、`rag/ingestion` 2、`rag/generation` 2、`storage/sqlite` 2、`rag/indexing` 1、`rag/pipeline` 1、`ariadne_eval` 1
 - `backend/domain/` 现有 `config.py` / `states.py` / `exceptions.py`，`__init__.py` 的 `__all__` 列出三者
 - `storage → rag` 共 4 处反向依赖，其中 2 处指向本文件（`chunks.py:4`、`messages.py:5`），另 2 处在 `storage/vector_db/registry.py:6-7`
 - `rag → storage` 依赖为 0
@@ -81,7 +81,7 @@ V5 必须单独设立：如果只跑 V1–V4，一个"搬迁完成但仍有人�
 |---|---|
 | 【遗漏 import】某文件仍引用旧路径 | V1 立即暴露；V4 字符串扫描兜底（含文档与注释） |
 | 【Pydantic 模型内部引用失效】`Chunk.metadata: ChunkMetadata` 是文件内直接引用 | 两者同文件搬迁，引用关系不变；V1 覆盖 |
-| 【`scipal_eval` 遗漏】该包在 `src/` 下的另一顶层目录 | 已核查：`draft_generator.py` 1 处引用，纳入 20 个文件清单，V1 覆盖 |
+| 【`ariadne_eval` 遗漏】该包在 `src/` 下的另一顶层目录 | 已核查：`draft_generator.py` 1 处引用，纳入 20 个文件清单，V1 覆盖 |
 | 【循环导入】新位置引发依赖环 | `domain/models.py` 仅依赖 pydantic，`domain/` 无任何内部层引用，结构上不可能成环；V1 验证 |
 | 【`__pycache__` 残留】旧路径的 .pyc 干扰验证 | 迁移前清理一次、验证前再清理一次 |
 | 【`domain/` 职责漂移】后续可能有人把业务逻辑塞进 `models.py` | 在模块 docstring 中写明"仅承载跨层共享的数据契约，不含行为" |

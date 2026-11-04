@@ -140,7 +140,7 @@ lifespan 启动
         删除 status=uploaded 且无对应 job 的文档行与磁盘文件；异常仅记日志
   3. await to_thread(runner.recover_interrupted_jobs)
         running / interrupted → queued（清 started_at / finished_at / error）
-  4. runner.start()   # daemon 线程名 scipal-job-runner
+  4. runner.start()   # daemon 线程名 ariadne-job-runner
   5. yield
   关闭
   runner.stop(timeout=1.0)  # 超时仅告警

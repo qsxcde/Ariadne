@@ -1,4 +1,4 @@
-# SciPal 整改计划（Remediation Plan）
+# Ariadne 整改计划（Remediation Plan）
 
 > 制定日期：2026-10-27
 > 依据：[audit-2026-10-27.md](../analysis/audit-2026-10-27.md)（10 维度审计，P0/P1 均经二次读码复核）
@@ -69,7 +69,7 @@ P0 ──┬── P1 ──┐
 | 0.3 | 上传改流式：先按 `Content-Length` 拒绝超限，再分块写临时文件并累计计数 | `api/routes/documents.py:43`、`application/documents.py:27-34` | 构造 60 MiB 请求返回 413，内存峰值不随体积增长 |
 | 0.4 | `logout()` 清空全部前端单例 + abort 在途流 + `useLibrary.invalidate()` + `usePaperReader.reset()` | `AppShell.vue:136-139`、`useAuth.ts:57-63`、`usePaperChat.ts:15` | 登出后 sessions/messages/documents 为空；换账号不出现他人会话 |
 | 0.5 | `PdfViewer` 保存 `RenderTask`，重渲染前 `await cancel()` 并忽略 `RenderingCancelledException` | `PdfViewer.vue:51-82` | 连续快速翻 10 页无白屏、无 console 异常 |
-| 0.6 | DB 移出包目录到 `data_dir()`；`.gitignore` 加 `**/*.db*`；清理 3 个未跟踪文件 | `storage/paths.py`、`.gitignore` | `git status` 干净；`SCIPAL_DATA_DIR` 生效 |
+| 0.6 | DB 移出包目录到 `data_dir()`；`.gitignore` 加 `**/*.db*`；清理 3 个未跟踪文件 | `storage/paths.py`、`.gitignore` | `git status` 干净；`ARIADNE_DATA_DIR` 生效 |
 
 ---
 
@@ -196,7 +196,7 @@ application/** 不得 import fastapi（保留现有规则）
 |---|---|
 | 7.1 | 路由表、配置字段、测试清单由 `openapi.json` / `RuntimeSettings` / `pytest --collect-only` 自动生成，**禁止手写计数** |
 | 7.2 | 重写 wiki 07/10/11：删掉已实现的 6 条「缺口」（含 1 条 P0），11 章从「差距分析」改为「剩余 backlog」 |
-| 7.3 | README 全面修正：`cd SciPal`、`.env` 路径、CPU/MPS、端点表、测试数、fallback 默认值 |
+| 7.3 | README 全面修正：`cd Ariadne`、`.env` 路径、CPU/MPS、端点表、测试数、fallback 默认值 |
 | 7.4 | CI 增加：`ruff check`（当前未安装、无配置）、`npm run typecheck`、契约 diff 门禁 |
 | 7.5 | 启动自检：`jwt_secret_key` 非空；`APP_ENV=production` 禁止匿名旁路；不满足直接启动失败 |
 

@@ -25,7 +25,7 @@
 **Non-Goals**
 
 - 不拆分 `chat_service.py`（313 行）、不下沉 SSE 事件定义、不移动 `index_service.py`——这些会改变依赖形状，需要测试网支撑，留给后续变更
-- 不改主包名 `backend` → `scipal`（收益是命名语义，代价是触及全仓 import 与部署配置，与结构正确性无关）
+- 不改主包名 `backend` → `ariadne`（收益是命名语义，代价是触及全仓 import 与部署配置，与结构正确性无关）
 - 不引入任何新依赖、不引入 lint/format 工具链
 - 不新增测试（测试体系建设是独立的后续变更）
 
@@ -101,7 +101,7 @@ V4 是关键补充——前三项只覆盖"代码能否运行"，无法发现 RE
 |---|---|
 | 【遗漏 import】某个文件引用了被移动模块但未被发现 | V1 全模块遍历导入会立即暴露；V4 字符串扫描兜底 |
 | 【循环导入】`runner.py` 上移后与 `services` 形成环 | `runner` → `services.ingestion_service` 是单向依赖，后者不反向引用 `runner`，无环。改动后由 V1 验证 |
-| 【未预见的外部引用】包外代码引用了被移动路径 | 已核查：唯一跨包引用是 `scipal_eval/cli.py` → `app.services.chat_service`，而 `chat_service` 本变更不移动 |
+| 【未预见的外部引用】包外代码引用了被移动路径 | 已核查：唯一跨包引用是 `ariadne_eval/cli.py` → `app.services.chat_service`，而 `chat_service` 本变更不移动 |
 | 【`__pycache__` 残留】旧路径的 .pyc 文件可能造成误导 | 迁移后清理 `app/` 下的 `__pycache__`；不影响运行时行为 |
 | 【IDE 索引失效】重命名后编辑器可能显示旧路径 | 提示：改动后重启语言服务器 |
 | 【未来扩展受限】删除 `api/` 层后，若将来要加中间件/依赖层需重新引入 | 可接受：`main.py` 已承载中间件；真需要时再引入有明确理由的层，好过保留一个空层 |

@@ -122,7 +122,7 @@ AppLayout.vue ──usePaperChat()──┬── useSessionState() ──▶ GE
 
 ### 4.1 `useAuth`
 
-模块级单例 `isAuthenticated / user / loading`。`checkAuth()` 在存在 token 时调 `getMe()`，失败 `clearToken()`。登录成功写 `localStorage["scipal_token"]`。
+模块级单例 `isAuthenticated / user / loading`。`checkAuth()` 在存在 token 时调 `getMe()`，失败 `clearToken()`。登录成功写 `localStorage["ariadne_token"]`。
 
 ### 4.2 `useSessionState`
 
@@ -240,6 +240,6 @@ npm run lint
 
 后端需先启动（见 [10 开发与运维](10-development.md)），并确保 `JWT_SECRET_KEY` 的配置与登录方式匹配：
 
-- 未配置 `JWT_SECRET_KEY` 且 `APP_ENV` 为开发类取值：后端处于匿名旁路，数据接口免鉴权，但 `/auth/login`、`/auth/register` 返回 400 `Auth not configured`。前端 `useAuth.checkAuth()` 在无 token 时直接置为未登录态，因此界面会停在 `LoginView` 且无法登录——本地无鉴权联调需要手动写入 `localStorage.setItem("scipal_token", "dev")`。
+- 未配置 `JWT_SECRET_KEY` 且 `APP_ENV` 为开发类取值：后端处于匿名旁路，数据接口免鉴权，但 `/auth/login`、`/auth/register` 返回 400 `Auth not configured`。前端 `useAuth.checkAuth()` 在无 token 时直接置为未登录态，因此界面会停在 `LoginView` 且无法登录——本地无鉴权联调需要手动写入 `localStorage.setItem("ariadne_token", "dev")`。
 - `APP_ENV=production` 且缺 `JWT_SECRET_KEY`：数据接口统一 503 `Authentication is not configured`（fail closed）。
 - 配置了 `JWT_SECRET_KEY`：走正常注册/登录流程。

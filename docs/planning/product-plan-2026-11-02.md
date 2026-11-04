@@ -1,6 +1,6 @@
 # 智能论文助手功能规划（2026-11-02）
 
-> 目标：在 SciPal 现有「单篇 PDF + 会话式 RAG」基础上，规划一个真正帮助研究人员**读论文、管理阅读进度、跟进领域进展**的产品。
+> 目标：在 Ariadne 现有「单篇 PDF + 会话式 RAG」基础上，规划一个真正帮助研究人员**读论文、管理阅读进度、跟进领域进展**的产品。
 > 前置阅读：[现状分析](../analysis/status-2026-11-02.md)、[能力缺口分析](../analysis/gap-analysis-2026-10-25.md)、[系统架构](../wiki/02-architecture.md)
 > 本文回答三个问题：做什么、先做什么、为什么；不含排期承诺。阶段目标与验收门禁见 [goals-2026-11-03.md](goals-2026-11-03.md)。
 
@@ -247,7 +247,7 @@
 | 文献库 | `GET /documents` 是跨会话视图（`frontend/src/api/library.ts:6`） | 新增 `/papers` 资源与 `/collections` |
 | 解析产物 | `DocumentIR` 已含 outline / quality report（`rag/ingestion/document_ir.py:71-80`） | 直接复用到速读卡、章节导航、质量提示 |
 | 阅读器 | `PaperReader` / `PdfViewer` 已支持引用定位 | 复用并增加批注层、笔记侧栏、进度上报 |
-| 评测 | `scipal_eval` 覆盖检索/RAGAS | 增加摘要忠实度、对比准确性、推荐相关性 |
+| 评测 | `ariadne_eval` 覆盖检索/RAGAS | 增加摘要忠实度、对比准确性、推荐相关性 |
 | 任务队列 | 单进程、会话级串行（`worker/runner.py`） | 增加 feed 抓取/批量解析 job；明确单实例约束 |
 
 **迁移策略（重要）**：不要一次性重写。M0 采用「paper 是资产，session 是阅读/索引容器」的最小改造：每篇 paper 自动创建一个 reading session，`documents` / `chunks` / `jobs` 增加 `paper_id` 并回填；**不拆 `documents.session_id` 的非空约束**，避免重写摄取与索引链路。旧会话 API 保留，新增 `/papers` API 双轨。等 M2 做集合检索时，再把索引 scope 从 session 上移到 collection。

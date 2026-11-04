@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1 align="center">SciPal</h1>
+<h1 align="center">Ariadne</h1>
 
 <p align="center">面向学术论文阅读的 RAG 问答与文献工作台</p>
 
@@ -20,7 +20,7 @@
 
 ## 简介
 
-SciPal 是一个面向学术论文阅读场景的 RAG 问答系统与文献工作台。用户上传 PDF 后，系统在后台完成文档解析、切块、向量化与索引构建，并基于论文内容提供**带来源引用的中文流式回答**；围绕这条主线，还提供文献库、批注、阅读统计、集合问答、多论文对比与 arXiv 跟进等能力。
+Ariadne 是一个面向学术论文阅读场景的 RAG 问答系统与文献工作台。用户上传 PDF 后，系统在后台完成文档解析、切块、向量化与索引构建，并基于论文内容提供**带来源引用的中文流式回答**；围绕这条主线，还提供文献库、批注、阅读统计、集合问答、多论文对比与 arXiv 跟进等能力。
 
 设计上强调三点：
 
@@ -125,7 +125,7 @@ SciPal 是一个面向学术论文阅读场景的 RAG 问答系统与文献工�
 ## 目录结构
 
 ```
-SciPal/
+Ariadne/
 ├── backend/
 │   ├── pyproject.toml              # 依赖、可选组与工具配置
 │   ├── .env.example                # 后端环境变量模板
@@ -143,7 +143,7 @@ SciPal/
 │       │   ├── composition/        # 配置到具体能力的装配
 │       │   ├── prompts/            # prompts.toml 与加载器
 │       │   └── scripts/            # OpenAPI / 端点表 / 迁移 / 索引回收
-│       └── scipal_eval/            # 离线评测 CLI
+│       └── ariadne_eval/            # 离线评测 CLI
 ├── frontend/
 │   └── src/
 │       ├── api/                    # HTTP 与 SSE 客户端、契约类型
@@ -178,7 +178,7 @@ SciPal/
 
 ```bash
 git clone <repo-url>
-cd SciPal
+cd Ariadne
 ```
 
 ### 2. 安装依赖
@@ -263,9 +263,9 @@ npm run dev
 | `MINERU_MODEL_VERSION_FALLBACK` | `pipeline` | 主模型解析失败时的回退版本；置空表示不回退 |
 | `JWT_SECRET_KEY` | 空 | 开发环境留空表示匿名访问；非开发环境必须配置 |
 | `APP_ENV` | `development` | 非开发环境且未配置密钥时，服务拒绝启动 |
-| `SCIPAL_DATA_DIR` | `backend/data` | 运行数据根目录（SQLite、原始 PDF、索引快照） |
-| `SCIPAL_MODEL_DIR` | `backend/data/model_cache` | 模型缓存目录 |
-| `SCIPAL_DB_PATH` | `<data>/scipal.db` | SQLite 数据库路径 |
+| `ARIADNE_DATA_DIR` | `backend/data` | 运行数据根目录（SQLite、原始 PDF、索引快照） |
+| `ARIADNE_MODEL_DIR` | `backend/data/model_cache` | 模型缓存目录 |
+| `ARIADNE_DB_PATH` | `<data>/ariadne.db` | SQLite 数据库路径 |
 | `UPLOAD_MAX_BYTES` | `52428800`（50 MiB） | 单次上传大小上限 |
 | `LLM_FALLBACK_ENABLED` | `false` | 开启后 DeepSeek 失败时降级到 fallback / Ollama |
 | `RERANKER_ENABLED` | `true` | 是否启用检索结果重排 |
@@ -434,7 +434,7 @@ cd frontend && npm run gen
 真实 arXiv 抓取冒烟测试默认 skip，需要显式开启：
 
 ```bash
-SCIPAL_NETWORK_TESTS=1 uv run --project backend pytest \
+ARIADNE_NETWORK_TESTS=1 uv run --project backend pytest \
   tests/network/test_arxiv_network.py tests/network/test_citations_network.py
 ```
 
@@ -461,7 +461,7 @@ CI 定义在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)：
 从现有会话索引导出评测草稿：
 
 ```bash
-uv run --project backend python -m scipal_eval.cli generate-draft \
+uv run --project backend python -m ariadne_eval.cli generate-draft \
   --session-id session-example \
   --output data/evaluation/drafts/retrieval-v1-draft.jsonl \
   --max-samples 30
@@ -470,7 +470,7 @@ uv run --project backend python -m scipal_eval.cli generate-draft \
 离线检索评测（默认不触发实时生成与 RAGAS）：
 
 ```bash
-uv run --project backend python -m scipal_eval.cli run \
+uv run --project backend python -m ariadne_eval.cli run \
   --dataset data/evaluation/reviewed/retrieval-v1.jsonl \
   --session-id session-example \
   --config-set retrieval-v1 \

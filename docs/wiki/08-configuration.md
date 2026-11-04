@@ -7,12 +7,12 @@
 仓库根目录的 `.env` **不会被读取**，启动时会打印一条 warning。
 
 ```
-SciPal/backend/.env  ← 后端配置（唯一生效路径）
-SciPal/frontend/.env ← 仅 VITE_* 变量
+Ariadne/backend/.env  ← 后端配置（唯一生效路径）
+Ariadne/frontend/.env ← 仅 VITE_* 变量
 ```
 
 启动日志会打印实际加载的路径：
-`Configuration: loading /…/SciPal/backend/.env`。
+`Configuration: loading /…/Ariadne/backend/.env`。
 
 模块级单例 `settings = RuntimeSettings()` 在 import 时即完成加载；改配置必须重启进程。
 
@@ -75,9 +75,9 @@ SciPal/frontend/.env ← 仅 VITE_* 变量
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `SCIPAL_DATA_DIR` | `None` → `backend/data` | 运行时数据根 |
-| `SCIPAL_MODEL_DIR` | `None` → `<数据根>/model_cache` | 模型缓存根 |
-| `SCIPAL_DB_PATH` | `None` → `<数据根>/scipal.db` → `backend/src/backend/storage/sqlite/scipal.db` | SQLite 文件 |
+| `ARIADNE_DATA_DIR` | `None` → `backend/data` | 运行时数据根 |
+| `ARIADNE_MODEL_DIR` | `None` → `<数据根>/model_cache` | 模型缓存根 |
+| `ARIADNE_DB_PATH` | `None` → `<数据根>/ariadne.db` → `backend/src/backend/storage/sqlite/ariadne.db` | SQLite 文件 |
 
 ### 2.6 MinerU
 
@@ -195,13 +195,13 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 backend_root()  = backend/src/backend
 project_root()  = 仓库根（.env 位置）
 
-data_dir()      = SCIPAL_DATA_DIR or backend_root().parent / "data"   → backend/data
-model_dir()     = SCIPAL_MODEL_DIR or data_dir()/model_cache
+data_dir()      = ARIADNE_DATA_DIR or backend_root().parent / "data"   → backend/data
+model_dir()     = ARIADNE_MODEL_DIR or data_dir()/model_cache
 mineru_model_dir()           = model_dir()/mineru
 mineru_modelscope_cache_dir()= model_dir()/mineru/modelscope
 embedding_model_dir()        = model_dir()/embeddings/<EMBEDDING_MODEL 末段名>
 
-DB: SCIPAL_DB_PATH → data_dir()/scipal.db → backend/src/backend/storage/sqlite/scipal.db
+DB: ARIADNE_DB_PATH → data_dir()/ariadne.db → backend/src/backend/storage/sqlite/ariadne.db
 ```
 
 三者都会 `mkdir(parents=True, exist_ok=True)`，目录不存在会自动创建。
@@ -228,8 +228,8 @@ MINERU_TORCH_DEVICE=cpu
 MINERU_DISABLE_OCR=true
 
 # 存储
-# SCIPAL_DATA_DIR=/var/lib/scipal
-# SCIPAL_DB_PATH=/var/lib/scipal/scipal.db
+# ARIADNE_DATA_DIR=/var/lib/ariadne
+# ARIADNE_DB_PATH=/var/lib/ariadne/ariadne.db
 
 # 鉴权（留空 = 开发旁路）
 # JWT_SECRET_KEY=change-me
@@ -246,5 +246,5 @@ MINERU_DISABLE_OCR=true
 1. **`EMBEDDING_DIM` 必须与模型输出维度一致**，否则追加索引时抛 `ValueError("Embedding dimension mismatch")`；换模型后需对已有文档重建索引。
 2. **切换 embedding 空间等于让旧索引失效**，历史会话的 FAISS 快照仍指向旧向量空间，检索结果不可比。
 3. `TERM_EXPAND_GLOSSARY_PATH` 是相对路径，按进程工作目录解析；用 `uv run --project backend ...` 时工作目录是仓库根，因此默认可命中 `backend/data/term_glossary.json`。
-4. 生产必须显式设置 `SCIPAL_DB_PATH` 或 `SCIPAL_DATA_DIR`，否则默认 DB 会落进源码包目录。
+4. 生产必须显式设置 `ARIADNE_DB_PATH` 或 `ARIADNE_DATA_DIR`，否则默认 DB 会落进源码包目录。
 5. 生产必须设置 `JWT_SECRET_KEY`，否则任何人可匿名读写全部会话（且归属校验缺失）。

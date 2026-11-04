@@ -1,7 +1,7 @@
 # 09 离线评测
 
-代码：`backend/src/scipal_eval/`
-入口：`scipal-eval` 控制台脚本 / `python -m scipal_eval.cli`（`prog="ragas-evals"`）
+代码：`backend/src/ariadne_eval/`
+入口：`ariadne-eval` 控制台脚本 / `python -m ariadne_eval.cli`（`prog="ragas-evals"`）
 
 评测在**当前进程内**直接调用应用服务层（`evaluation.evaluate_session_retrieval` / `evaluation.evaluate_session_chat`），不经过 HTTP，因此需要能读到同一份 SQLite 与会话索引文件。
 
@@ -45,7 +45,7 @@ for sample in samples:
 
 ## 4. 数据集格式
 
-JSONL，一行一个 `EvalSample`（`scipal_eval/models.py`，`extra="forbid"`）。
+JSONL，一行一个 `EvalSample`（`ariadne_eval/models.py`，`extra="forbid"`）。
 
 必填字段：`sample_id`、`document_id`、`question`、`reference_answer`、`question_type`、`difficulty`、`review_status`（`draft` / `approved`）。
 
@@ -72,7 +72,7 @@ JSONL，一行一个 `EvalSample`（`scipal_eval/models.py`，`extra="forbid"`�
 
 ## 5. 配置集
 
-`scipal_eval/configs.py`：
+`ariadne_eval/configs.py`：
 
 | 配置集 | 包含配置 |
 |---|---|
@@ -110,7 +110,7 @@ JSONL，一行一个 `EvalSample`（`scipal_eval/models.py`，`extra="forbid"`�
 
 ### 6.3 LLM Judge（`judge.py`）
 
-`ChatOpenAI(temperature=0)`，模型优先级：`SCIPAL_EVAL_JUDGE_MODEL` > `--judge-model`。
+`ChatOpenAI(temperature=0)`，模型优先级：`ARIADNE_EVAL_JUDGE_MODEL` > `--judge-model`。
 
 输出 JSON：`completeness, citation_accuracy, hallucination_rate, task_success_rate, end_to_end_answer_quality, abstention_accuracy, rationale`，分数 clamp 到 `[0,1]`。
 
@@ -135,7 +135,7 @@ JSONL，一行一个 `EvalSample`（`scipal_eval/models.py`，`extra="forbid"`�
 
 ## 8. 阈值
 
-默认文件 `backend/src/scipal_eval/configs/eval_thresholds.yaml`：
+默认文件 `backend/src/ariadne_eval/configs/eval_thresholds.yaml`：
 
 | suite | metric | 规则 |
 |---|---|---|
@@ -166,7 +166,7 @@ JSONL，一行一个 `EvalSample`（`scipal_eval/models.py`，`extra="forbid"`�
 
 ```bash
 # 纯检索（默认 suite=retrieval、profile=regression）
-uv run --project backend python -m scipal_eval.cli run \
+uv run --project backend python -m ariadne_eval.cli run \
   --dataset data/evaluation/reviewed/retrieval-v1.jsonl \
   --session-id session-example \
   --config-set retrieval-v1 \
@@ -174,7 +174,7 @@ uv run --project backend python -m scipal_eval.cli run \
   --run-name retrieval-exp-001
 
 # 生成 + RAGAS
-uv run --project backend python -m scipal_eval.cli run \
+uv run --project backend python -m ariadne_eval.cli run \
   --dataset data/evaluation/reviewed/retrieval-v1.jsonl \
   --session-id session-example \
   --config-set retrieval-v1 \
@@ -183,7 +183,7 @@ uv run --project backend python -m scipal_eval.cli run \
   --with-generation --with-ragas
 
 # 对比两次运行
-uv run --project backend python -m scipal_eval.cli compare \
+uv run --project backend python -m ariadne_eval.cli compare \
   --baseline eval_outputs/ragas/run-a/summary.json \
   --current  eval_outputs/ragas/run-b/summary.json
 ```

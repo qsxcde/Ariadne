@@ -1,7 +1,7 @@
 # M0 论文资产层设计（2026-11-02）
 
 > **状态：M0.1–M0.4 已实施（2026-11-03）；M0.5 验收中；当前代码为 schema v8。**
-> 范围：SciPal 数据模型重构（schema v8），为「个人研究生 + 阅读进度优先」的论文助手打地基。
+> 范围：Ariadne 数据模型重构（schema v8），为「个人研究生 + 阅读进度优先」的论文助手打地基。
 > 前置决策：目标用户是个人用户、进度以阅读为主、先做数据模型再上 AI。
 > 相关文档：[产品规划](product-plan-2026-11-02.md)、[现状分析](../analysis/status-2026-11-02.md)、[数据模型](../wiki/03-data-model.md)
 
@@ -330,7 +330,7 @@ SET paper_id = (
 
 ### 4.4 安全措施
 
-- 迁移前复制 `backend/data/scipal.db` 到带时间戳的备份；CI 用 v7 fixture 跑迁移测试。
+- 迁移前复制 `backend/data/ariadne.db` 到带时间戳的备份；CI 用 v7 fixture 跑迁移测试。
 - 迁移在单个事务内执行；失败回滚，不留下半张新表。
 - 进入 v8 前先 `conn.commit()`，再执行 `PRAGMA foreign_keys = OFF`；SQLite 在事务内会忽略该 PRAGMA。
 - `PRAGMA foreign_key_check` 必须为空；否则中止迁移。

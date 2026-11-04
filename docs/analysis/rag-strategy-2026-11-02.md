@@ -12,7 +12,7 @@
 query → embedding → top-k 向量检索 → 拼进 prompt → LLM 生成
 ~~~
 
-而 SciPal 现在并不是这个形态，已经属于「工程化 RAG」：
+而 Ariadne 现在并不是这个形态，已经属于「工程化 RAG」：
 
 | 能力 | 当前实现 | 位置 |
 |---|---|---|
@@ -23,7 +23,7 @@ query → embedding → top-k 向量检索 → 拼进 prompt → LLM 生成
 | 上下文扩展 | 同章节/相邻块/链接块 | `rag/retrieval/context_builder.py` |
 | 查询改写 | 跨语言 query pack + 历史改写 + 术语扩展 | `rag/retrieval/query_rewriter.py` 等 |
 | 引用校验 | 检查回答里的 `[Section: X]` 是否在召回集合中 | `rag/answer.py:292-296` |
-| 离线评测 | 检索指标 / RAGAS / LLM Judge | `backend/src/scipal_eval` |
+| 离线评测 | 检索指标 / RAGAS / LLM Judge | `backend/src/ariadne_eval` |
 
 所以问题不是「要不要从 naive 升级」，而是：**这套工程化 RAG 是否覆盖产品所需的问题类型。**
 
@@ -195,7 +195,7 @@ M0 的索引仍按 session 构建；M2 需要：
 
 ## 5. 用评测决定是否升级
 
-不要凭感觉增加复杂度。用 `scipal_eval` 建一个小规模标注集（每类 30–50 题）：
+不要凭感觉增加复杂度。用 `ariadne_eval` 建一个小规模标注集（每类 30–50 题）：
 
 | 指标 | 目标 | 不达标时的动作 |
 |---|---|---|
