@@ -66,7 +66,7 @@ function handlePin(sessionId: string): void {
     aria-label="最近论文会话"
   >
     <template v-if="collapsed">
-      <div class="app-sidebar__collapsed-brand" aria-label="SciPal">S</div>
+      <div class="app-sidebar__collapsed-brand" aria-label="Ariadne">A</div>
       <el-button
         class="app-sidebar__collapsed-button"
         :icon="Expand"

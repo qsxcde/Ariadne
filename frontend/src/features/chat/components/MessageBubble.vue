@@ -50,7 +50,7 @@ const displayText = computed(() => {
 <template>
   <article class="message-row" :class="`message-row--${props.message.role}`">
     <div v-if="props.message.role === 'assistant'" class="avatar-shell" aria-hidden="true">
-      <span class="avatar-shell__brand">S</span>
+      <span class="avatar-shell__brand">A</span>
     </div>
 
     <div class="message-column">

@@ -24,7 +24,7 @@ const emit = defineEmits<{
   logout: [];
 }>();
 
-const STORAGE_KEY = "scipal.rail.collapsed";
+const STORAGE_KEY = "ariadne.rail.collapsed";
 const NARROW_QUERY = "(max-width: 1200px)";
 const isNarrow = ref(window.matchMedia(NARROW_QUERY).matches);
 const collapsed = ref(
@@ -64,8 +64,8 @@ onBeforeUnmount(() => window.removeEventListener("resize", syncViewport));
 <template>
   <nav class="rail" :class="{ 'rail--collapsed': collapsed }" aria-label="主导航">
     <div class="rail__brand">
-      <span class="rail__mark">S</span>
-      <span v-if="!collapsed" class="rail__name">SciPal</span>
+      <span class="rail__mark">A</span>
+      <span v-if="!collapsed" class="rail__name">Ariadne</span>
       <button
         type="button"
         class="rail__collapse"

@@ -99,7 +99,7 @@ function toggleMore(): void {
       type="textarea"
       :autosize="{ minRows: 2, maxRows: 4 }"
       :disabled="isDisabled"
-      placeholder="给 SciPal 发送消息"
+      placeholder="给 Ariadne 发送消息"
       resize="none"
       @update:model-value="handleDraftChange"
       @keydown.enter="handleEnter"

@@ -42,8 +42,8 @@ function toggleMode(): void {
   <div class="login-view">
     <section class="login-view__card">
       <header class="login-view__header">
-        <span class="login-view__mark" aria-hidden="true">SP</span>
-        <h1 class="login-view__title">SciPal</h1>
+        <span class="login-view__mark" aria-hidden="true">A</span>
+        <h1 class="login-view__title">Ariadne</h1>
         <p class="login-view__subtitle">学术论文阅读助手 · 让引用可追溯</p>
       </header>
 

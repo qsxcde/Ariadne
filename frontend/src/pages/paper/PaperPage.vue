@@ -36,7 +36,7 @@ const {
 } = usePapers();
 
 const NARROW_QUERY = "(max-width: 1200px)";
-const INSPECTOR_STORAGE_KEY = "scipal.inspector.collapsed";
+const INSPECTOR_STORAGE_KEY = "ariadne.inspector.collapsed";
 const PROGRESS_THROTTLE_MS = 1200;
 const STATUS_FEEDBACK_MS = 1800;
 

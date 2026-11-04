@@ -38,7 +38,7 @@ onMounted(() => {
           <a href="#settings-alerts">提醒与 Digest</a>
           <a href="#settings-notifications">通知</a>
           <a href="#settings-reading">阅读偏好</a>
-          <a href="#settings-about">关于 SciPal</a>
+          <a href="#settings-about">关于 Ariadne</a>
         </nav>
 
         <div class="settings-view__sections">
@@ -51,7 +51,7 @@ onMounted(() => {
           />
 
           <SettingsSection id="settings-data" title="数据与隐私" index="01">
-            <p>数据目录由后端 SCIPAL_DATA_DIR 控制，默认是 backend/data。</p>
+            <p>数据目录由后端 ARIADNE_DATA_DIR 控制，默认是 backend/data。</p>
             <p>
               论文原文、解析产物、索引与 SQLite 数据库都保存在本地；未配置远程模型时不会上传论文内容。
             </p>
@@ -69,7 +69,7 @@ onMounted(() => {
             <p class="settings-hint">当前版本只支持文本型 PDF。</p>
           </SettingsSection>
 
-          <SettingsSection id="settings-about" title="关于 SciPal" index="06" last>
+          <SettingsSection id="settings-about" title="关于 Ariadne" index="06" last>
             <p>智能论文助手 v0.1 · 个人研究生阅读工作台。</p>
             <p>当前阶段：M0 论文资产层与阅读闭环。</p>
             <p class="settings-hint">后续会加入速读卡、跨论文对比与领域跟进。</p>

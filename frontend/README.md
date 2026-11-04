@@ -1,4 +1,4 @@
-# SciPal 前端
+# Ariadne 前端
 
 Vue 3 + TypeScript + Vite + Element Plus。负责会话管理、PDF 上传与 SSE 流式问答渲染。
 

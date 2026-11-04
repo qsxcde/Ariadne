@@ -16,9 +16,9 @@ defineEmits<{
 <template>
   <div class="sidebar-header">
     <div class="sidebar-header__brand" :class="{ 'sidebar-header__brand--collapsed': collapsed }">
-      <div class="sidebar-header__mark">S</div>
+      <div class="sidebar-header__mark">A</div>
       <div v-if="!collapsed" class="sidebar-header__copy">
-        <h1>SciPal</h1>
+        <h1>Ariadne</h1>
         <p>论文智能助手</p>
       </div>
     </div>

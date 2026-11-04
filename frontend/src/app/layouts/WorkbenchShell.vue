@@ -129,7 +129,7 @@ watch(
 </script>
 
 <template>
-  <main class="workbench" aria-label="SciPal 研究工作台">
+  <main class="workbench" aria-label="Ariadne 研究工作台">
     <WorkbenchRail
       :active="activeSection"
       :collections="collections"

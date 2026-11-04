@@ -71,7 +71,7 @@ async function handleImported(): Promise<void> {
 async function downloadBibtex(): Promise<void> {
   try {
     const bib = await exportBibtex();
-    downloadText(bib, "scipal-library.bib", "application/x-bibtex;charset=utf-8");
+    downloadText(bib, "ariadne-library.bib", "application/x-bibtex;charset=utf-8");
   } catch (error) {
     ElMessage.error(toErrorMessage(error, "导出 BibTeX 失败"));
   }

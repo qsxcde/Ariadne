@@ -5,7 +5,7 @@
 
 /** 留空即走同源相对路径（开发期由 vite proxy 转发，生产由反向代理转发）。 */
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
-const TOKEN_KEY = "scipal_token";
+const TOKEN_KEY = "ariadne_token";
 
 type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST" | "PUT";
 

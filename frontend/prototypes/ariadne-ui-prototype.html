@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SciPal UI Prototype</title>
+    <title>Ariadne UI Prototype</title>
     <style>
       :root {
         --ink: #172033;
@@ -67,67 +67,10 @@
 
       .app {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: clamp(272px, 16.25vw, 312px) minmax(0, 1fr);
         height: 100%;
         border: 1px solid rgba(199, 211, 226, 0.9);
         background: var(--mist);
-      }
-
-
-      .collapsed-toolbar {
-        position: absolute;
-        top: 22px;
-        left: 22px;
-        z-index: 4;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px;
-        background: rgba(255, 255, 255, 0.86);
-        border: 1px solid rgba(199, 211, 226, 0.92);
-        border-radius: 16px;
-        box-shadow: 0 14px 36px rgba(47, 69, 103, 0.12);
-        backdrop-filter: blur(14px);
-      }
-
-      .collapsed-toolbar__brand,
-      .collapsed-toolbar__button {
-        display: grid;
-        width: 36px;
-        height: 36px;
-        place-items: center;
-        border-radius: 11px;
-      }
-
-      .collapsed-toolbar__brand {
-        color: #ffffff;
-        font-size: 16px;
-        font-weight: 850;
-        background: linear-gradient(145deg, #5c7ff0 0%, #244dcc 100%);
-        box-shadow: 0 10px 22px rgba(71, 110, 230, 0.2);
-      }
-
-      .collapsed-toolbar__button {
-        color: var(--ink-2);
-        background: #ffffff;
-        border: 1px solid var(--line);
-      }
-
-      .collapsed-toolbar__button--primary {
-        color: #ffffff;
-        background: linear-gradient(145deg, #5d80ee, #2d55d1);
-        border-color: transparent;
-      }
-
-      .collapsed-toolbar__button:hover {
-        color: var(--brand-2);
-        background: var(--aqua-soft);
-        border-color: rgba(18, 166, 154, 0.24);
-      }
-
-      .collapsed-toolbar__button--primary:hover {
-        color: #ffffff;
-        background: linear-gradient(145deg, #6d8cf0, #355ed8);
       }
 
       .sidebar {
@@ -314,7 +257,7 @@
         display: grid;
         grid-template-rows: auto minmax(0, 1fr) auto;
         min-width: 0;
-        padding: clamp(20px, 2.1vw, 28px) clamp(32px, 4.6vw, 72px)
+        padding: clamp(20px, 2.1vw, 28px) clamp(28px, 4.2vw, 64px)
           clamp(22px, 2.4vw, 32px);
       }
 
@@ -566,7 +509,7 @@
 
       @media (max-width: 1280px) {
         .app {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: 248px minmax(0, 1fr);
         }
 
         .sidebar {
@@ -612,7 +555,7 @@
 
       @media (max-width: 1100px) {
         .app {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: 86px minmax(0, 1fr);
         }
 
         .sidebar {
@@ -753,19 +696,65 @@
   <body>
     <main class="canvas">
       <div class="app">
-        <div class="collapsed-toolbar" aria-label="收起后的侧边栏操作">
-          <div class="collapsed-toolbar__brand">S</div>
-          <button class="collapsed-toolbar__button" type="button" aria-label="展开侧边栏">
-            <svg class="glyph" viewBox="0 0 24 24">
-              <path d="M4 6h16M4 12h10M4 18h7" />
-            </svg>
-          </button>
-          <button class="collapsed-toolbar__button collapsed-toolbar__button--primary" type="button" aria-label="新对话 / 上传论文">
+        <aside class="sidebar">
+          <div class="brand-row">
+            <div class="brand-mark">A</div>
+            <div class="brand-copy">
+              <h1>Ariadne</h1>
+              <p>论文智能助手</p>
+            </div>
+            <div class="icon-actions">
+              <div class="icon-btn">
+                <svg class="glyph" viewBox="0 0 24 24">
+                  <path d="M4 6h16M4 12h10M4 18h7" />
+                </svg>
+              </div>
+              <div class="icon-btn">
+                <svg class="glyph" viewBox="0 0 24 24">
+                  <path d="m12 20 7-7-8-8-7 7v8h8z" />
+                  <path d="M14 7l3 3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="primary-action">
             <svg class="glyph" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />
             </svg>
-          </button>
-        </div>
+            新对话 / 上传论文
+          </div>
+
+          <div class="section-label">最近会话</div>
+          <div class="session-card">
+            <div class="doc-icon">PDF</div>
+            <div>
+              <strong>2606.20518v1.pdf</strong>
+              <span>1 篇论文 · 0 条新消息</span>
+            </div>
+            <div class="more">•••</div>
+          </div>
+
+          <div class="section-label">工作区</div>
+          <div class="session-card" style="background:#fff;border-color:var(--line)">
+            <div class="doc-icon" style="color:#0f766e">RAG</div>
+            <div>
+              <strong>检索质量概览</strong>
+              <span>23 个片段已索引</span>
+            </div>
+            <div class="more">›</div>
+          </div>
+
+          <div class="side-spacer"></div>
+          <div class="index-card">
+            <span>已索引片段</span>
+            <strong>23</strong>
+          </div>
+          <div class="user-row">
+            <span>wangjie</span>
+            <span class="logout">退出</span>
+          </div>
+        </aside>
 
         <section class="workspace">
           <header class="topbar">
@@ -791,7 +780,7 @@
               <div class="question">这篇论文提出了什么方法</div>
 
               <div class="assistant-row">
-                <div class="avatar">S</div>
+                <div class="avatar">A</div>
                 <article class="answer-card">
                   <div class="answer-meta">
                     <b>回答基于论文片段</b>
@@ -848,7 +837,7 @@
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </div>
-              <div class="placeholder">给 SciPal 发送消息，或继续追问这篇论文</div>
+              <div class="placeholder">给 Ariadne 发送消息，或继续追问这篇论文</div>
               <div class="toolset">
                 <span>工具仅提供界面状态</span>
                 <span>•••</span>

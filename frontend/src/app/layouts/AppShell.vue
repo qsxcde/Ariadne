@@ -240,7 +240,7 @@ watch([showReader, () => documents.value.length, () => paperSession.value?.sessi
     <section
       class="app-frame"
       :class="{ 'app-frame--reader': showPaper || (showReader && readerDocument && activeSessionId) }"
-      aria-label="SciPal 论文智能助手"
+      aria-label="Ariadne 论文智能助手"
     >
       <AppSidebar
         :collapsed="isSidebarCollapsed"
