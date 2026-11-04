@@ -201,6 +201,8 @@ Webhook 投递不需要这些配置；`POST /notifications/deliver` 可传 `webh
 | `AGENT_MAX_EVIDENCE_CHARS` | `12000` | 工具结果与最终回答可使用的证据总字符上限 |
 | `AGENT_MAX_HISTORY_TURNS` | `6` | Agent 带入的历史轮数，超出部分丢弃 |
 
+前端在打开研究面板时调用 `GET /features` 读取 `agent_enabled`；关闭时只显示快速问答，模式切换整体隐藏。修改该值需要重启服务。
+
 ## 3. 路径解析
 
 ```

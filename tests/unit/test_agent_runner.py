@@ -4,7 +4,6 @@ import importlib
 from typing import Any
 
 import pytest
-from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -185,7 +184,7 @@ def test_runner_enforces_model_call_limit(isolated_storage, monkeypatch) -> None
     session = session_repo.create_session("Agent", user_id="u1")
     _install_fake_model(monkeypatch, AlwaysToolModel())
 
-    with pytest.raises(ModelCallLimitExceededError):
+    with pytest.raises(RuntimeError, match="研究步数达到上限（2）"):
         list(
             runner_module.LangGraphAgentRunner(max_steps=2).stream(
                 question="loop",

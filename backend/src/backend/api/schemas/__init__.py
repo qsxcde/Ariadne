@@ -1,7 +1,7 @@
 """HTTP transfer models (request/response and SSE payloads)."""
 
 from backend.api.schemas.auth import AuthRequest, AuthResponse, UserResponse
-from backend.api.schemas.agent import AgentRunDetail, AgentStepSummary
+from backend.api.schemas.agent import AgentRunDetail, AgentStepSummary, FeatureFlags
 from backend.api.schemas.chat import (
     ChatMessage,
     ChatStreamDoneEvent,
@@ -122,6 +122,7 @@ __all__ = [
     "ChatStreamToolCallEvent",
     "ChatStreamToolResultEvent",
     "ChatStreamWarningEvent",
+    "FeatureFlags",
     "RunStartedValue",
     "ToolCallValue",
     "ToolResultValue",

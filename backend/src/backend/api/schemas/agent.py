@@ -24,6 +24,10 @@ class AgentStepSummary(BaseModel):
     created_at: str
 
 
+class FeatureFlags(BaseModel):
+    agent_enabled: bool
+
+
 class AgentRunDetail(BaseModel):
     id: str
     session_id: str

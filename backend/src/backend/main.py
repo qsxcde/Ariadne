@@ -15,6 +15,7 @@ from backend.api.routes import (
     chat,
     collections,
     documents,
+    features,
     feed,
     integrations,
     library,
@@ -106,6 +107,7 @@ register_exception_handlers(app)
 register_default_handlers()
 
 app.include_router(auth.router)
+app.include_router(features.router)
 app.include_router(sessions.router)
 app.include_router(documents.router)
 # Static /papers/* paths (stats, reading-stats) must be matched before /papers/{paper_id}.

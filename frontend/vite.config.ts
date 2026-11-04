@@ -16,6 +16,7 @@ export default defineConfig({
     // 未设置 VITE_API_BASE_URL 时，前端走同源相对路径，由 dev server 代理到后端
       proxy: {
         "/auth": BACKEND_ORIGIN,
+        "/features": BACKEND_ORIGIN,
         "/sessions": BACKEND_ORIGIN,
         "/health": BACKEND_ORIGIN,
         "/documents": BACKEND_ORIGIN,

@@ -45,11 +45,12 @@ Ariadne 是一个面向学术论文阅读场景的 RAG 问答系统与文献工�
 - 划词解释、速读卡、术语表与引用摘要。
 - 阅读时长记录、按天/按论文统计与每周复盘。
 
-### RAG 问答
+### RAG 问答与研究 Agent
 
 - 单会话内多文档累积索引，回答严格基于论文上下文。
 - BM25 + Dense 混合召回、RRF 融合、Cross-Encoder 重排与上下文扩展。
-- SSE 流式输出，事件类型为 `status`、`token`、`sources`、`done`（异常时附加 `warning` / `error`）。
+- 快速问答与 Agent 研究双模式：Agent 可多步检索、读取片段并展示可回放的运行轨迹。
+- SSE 流式输出，事件类型为 `status`、`run_started`、`tool_call`、`tool_result`、`token`、`sources`、`done`（异常时附加 `warning` / `error`）。
 - DeepSeek 为主模型，可在开启配置后降级到 GLM / Qwen / Ollama。
 
 ### 综合与跟进
@@ -78,6 +79,7 @@ Ariadne 是一个面向学术论文阅读场景的 RAG 问答系统与文献工�
 | 关键词检索 | 自实现 BM25（中英混合分词） |
 | 重排序 | 远程 rerank API → 本地 cross-encoder → 原序截断 |
 | LLM | OpenAI Python SDK，DeepSeek 主用 |
+| Agent | LangChain 1.x `create_agent` + LangGraph 1.2（仅适配器层引入） |
 | 持久化 | SQLite（WAL）+ 本地文件目录 |
 | 测试与质量 | pytest、Vitest、ESLint、Prettier、ruff、mypy |
 
@@ -93,14 +95,14 @@ Ariadne 是一个面向学术论文阅读场景的 RAG 问答系统与文献工�
 │ 接口层  backend/api         路由、传输契约、SSE 编码、鉴权   │
 ├────────────────────────────────────────────────────────────┤
 │ 应用层  backend/application library / reading / ingestion /  │
-│         conversation / follow / synthesis                   │
+│         conversation / follow / synthesis / agent           │
 ├────────────────────────────────────────────────────────────┤
 │ 领域层  backend/domain      模型、状态机、授权规则、领域异常  │
 ├────────────────────────────────────────────────────────────┤
 │ 能力层  backend/rag         摄取、切块、索引、检索、生成      │
 ├────────────────────────────────────────────────────────────┤
 │ 适配层  backend/adapters    LLM / Embedding / Vector /       │
-│         Parser / Rerank                                     │
+│         Parser / Rerank / Agent（LangGraph）                 │
 ├────────────────────────────────────────────────────────────┤
 │ 存储层  backend/storage     SQLite（WAL）+ 本地文件目录      │
 └────────────────────────────────────────────────────────────┘
@@ -119,6 +121,12 @@ Ariadne 是一个面向学术论文阅读场景的 RAG 问答系统与文献工�
 1. `POST /sessions/{id}/messages` 先持久化用户消息，并等待会话存在 active ready 快照。
 2. 基于快照检索上下文，调用 LLM 生成中文回答。
 3. 通过 SSE 返回 `sources` 与 `done`，持久化 assistant 消息；生成中断时以 `failed` 状态落库并保留已生成内容。
+
+**Agent 研究**
+
+1. 请求携带 `mode: "agent"` 时，服务端创建 `agent_runs`，通过 LangGraph `create_agent` 调用 3 个只读工具。
+2. 工具步骤、来源与摘要写入 `agent_steps`；SSE 推送 `run_started` / `tool_call` / `tool_result` 与最终答案。
+3. 回答消息通过 `run_id` 关联运行，可随时按 `GET /sessions/{id}/runs/{run_id}` 回放。
 
 完整链路（状态机、数据模型、SSE 协议）见 [docs/wiki](docs/wiki/README.md)。
 
@@ -312,6 +320,7 @@ docker compose -f docker-compose.app.yml up --build
 | PUT | `/collections/{collection_id}/papers/{paper_id}` | Add Paper To Collection |
 | GET | `/digest` | Get Digest |
 | GET | `/documents` | 跨会话的文献库列表（已归档会话不计入）。 |
+| GET | `/features` | Get Features |
 | GET | `/feed` | List Feed |
 | POST | `/feed/refresh` | Refresh Feed |
 | POST | `/feed/{item_id}/ignore` | Ignore Feed Item |
@@ -497,6 +506,7 @@ uv run --project backend python -m ariadne_eval.cli run \
 - 检索按单会话、单 active snapshot 组织，暂不支持跨论文联合检索。
 - 应用为单进程设计：任务队列、会话锁与向量库缓存均为进程内状态，不支持多副本部署。
 - 问答质量依赖外部模型服务（DeepSeek 主用，可降级）与 Embedding 资源可用性。
+- Agent 研究仅检索当前会话、只读不写，并受 `AGENT_MAX_STEPS` / `AGENT_MAX_TOOL_CALLS` / `AGENT_TIMEOUT_SECONDS` 预算约束；模型需支持工具调用。
 - 前端交付范围为 PC Web，未适配移动端；部分输入区工具按钮仍为 UI 占位。
 - 暂无可观测性指标（`/metrics`、tracing），仅有 stdout 日志。
 

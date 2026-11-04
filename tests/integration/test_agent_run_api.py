@@ -24,6 +24,17 @@ def client():
 
 
 @pytest.mark.integration
+def test_features_expose_agent_flag(client: TestClient, monkeypatch):
+    from backend.config import settings
+
+    monkeypatch.setattr(settings, "agent_enabled", False)
+    response = client.get("/features")
+
+    assert response.status_code == 200, response.text
+    assert response.json() == {"agent_enabled": False}
+
+
+@pytest.mark.integration
 def test_get_agent_run_returns_steps(client: TestClient):
     session = sessions.create_session("Agent", user_id="u1")
     run = agent_runs.create_agent_run(session["id"], user_id="u1", model="fake")

@@ -1670,6 +1670,19 @@
         "title": "ExplainResponse",
         "type": "object"
       },
+      "FeatureFlags": {
+        "properties": {
+          "agent_enabled": {
+            "title": "Agent Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agent_enabled"
+        ],
+        "title": "FeatureFlags",
+        "type": "object"
+      },
       "FeedItemSummary": {
         "properties": {
           "abstract": {
@@ -5205,6 +5218,29 @@
           }
         ],
         "summary": "List Documents"
+      }
+    },
+    "/features": {
+      "get": {
+        "operationId": "get_features_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlags"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Features"
       }
     },
     "/feed": {

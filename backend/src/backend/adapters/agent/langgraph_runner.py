@@ -13,6 +13,7 @@ from typing import Any, cast
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelCallLimitMiddleware
+from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -151,11 +152,16 @@ class LangGraphAgentRunner:
                     )
                 ],
             )
-            yield from self._stream_agent(
-                agent,
-                messages=self._build_messages(question, history),
-                run_id=run_id,
-            )
+            try:
+                yield from self._stream_agent(
+                    agent,
+                    messages=self._build_messages(question, history),
+                    run_id=run_id,
+                )
+            except ModelCallLimitExceededError as exc:
+                raise RuntimeError(
+                    f"研究步数达到上限（{self._max_steps}），已停止。"
+                ) from exc
         finally:
             conn.close()
 

@@ -2,6 +2,7 @@ import { useLibrary } from "@/features/library/composables/useLibrary";
 import { resetPaperChat } from "@/features/chat/composables/usePaperChat";
 import { resetAgentRuns } from "@/features/agent/composables/useAgentRuns";
 import { usePaperReader } from "@/features/reader/composables/usePaperReader";
+import { resetFeatures } from "@/shared/composables/useFeatures";
 import { useSourcePreview } from "@/shared/composables/useSourcePreview";
 
 /**
@@ -14,6 +15,7 @@ import { useSourcePreview } from "@/shared/composables/useSourcePreview";
 export function resetClientState(): void {
   resetPaperChat();
   resetAgentRuns();
+  resetFeatures();
   useLibrary().reset();
   usePaperReader().reset();
   useSourcePreview().reset();

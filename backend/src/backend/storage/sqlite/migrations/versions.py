@@ -638,7 +638,7 @@ def _migrate_add_agent_tables(conn) -> None:
           client_message_id TEXT NULL,
           status TEXT NOT NULL,
           model TEXT NULL,
-          max_steps INTEGER NOT NULL DEFAULT 6,
+          max_steps INTEGER NOT NULL DEFAULT 12,
           step_count INTEGER NOT NULL DEFAULT 0,
           prompt_tokens INTEGER NULL,
           completion_tokens INTEGER NULL,

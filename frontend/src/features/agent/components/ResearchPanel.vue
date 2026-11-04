@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import ModeSwitch from "@/features/agent/components/ModeSwitch.vue";
 import RunPanel from "@/features/agent/components/RunPanel.vue";
 import { useAgentRuns } from "@/features/agent/composables/useAgentRuns";
 import PaperAskPanel from "@/features/reader/components/PaperAskPanel.vue";
+import { useFeatures } from "@/shared/composables/useFeatures";
 
 const props = defineProps<{
   sessionId: string;
@@ -17,6 +18,11 @@ const emit = defineEmits<{
 
 const mode = ref<"fast" | "agent">("fast");
 const { currentRun, latestRunForSession, loadRun, setActive } = useAgentRuns();
+const { agentEnabled, ensureLoaded } = useFeatures();
+
+onMounted(() => {
+  void ensureLoaded();
+});
 
 const run = computed(() => {
   const current = currentRun.value;
@@ -46,7 +52,7 @@ async function viewRun(runId: string): Promise<void> {
 
 <template>
   <div class="research-panel">
-    <div class="research-panel__head">
+    <div v-if="agentEnabled" class="research-panel__head">
       <ModeSwitch :model-value="mode" @update:model-value="changeMode" />
     </div>
 

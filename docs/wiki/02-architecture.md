@@ -30,7 +30,7 @@
 │         llm / embedding / vector（外部 I/O 与模型客户端）       │
 ├──────────────────────────────────────────────────────────────┤
 │ 存储层  backend/storage/                                      │
-│  sqlite/*（20 张表仓储） paths.py（目录布局）                   │
+│  sqlite/*（22 张表仓储） paths.py（目录布局）                   │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -44,8 +44,10 @@
 
 | 文件 | 职责 |
 |---|---|
-| `backend/main.py` | 装配根：`init_db` → 孤儿文档清理 → 中断 job 重排 → 启动 runner；注册 CORS、异常处理器、job handler 与 13 个 router；`/health` |
-| `api/schemas/{auth,session,document,chat,feed,paper}.py` | 请求/响应与 SSE 事件的 Pydantic 模型，按域拆分，无 alias |
+| `backend/main.py` | 装配根：`init_db` → 孤儿文档清理 → 中断 job 重排 → 启动 runner；注册 CORS、异常处理器、job handler 与 14 个 router；`/health` |
+| `api/schemas/{auth,session,document,chat,feed,paper,agent}.py` | 请求/响应与 SSE 事件的 Pydantic 模型，按域拆分，无 alias |
+| `api/routes/features.py` | `GET /features`：向前端暴露 `agent_enabled` 灰度开关 |
+| `api/routes/sessions.py` | 会话快照、文档上传，以及 `GET /sessions/{id}/runs/{run_id}` 运行回放 |
 | `api/security.py` | `OAuth2PasswordBearer` + JWT 签发/校验 + bcrypt 口令哈希 |
 | `api/deps.py` | `get_accessible_session`：授权规则的唯一调用入口，失败抛 `SessionNotFoundError` |
 | `api/errors.py` | 领域异常 → HTTP 映射（404 / 413 / 400），是唯一的错误翻译点 |
@@ -70,6 +72,7 @@
 | `application/conversation/` | `chat` / `sessions` / `session_index` / `policies` / `evaluation` / `events` | 会话快照、问答编排、索引等待、配置翻译与离线评测 |
 | `application/follow/` | `feed` / `notifications` / `alerts` / `citation_alerts` / `version_alerts` | 订阅、Feed、站内通知与两类提醒 |
 | `application/synthesis/` | `service` | 集合问答与多论文对比 |
+| `application/agent/` | `service` / `queries` / `tools/session_tools` / `tool_specs` | Agent 运行编排、运行回放查询、3 个只读会话工具与参数模型；不依赖 LangChain |
 | `application/auth.py` | `auth` | 注册、登录与用户查询（单模块上下文） |
 
 关键事实：
@@ -85,7 +88,8 @@
 - `models.py`：`ChunkMetadata`、`Chunk`、`SourceRef`、`VectorSearchHit`、`BBoxUnit`。
 - `parsing.py`：`ParserBackend` 协议与 `RawParserResult`，供摄取流水线和解析器适配器共用。
 - `ports.py`：`TextCompleter`、`VectorStore`、`Embedder` 三个能力端口。
-- `states.py`：`SessionStatus`、`DocumentStage`、`IndexSnapshotStatus`、`JobStatus` 四个 `StrEnum`，外加 `TERMINAL_JOB_STATUSES` 与 `PROCESSING_DOCUMENT_STAGES` 两个常量集合。
+- `states.py`：`SessionStatus`、`DocumentStage`、`IndexSnapshotStatus`、`JobStatus`、`AgentRunStatus`、`AgentStepKind`、`AgentStepStatus` 等 `StrEnum`，外加 `TERMINAL_JOB_STATUSES` 与 `PROCESSING_DOCUMENT_STAGES` 两个常量集合。
+- `agent.py`：`AgentRunner` 端口、`ToolContext`、工具规格与 `Agent*` 事件；不 import 任何 LangChain / LangGraph 类型。
 - `access.py`：`session_is_accessible`，纯函数授权规则。
 - `exceptions.py`：`PaperParseError`、`EmbeddingModelUnavailableError`、`SessionNotFoundError`、`ActiveIndexNotReadyError`、`SnapshotCommitError`，以及上传校验用的 `UploadValidationError` / `UploadTooLargeError` / `InvalidUploadError`。
 
@@ -105,6 +109,7 @@
 | `llm_output.py` | `strip_markdown_fence` / `parse_json_object` | LLM 结构化输出的统一清洗；改写/术语扩展/Judge 都走这里 |
 | `adapters/resources.py` | `LazyResource` | 外部客户端（OpenAI / httpx）的线程安全懒加载单例；reranker 客户端复用 |
 | `answer.py` | `answer.stream_answer` | 单轮问答能力（检索 + 生成 + 引用校验）；`options` 与 `policy` 必须由调用方显式传入 |
+| `adapters/agent/` | `langgraph_runner.LangGraphAgentRunner` / `langchain_tools` | LangChain `create_agent` + LangGraph 唯一落点：工具适配、检查点、模型调用预算与事件映射 |
 
 ### 2.5 存储层
 
@@ -113,9 +118,9 @@
 | `storage/paths.py` | 会话目录布局；`remove_session_dir` 带越界校验 |
 | `storage/sqlite/connection.py` | 路径三级回退、PRAGMA、`transaction()` 上下文管理器 |
 | `storage/sqlite/schema.py` | 当前全量 DDL、`init_db()` 与 `PRAGMA user_version` 版本声明 |
-| `storage/sqlite/migrations/versions.py` | v2 → v18 的增量迁移函数，由 `schema.init_db()` 调用 |
+| `storage/sqlite/migrations/versions.py` | v2 → v19 的增量迁移函数，由 `schema.init_db()` 调用 |
 | `storage/sqlite/uow.py` | `unit_of_work()`：多步存储操作的显式事务边界 |
-| `storage/sqlite/*.py` | 20 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / index_snapshots / papers / collections / annotations / feed / notifications 等 |
+| `storage/sqlite/*.py` | 22 张表的仓储函数（无 ORM，纯 SQL），含 sessions / documents / jobs / chunks / messages / agent_runs / agent_steps / index_snapshots / papers / collections / annotations / feed / notifications 等 |
 
 ### 2.6 配置 `backend/src/backend/config.py`
 
@@ -135,7 +140,7 @@ import 期
 lifespan 启动
   1. await to_thread(init_db)
         user_version < 1 → 直接建当前全量 schema 并置 5
-        否则逐版本迁移 v2 → v5
+        否则逐版本迁移 v2 → v19
   2. await to_thread(recover_orphaned_documents)
         删除 status=uploaded 且无对应 job 的文档行与磁盘文件；异常仅记日志
   3. await to_thread(runner.recover_interrupted_jobs)
@@ -207,6 +212,28 @@ POST /sessions/{id}/messages
   → api.streaming.encode_sse_event → 200 text/event-stream
 ```
 
+### 4.4 Agent 流式研究
+
+```
+POST /sessions/{id}/messages  {mode: "agent"}
+  → Depends(get_accessible_session)
+  → api/routes/chat.py 惰性装配 composition.agent_runner()
+  → application.conversation.chat._stream_agent_turn
+        application.agent.service.stream_agent_run
+          storage.sqlite.agent_runs.create_agent_run（按 client_message_id 幂等）
+          AgentRunner.stream → adapters/agent/langgraph_runner
+                create_agent(tools=search_session_chunks/read_chunk/get_paper,
+                             checkpointer=<data>/agent/checkpoints.sqlite)
+                ModelCallLimitMiddleware（agent_max_steps）
+                updates/messages → AgentToken / AgentToolCall / AgentToolResult
+          storage.sqlite.agent_steps：工具参数、来源、摘要、状态
+          storage.sqlite.agent_runs：token 用量、步数、终态
+        storage.sqlite.messages.create_message(role=assistant, run_id=...)
+  → SSE：run_started → status/tool_call/tool_result → token → sources → done
+```
+
+`GET /sessions/{id}/runs/{run_id}` 由 `application.agent.queries` 组装 run、steps、问题、答案与来源，供刷新后回放。
+
 ## 5. 并发模型
 
 | 面 | 实现 | 约束 |
@@ -240,6 +267,8 @@ POST /sessions/{id}/messages
 - **索引可见性**：对外可用索引 = `index_snapshots` 中 active `ready` 快照；`retrieval_indexes` 为 legacy 兼容读取路径。
 - **资源归属**：策略在 `domain/access.session_is_accessible`，调用入口在 `api/deps.get_accessible_session`；`user_id IS NULL` 的历史会话对所有调用方开放，其余必须与当前用户一致，否则按 404 处理。
 - **依赖边界**：`tests/architecture/test_package_boundaries.py` 用 AST 静态校验「application 不依赖 fastapi」「storage 不依赖 rag」「rag/answer 不读 settings」「仅 api 与 main 依赖 fastapi」。
-- **上下文边界**：`application/{library,reading,ingestion,conversation,follow,synthesis}` 各自拥有用例；跨上下文只调用公开函数或共用 domain 类型；`api/routes` 与 `application` 子包一一对应。
+- **上下文边界**：`application/{library,reading,ingestion,conversation,follow,synthesis,agent}` 各自拥有用例；跨上下文只调用公开函数或共用 domain 类型；`api/routes` 与 `application` 子包一一对应。
+- **Agent 框架边界**：只有 `adapters/agent/` 导入 LangChain / LangGraph；domain、application、api 仅依赖 `AgentRunner` 端口与 `Agent*` 事件。
+- **运行可回放**：消息的 `run_id` 指向 `agent_runs`，步骤与来源落库；`GET /sessions/{id}/runs/{run_id}` 不依赖进程内状态。
 
 细节见 [04 API 参考](04-api.md) 与 [03 数据模型与存储](03-data-model.md)。

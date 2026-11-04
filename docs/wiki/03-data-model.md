@@ -1,7 +1,7 @@
 # 03 数据模型与存储
 
-权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 18`，含当前全量 DDL）。
-增量迁移：`backend/src/backend/storage/sqlite/migrations/versions.py`（v2 → v18）。
+权威定义：`backend/src/backend/storage/sqlite/schema.py`（`CURRENT_SCHEMA_VERSION = 19`，含当前全量 DDL）。
+增量迁移：`backend/src/backend/storage/sqlite/migrations/versions.py`（v2 → v19）。
 仓储实现：`backend/src/backend/storage/sqlite/*.py`（纯 SQL，无 ORM）。
 
 ## 1. 表总览
@@ -22,7 +22,9 @@
 | `sessions` | 会话 | 标题、置顶、归档、归属用户、关联论文 |
 | `documents` | 文档 | PDF 元数据、状态机、解析产物路径、论文归属 |
 | `chunks` | 分块 | 检索事实表，正文 + 结构化元数据 |
-| `messages` | 消息 | 对话历史与 `sources_json` |
+| `messages` | 消息 | 对话历史与 `sources_json`；Agent 回答通过 `run_id` 关联运行 |
+| `agent_runs` | 运行 | 一次 Agent 研究的目标、状态、步数、token 与耗时（v19 引入） |
+| `agent_steps` | 步骤 | 运行内的工具调用、参数、命中来源与错误（v19 引入） |
 | `jobs` | 任务 | 单次摄取尝试、重试次数、错误 |
 | `index_snapshots` | 索引快照 | 不可变快照与原子切换 |
 | `retrieval_indexes` | 已发布索引 | legacy 兼容的"当前索引指针" |
@@ -109,9 +111,10 @@
 | `content` | TEXT | NOT NULL | |
 | `sources_json` | TEXT | NULL | `list[SourceRef]` 的 JSON |
 | `status` | TEXT | NOT NULL DEFAULT `complete` | `complete` / `failed` / `stopped` |
+| `run_id` | TEXT | NULL | 该回答对应的 `agent_runs.id`（v19）；快速问答为 NULL |
 | `created_at` | TEXT | NOT NULL | |
 
-索引：`idx_messages_session_id`。
+索引：`idx_messages_session_id`。`run_id` 无外键，仅供回放查询与前端“查看研究过程”。
 
 ### 2.5 `jobs`
 
@@ -221,6 +224,49 @@
 
 Embedding 解析顺序：用户 Key > env `EMBEDDING_REMOTE_API_KEY` > 本地 `EMBEDDING_MODEL`。索引快照记录不含密钥的指纹 `mode|provider|model|dim`；仅换 Key 不改变指纹，不触发重建。
 
+### 2.11 `agent_runs`（v19）
+
+一次 Agent 研究运行一行；`client_message_id` 用于同一请求的幂等创建。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| `id` | TEXT | PK，UUID，同时是 LangGraph `thread_id` |
+| `session_id` | TEXT | NOT NULL，FK → sessions CASCADE |
+| `user_id` | TEXT | 归属用户，弱关联 |
+| `client_message_id` | TEXT | 客户端消息 id；重复提交返回同一 run |
+| `status` | TEXT | `running / completed / failed / stopped` |
+| `model` | TEXT | 实际使用的模型名 |
+| `max_steps` | INTEGER | 本次运行的模型调用预算（默认 12） |
+| `step_count` | INTEGER | 已记录的步骤数 |
+| `prompt_tokens` / `completion_tokens` | INTEGER | 运行结束时写入 |
+| `error_message` | TEXT | 失败原因 |
+| `created_at` / `finished_at` | TEXT | |
+
+索引：`idx_agent_runs_session(session_id, created_at DESC)`、部分索引 `idx_agent_runs_client_message(client_message_id)`。
+
+### 2.12 `agent_steps`（v19）
+
+工具调用轨迹；一次运行内 `step_index` 唯一。
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| `id` | TEXT | PK，UUID |
+| `run_id` | TEXT | NOT NULL，FK → agent_runs CASCADE |
+| `step_index` | INTEGER | 运行内序号 |
+| `kind` | TEXT | `decision / tool` |
+| `tool_name` | TEXT | `search_session_chunks / read_chunk / get_paper` |
+| `arguments_json` / `result_json` | TEXT | 工具参数与结果 JSON |
+| `sources_json` | TEXT | 本步命中的 `SourceRef` 数组 |
+| `summary` | TEXT | 面向界面的摘要 |
+| `status` | TEXT | `running / ok / error / interrupted` |
+| `error_message` | TEXT | 失败原因 |
+| `latency_ms` / `prompt_tokens` / `completion_tokens` | INTEGER | 预留用量字段 |
+| `created_at` | TEXT | |
+
+索引：唯一索引 `idx_agent_steps_run_step(run_id, step_index)`。
+
+> LangGraph 检查点单独存放在 `<data>/agent/checkpoints.sqlite`，不写应用库。
+
 ## 3. 关系与文件系统映射
 
 ```
@@ -237,6 +283,9 @@ sessions 1 ── N chunks        (CASCADE)
 sessions 1 ── N jobs          (CASCADE)
 sessions 1 ── N index_snapshots (CASCADE)
 sessions 1 ── 1 retrieval_indexes (逻辑, 无 UNIQUE)
+sessions 1 ── N agent_runs    (CASCADE)
+agent_runs 1 ── N agent_steps (CASCADE)
+messages.run_id ── agent_runs.id (弱关联, 无 FK)
 documents 1 ── N chunks       (CASCADE)
 documents 1 ── N jobs         (document_id 可空, SET NULL)
 ```
@@ -251,6 +300,7 @@ documents 1 ── N jobs         (document_id 可空, SET NULL)
 | `index_snapshots.index_path` | `<data>/index/<session_id>/snapshots/<token>.faiss.index` |
 | `index_snapshots.chunks_path` | `<data>/index/<session_id>/snapshots/<token>.chunks.json` |
 | `retrieval_indexes.index_path` / `chunks_path` | 快照路径的指针拷贝；legacy 布局为 `index/<sid>/faiss.index` + `chunks.json` |
+| LangGraph 检查点（不入库） | `<data>/agent/checkpoints.sqlite` |
 
 删除会话时：`archive_session`（置 `is_archived=1`）+ `registry.discard_store` + `remove_session_dir`（递归删除 `raw/`、`parsed/`、`chunks/`、`index/` 下该会话目录，删除前做 `is_relative_to` 越界校验）。
 
@@ -309,6 +359,22 @@ queued ──CAS──▶ running ──▶ succeeded
 | 同时存在 `failed` 与 `ready` | `degraded` |
 | 全部 `failed` | `failed` |
 | 其它 | `processing` |
+
+### 4.5 Agent 运行 `AgentRunStatus` / `AgentStepStatus`
+
+```
+agent_runs:   running ──▶ completed
+                  ├──▶ failed   （预算耗尽、超时、适配器异常）
+                  └──▶ stopped  （客户端断开）
+
+agent_steps:  running ──▶ ok
+                  ├──▶ error        （工具返回错误）
+                  └──▶ interrupted  （预算/超时/客户端停止时仍未完成）
+```
+
+- 每个 run 以 `running` 创建，正常完成写 token 用量与 `finished_at`。
+- 客户端取消时保留已生成的部分答案（`messages.status = stopped`）。
+- 工具步骤与 SSE 的 `tool_call` / `tool_result` 一一对应。
 
 ## 5. 磁盘目录布局
 
@@ -394,7 +460,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 
 | 版本 | 变更 |
 |---|---|
-| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 16` |
+| v1（新库） | 直接创建当前全量 schema 并置 `user_version = 19` |
 | v2 | `chunks(document_id, chunk_index)` 唯一索引 |
 | v3 | `retrieval_indexes.created_at` 补列并回填；新增 `idx_sessions_list` 部分索引 |
 | v4 | 重建 6 张含外键表，补全 `ON DELETE CASCADE` / `SET NULL` |
@@ -412,6 +478,7 @@ uv run --project backend python -m backend.scripts.gc_index_snapshots --apply --
 | v16 | `subscriptions.source`：订阅来源（arxiv/openalex/pubmed/rss） |
 | v17 | 新增 `user_model_settings`（按用户的 LLM/Embedding/Rerank 供应商、模型与加密密钥） |
 | v18 | `index_snapshots.embedding_fingerprint` / `embedding_model`：记录索引由哪个 Embedding 模型构建 |
+| v19 | 新增 `agent_runs` / `agent_steps`；`messages.run_id` 关联 Agent 回答与运行；LangGraph 检查点独立存放 |
 
 新库不执行增量脚本，只有旧库才逐版本升级；升级过程 `PRAGMA foreign_keys = OFF` → 重建表 → 重建索引 → `ON`，异常自动 rollback。
 

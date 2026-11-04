@@ -57,6 +57,7 @@ export type PaperImportResult = Schemas["PaperImportResponse"];
 export type AnnotationSummary = Schemas["AnnotationSummary"];
 export type AnnotationCreatePayload = Schemas["AnnotationCreateRequest"];
 
+export type FeatureFlags = Schemas["FeatureFlags"];
 export type AgentStep = Schemas["AgentStepSummary"];
 export type AgentRunDetail = Schemas["AgentRunDetail"];
 

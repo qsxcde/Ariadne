@@ -17,7 +17,7 @@ frontend/src/shared/contracts/openapi.d.ts   ← 生成的 TS 类型，禁止手
 ```
 
 - `frontend/src/api/types.ts` 只做 `Schemas["Xxx"]` 的别名映射，不再手写字段。
-- SSE 事件模型不在 OpenAPI 的 paths 下，导出脚本会把 6 个 `ChatStream*Event`
+- SSE 事件模型不在 OpenAPI 的 paths 下，导出脚本会把 9 个 `ChatStream*Event`
   和 `ChatStreamEvent` 联合补进 components。
 - CI 会校验：`contracts/openapi.json` 与 app 一致、生成类型与 JSON 一致、
   README 端点表与契约一致。
@@ -48,6 +48,7 @@ frontend/src/shared/contracts/openapi.d.ts   ← 生成的 TS 类型，禁止手
 | POST | `/auth/register` | 注册并签发 JWT | 201 | 400 / 409 |
 | POST | `/auth/login` | 登录签发 JWT | 200 | 400 / 401 |
 | GET | `/auth/me` | 当前用户 | 200 | 401 |
+| GET | `/features` | 当前服务端功能开关（`agent_enabled`） | 200 | 401 |
 | GET | `/sessions` | 会话列表 | 200 | 401 |
 | POST | `/sessions` | 新建会话 | 200 | 401 |
 | GET | `/sessions/{id}` | 会话快照 | 200 | 401 / 404 |
@@ -102,7 +103,8 @@ frontend/src/shared/contracts/openapi.d.ts   ← 生成的 TS 类型，禁止手
 | GET | `/sessions/{id}/documents/{document_id}/content` | 结构化正文（阅读器） | 200 | 401 / 404 |
 | GET | `/sessions/{id}/documents/{document_id}/file` | 原始 PDF 字节（原页渲染） | 200 | 401 / 404 |
 | GET | `/sessions/{id}/documents/{document_id}/chunks/{chunk_index}` | 引用定位（还原原文段落 + 坐标） | 200 | 401 / 404 |
-| POST | `/sessions/{id}/messages` | 流式对话 | 200（SSE） | 401 / 404 |
+| POST | `/sessions/{id}/messages` | 流式对话；`mode=fast`（默认）或 `agent` | 200（SSE） | 401 / 404 |
+| GET | `/sessions/{id}/runs/{run_id}` | 回放一次 Agent 运行（run + steps + 问题/答案/来源） | 200 | 401 / 404 |
 
 > 标识导入：`POST /papers/import` 接受 `{source: arxiv|doi|url, identifier, download_pdf}`；arXiv 走 Atom API、DOI 走 Crossref、网页读 citation 元标签，按 `arxiv_id` / `doi` 去重（409 带 `paper_id`）。PDF 不可用时返回 202 + `pdf_imported=false` 与 `warning`，论文仍以 `inbox` 状态入库。
 >
@@ -398,10 +400,15 @@ curl "http://127.0.0.1:8000/sessions/$SID/documents/$DOC/chunks/4" \
 ### 3.14 `POST /sessions/{id}/messages`（SSE）
 
 ```json
-{"role": "user", "content": "这篇论文的核心贡献是什么？", "regenerate": false}
+{
+  "role": "user",
+  "content": "这篇论文的核心贡献是什么？",
+  "regenerate": false,
+  "mode": "agent"
+}
 ```
 
-`role` 默认 `"user"`，服务端只使用 `content` 与 `regenerate`，不校验也不落库传入的 `role`。
+`role` 默认 `"user"`，服务端只使用 `content`、`regenerate` 与 `mode`，不校验也不落库传入的 `role`。`mode` 默认 `fast`；`agent` 需要 `AGENT_ENABLED=true`，否则立即以 `error` 事件返回。
 
 `regenerate: true` 时复用上一条提问：先删除末尾的 assistant 消息，再把该提问排除出对话历史后重新生成；若末尾不是 assistant 消息，则退化为普通提问。
 
@@ -421,18 +428,22 @@ data: {"type":"...","value":...}\n\n
 
 | type | value | 说明 |
 |---|---|---|
-| `status` | `waiting_for_index` \| `retrieving` \| `generating` | 阶段提示 |
+| `status` | `waiting_for_index` \| `retrieving` \| `generating` \| `planning` \| `tool_running` \| `answering` | 阶段提示 |
+| `run_started` | `{run_id, max_steps}` | Agent 运行开始 |
+| `tool_call` | `{run_id, step, tool, arguments}` | 工具调用开始 |
+| `tool_result` | `{run_id, step, tool, status, summary, sources}` | 工具返回 |
 | `token` | string | 增量文本 |
 | `sources` | `list[SourceRef]` | 引用来源 |
 | `warning` | string | 非致命告警（如无有效引用） |
 | `error` | string | 错误文案 |
-| `done` | 无 `value` | 结束哨兵 |
+| `done` | `{run_id?}` | 结束哨兵；Agent 运行返回 `run_id` |
 
 `SourceRef` 字段：`paper_id?`、`section`、`chunk_index`、`text_excerpt?`、`page_start?`、`page_end?`、`block_ids?`、`confidence?`。
 
 ### 4.1 正常时序
 
 ```
+# fast
 status:waiting_for_index   ← 仅当首轮无 ready 快照时发出（延迟到索引就绪后再发）
 status:retrieving
 status:generating
@@ -440,6 +451,18 @@ token × N
 warning                    ← 引用校验不通过时
 sources
 done
+
+# agent
+run_started
+status:planning
+status:tool_running
+tool_call
+tool_result
+…（可多轮）
+status:answering
+token × N
+sources
+done{run_id}
 ```
 
 assistant 消息在 `done` 之前落库，因此客户端收到 `done` 后立刻 `GET /sessions/{id}` 能读到完整回答。
